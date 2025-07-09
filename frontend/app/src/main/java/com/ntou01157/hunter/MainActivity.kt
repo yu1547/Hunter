@@ -1,20 +1,34 @@
 package com.ntou01157.hunter
 
 import android.os.Bundle
-import androidx.activity.enableEdgeToEdge
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
+import okhttp3.Request
 
 class MainActivity : AppCompatActivity() {
+
+    private val client = OkHttpClient()
+    private val backendUrl = "https://hunter-backend-sbz8.onrender.com/"
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(R.layout.activity_main)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
+
+        // 發送 GET 請求
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val request = Request.Builder().url(backendUrl).build()
+                val response = client.newCall(request).execute()
+                val body = response.body?.string()
+
+                Log.d("API_RESPONSE", "Response from backend: $body")
+            } catch (e: Exception) {
+                Log.e("API_ERROR", "Error calling backend", e)
+            }
         }
     }
 }
