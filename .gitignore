@@ -4,7 +4,7 @@ Thumbs.db
 
 # == Node backend ==
 /backend/node_modules/
-/backend/.env
+/.env
 /backend/.DS_Store
 
 # == Android frontend ==
