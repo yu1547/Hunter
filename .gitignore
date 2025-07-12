@@ -6,6 +6,7 @@ Thumbs.db
 /backend/node_modules/
 /backend/.env
 /backend/.DS_Store
+/backend/db.js
 
 # == Android frontend ==
 /frontend/.gradle/
