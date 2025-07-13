@@ -28,8 +28,8 @@ exports.getAllItems = async (req, res) => {
 // 取得單一指定道具
 exports.getItemById = async (req, res) => {
   try {
-    const item = await Item.findOne({ itemId: req.params.itemId });
-    if (!item) return res.status(404).json({ message: 'Item not found' });
+    const item = await Item.findById(req.params.id);
+    if (!item) return res.status(404).json({ message: 'Item not found'});
     res.json(item);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -39,8 +39,8 @@ exports.getItemById = async (req, res) => {
 // 更新道具資訊
 exports.updateItem = async (req, res) => {
   try {
-    const updated = await Item.findOneAndUpdate(
-      { itemId: req.params.itemId },
+    const updated = await Item.findByIdAndUpdate(
+      req.params.id, // 注意這裡的參數名改為 id
       req.body,
       { new: true }
     );
@@ -54,7 +54,7 @@ exports.updateItem = async (req, res) => {
 // 刪除道具
 exports.deleteItem = async (req, res) => {
   try {
-    const deleted = await Item.findOneAndDelete({ itemId: req.params.itemId });
+    const deleted = await Item.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ message: 'Item not found' });
     res.json({ message: 'Item deleted' });
   } catch (error) {
