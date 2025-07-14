@@ -19,5 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "hunter"
+rootProject.name = "kotlin_test1"
 include(":app")
+ 
