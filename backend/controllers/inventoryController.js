@@ -157,3 +157,43 @@ exports.useItem = async (req, res) => {
   }
 };
 
+exports.craftItem = async (req, res) => {
+  const { userId, itemId } = req.params;
+
+  try {
+    const inventory = await UserInventory.findOne({ userId });
+    const targetItem = await Item.findById(itemId);
+
+    if (!targetItem.isBlend || !targetItem.material) {
+      return res.status(400).json({ message: "該物品不可合成" });
+    }
+
+    const materials = JSON.parse(targetItem.material); // 例如 { itemId1: 2, itemId2: 3 }
+
+    // 檢查是否有足夠材料
+    for (const [matId, requiredQty] of Object.entries(materials)) {
+      const invEntry = inventory.items.find(i => i.itemId.toString() === matId);
+      if (!invEntry || invEntry.quantity < requiredQty) {
+        return res.status(400).json({ message: "材料不足" });
+      }
+    }
+
+    // 扣材料 & 加入合成品
+    for (const [matId, requiredQty] of Object.entries(materials)) {
+      const invEntry = inventory.items.find(i => i.itemId.toString() === matId);
+      invEntry.quantity -= requiredQty;
+    }
+
+    const existing = inventory.items.find(i => i.itemId.toString() === itemId);
+    if (existing) {
+      existing.quantity += 1;
+    } else {
+      inventory.items.push({ itemId: targetItem._id, quantity: 1 });
+    }
+
+    await inventory.save();
+    res.json({ message: "合成成功" });
+  } catch (e) {
+    res.status(500).json({ message: "伺服器錯誤", error: e.message });
+  }
+};

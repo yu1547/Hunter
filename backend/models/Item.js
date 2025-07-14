@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const ItemSchema = new mongoose.Schema({
   // 不用寫 itemId 了，直接用 _id 當唯一識別
+  itemId: { type: String, required: true, unique: true },
   itemFunc: { type: String, required: true },
   itemName: { type: String, required: true },
   itemType: { type: Number, required: true, enum: [0, 1, 2, 3] },

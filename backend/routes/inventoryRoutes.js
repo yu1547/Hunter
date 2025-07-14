@@ -6,5 +6,6 @@ router.get('/:userId/inventory', inventoryController.getInventory);
 router.post('/:userId/inventory/add', inventoryController.addItem);
 router.post('/:userId/inventory/remove', inventoryController.removeItem);
 router.post('/:userId/inventory/use', inventoryController.useItem);
+router.post('/:userId/craft', inventoryController.craftItem);
 
 module.exports = router;

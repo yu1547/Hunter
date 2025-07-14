@@ -77,4 +77,5 @@ dependencies {
     implementation("io.ktor:ktor-client-serialization:1.6.7") // Use the latest stable version
     // Kotlinx Serialization JSON (if not already included)
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2") // Use the latest stable version
+    implementation("io.coil-kt:coil-compose:2.3.0")
 }
