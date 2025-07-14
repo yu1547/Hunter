@@ -68,4 +68,13 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    implementation("io.ktor:ktor-client-core:1.6.7") // Use the latest stable version
+    // Ktor Client CIO Engine
+    implementation("io.ktor:ktor-client-cio:1.6.7") // Use the latest stable version
+    // Ktor Client JSON Feature
+    implementation("io.ktor:ktor-client-json:1.6.7") // Use the latest stable version
+    // Ktor Client Kotlinx Serialization
+    implementation("io.ktor:ktor-client-serialization:1.6.7") // Use the latest stable version
+    // Kotlinx Serialization JSON (if not already included)
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2") // Use the latest stable version
 }
