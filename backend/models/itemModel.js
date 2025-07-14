@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
-// 定義道具模型結構
 const itemSchema = new Schema({
   itemId: {
     type: Schema.Types.ObjectId,
@@ -40,13 +39,9 @@ const itemSchema = new Schema({
     max: 5,
     required: true
   },
-  material: {
-    type: String,
+  resultId: {
+    type: Schema.Types.ObjectId,
     default: null
-  },
-  isBlend: {
-    type: Boolean,
-    default: false
   }
 });
 

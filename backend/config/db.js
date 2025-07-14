@@ -21,23 +21,15 @@ const connectDB = async () => {
     }
 };
 
-// // 舊的 MongoDB 客戶端連接（保留以向後兼容）
-// const client = new MongoClient(uri, {
-//     serverApi: {
-//         version: ServerApiVersion.v1,
-//         strict: true,
-//         deprecationErrors: true,
-//     }
-// });
+// 獲取 MongoDB 客戶端
+const getMongoClient = () => {
+    return new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            strict: true,
+            deprecationErrors: true,
+        }
+    });
+};
 
-// async function run() {
-//     try {
-//         await client.connect();
-//         await client.db("admin").command({ ping: 1 });
-//         console.log("Pinged your deployment. You successfully connected to MongoDB!");
-//     } finally {
-//         await client.close();
-//     }
-// }
-
-module.exports = { connectDB };
+module.exports = { connectDB, getMongoClient };

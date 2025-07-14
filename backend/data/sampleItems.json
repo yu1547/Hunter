@@ -8,8 +8,7 @@
     "maxStack": 99,
     "itemMethod": "chest",
     "itemRarity": 2,
-    "material": "金屬",
-    "isBlend": false
+    "resultId": { "$oid": "507f1f77bcf86cd799439201" }
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439102" },
@@ -20,8 +19,7 @@
     "maxStack": 99,
     "itemMethod": "chest",
     "itemRarity": 3,
-    "material": "金屬",
-    "isBlend": false
+    "resultId": { "$oid": "507f1f77bcf86cd799439202" }
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439103" },
@@ -32,8 +30,7 @@
     "maxStack": 99,
     "itemMethod": "chest",
     "itemRarity": 4,
-    "material": "金屬",
-    "isBlend": false
+    "resultId": { "$oid": "507f1f77bcf86cd799439203" }
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439104" },
@@ -44,8 +41,7 @@
     "maxStack": 50,
     "itemMethod": "randomEvent",
     "itemRarity": 1,
-    "material": "黏液",
-    "isBlend": false
+    "resultId": { "$oid": "507f1f77bcf86cd799439204" }
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439105" },
@@ -56,8 +52,7 @@
     "maxStack": 50,
     "itemMethod": "randomEvent",
     "itemRarity": 2,
-    "material": "黏液",
-    "isBlend": false
+    "resultId": { "$oid": "507f1f77bcf86cd799439205" }
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439106" },
@@ -68,8 +63,7 @@
     "maxStack": 20,
     "itemMethod": "scan",
     "itemRarity": 4,
-    "material": "紙張",
-    "isBlend": false
+    "resultId": { "$oid": "507f1f77bcf86cd799439206" }
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439201" },
@@ -78,10 +72,9 @@
     "itemType": 1,
     "itemEffect": "普通的鑰匙。可用來開啟銅寶箱。",
     "maxStack": 10,
-    "itemMethod": "blend",
+    "itemMethod": "npc",
     "itemRarity": 3,
-    "material": "金屬",
-    "isBlend": true
+    "resultId": null
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439202" },
@@ -90,10 +83,9 @@
     "itemType": 1,
     "itemEffect": "還不錯的鑰匙。可用來開啟銀寶箱。",
     "maxStack": 10,
-    "itemMethod": "blend",
+    "itemMethod": "npc",
     "itemRarity": 4,
-    "material": "金屬",
-    "isBlend": true
+    "resultId": null
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439203" },
@@ -102,10 +94,9 @@
     "itemType": 1,
     "itemEffect": "稀有的鑰匙。可用來開啟金寶箱。",
     "maxStack": 5,
-    "itemMethod": "blend",
+    "itemMethod": "npc",
     "itemRarity": 5,
-    "material": "金屬",
-    "isBlend": true
+    "resultId": null
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439204" },
@@ -114,10 +105,9 @@
     "itemType": 1,
     "itemEffect": "使用後可召喚小史萊姆為你尋找鑰匙碎片，找到後自動消失。",
     "maxStack": 5,
-    "itemMethod": "blend",
+    "itemMethod": "randomEvent",
     "itemRarity": 2,
-    "material": "黏液",
-    "isBlend": true
+    "resultId": null
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439205" },
@@ -126,10 +116,9 @@
     "itemType": 1,
     "itemEffect": "使用後可召喚大史萊姆為你尋找鑰匙碎片，找到後自動消失。",
     "maxStack": 3,
-    "itemMethod": "blend",
+    "itemMethod": "randomEvent",
     "itemRarity": 3,
-    "material": "黏液",
-    "isBlend": true
+    "resultId": null
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439206" },
@@ -138,10 +127,9 @@
     "itemType": 1,
     "itemEffect": "使用後立即觸發金色寶箱事件。",
     "maxStack": 1,
-    "itemMethod": "blend",
+    "itemMethod": "chest",
     "itemRarity": 5,
-    "material": "紙張",
-    "isBlend": true
+    "resultId": null
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439207" },
@@ -152,8 +140,7 @@
     "maxStack": 5,
     "itemMethod": "npc",
     "itemRarity": 3,
-    "material": "魔法水晶",
-    "isBlend": false
+    "resultId": null
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439208" },
@@ -165,7 +152,8 @@
     "itemMethod": "npc",
     "itemRarity": 3,
     "material": "魔法水晶",
-    "isBlend": false
+    "isBlend": false,
+    "resultId": null
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439209" },
@@ -176,8 +164,7 @@
     "maxStack": 3,
     "itemMethod": "scan",
     "itemRarity": 2,
-    "material": "木材",
-    "isBlend": false
+    "resultId": null
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439210" },
@@ -188,7 +175,6 @@
     "maxStack": 1,
     "itemMethod": "randomEvent",
     "itemRarity": 5,
-    "material": "木材",
-    "isBlend": false
+    "resultId": null
   }
 ]

@@ -6,9 +6,9 @@ const { getMongoClient } = require('../config/db');
 // 資料庫名稱
 const dbName = 'Hunter';
 // 集合名稱
-const collectionName = 'users';
+const collectionName = 'items';
 // JSON 資料檔案路徑
-const dataFilePath = path.join(__dirname, '../data/sampleUsers.json');
+const dataFilePath = path.join(__dirname, '../data/sampleItems.json');
 
 async function importData() {
   let client;
@@ -25,27 +25,32 @@ async function importData() {
     
     // 讀取 JSON 檔案
     const rawData = fs.readFileSync(dataFilePath);
-    let users = JSON.parse(rawData);
+    let items = JSON.parse(rawData);
     
-    // 轉換 MongoDB 的 ObjectId 字串為實際的 ObjectId 物件 (如果需要)
-    users = users.map(user => {
-      // 如果 user 有包含 ObjectId 格式的字段，在這裡處理
-      if (user._id && user._id.$oid) {
-        user._id = new ObjectId(user._id.$oid);
+    // 轉換 MongoDB 的 ObjectId 字串為實際的 ObjectId 物件
+    items = items.map(item => {
+      // 轉換 itemId
+      if (item.itemId && item.itemId.$oid) {
+        item.itemId = new ObjectId(item.itemId.$oid);
       }
-      return user;
+      
+      // 轉換 resultId (如果存在且不為 null)
+      if (item.resultId && item.resultId.$oid) {
+        item.resultId = new ObjectId(item.resultId.$oid);
+      }
+      
+      return item;
     });
 
-    // 清空集合
+    // 清空集合 (可選，取決於是否要保留舊資料)
     await collection.deleteMany({});
-    console.log('已刪除所有現有用戶數據');
+    console.log('已清空集合');
 
     // 插入資料
-    const result = await collection.insertMany(users);
-    console.log(`成功導入 ${result.insertedCount} 筆用戶數據`);
+    const result = await collection.insertMany(items);
+    console.log(`成功導入 ${result.insertedCount} 筆資料到 items 集合`);
   } catch (error) {
-    console.error('導入用戶數據時出錯:', error);
-    process.exit(1);
+    console.error('導入資料過程中發生錯誤:', error);
   } finally {
     // 關閉連接
     if (client) {
@@ -56,4 +61,5 @@ async function importData() {
 }
 
 // 執行匯入功能
+importData();
 importData();
