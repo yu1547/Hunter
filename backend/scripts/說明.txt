@@ -1,0 +1,7 @@
+| 用途        | 說明                                     | 範例檔名                          |
+| --------- | -------------------------------------- | ----------------------------- |
+| 資料初始化  | 新增一些預設的資料（像是道具、任務）                     | `seedItems.js`、`seedUsers.js` |
+| 清除資料庫  | 重置某些資料（例如開發測試時清除掉落紀錄）                  | `clearTestData.js`            |
+| 手動測試功能 | 單獨跑某些後端邏輯（像你現在的 `generateDropForUser`） | `testDropSystem.js`           |
+| 設定轉換   | 將 JSON 檔轉換成資料庫格式、建立 index 等            | `convertJsonToMongo.js`       |
+| 排程任務   | 例如每日凌晨刷新排行榜（若使用 cron）                  | `refreshDailyRanking.js`      |
