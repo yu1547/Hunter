@@ -8,7 +8,8 @@
     "maxStack": 99,
     "itemMethod": "chest",
     "itemRarity": 2,
-    "resultId": { "$oid": "507f1f77bcf86cd799439201" }
+    "resultId": { "$oid": "507f1f77bcf86cd799439201" },
+    "itemPic": "https://media.istockphoto.com/id/2177128965/zh/%E5%90%91%E9%87%8F/hand-drawn-arrows-collection-set-simple-flat-arrows-isolated-on-white-background-arrow-mark.jpg?s=1024x1024&w=is&k=20&c=LhNd1DdPdWgSTTy5SyOUn2FyM7sjVnOTkgOO077bXmg="
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439102" },
@@ -19,7 +20,8 @@
     "maxStack": 99,
     "itemMethod": "chest",
     "itemRarity": 3,
-    "resultId": { "$oid": "507f1f77bcf86cd799439202" }
+    "resultId": { "$oid": "507f1f77bcf86cd799439202" },
+    "itemPic": "https://media.istockphoto.com/id/2177128965/zh/%E5%90%91%E9%87%8F/hand-drawn-arrows-collection-set-simple-flat-arrows-isolated-on-white-background-arrow-mark.jpg?s=1024x1024&w=is&k=20&c=LhNd1DdPdWgSTTy5SyOUn2FyM7sjVnOTkgOO077bXmg="
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439103" },
@@ -30,7 +32,8 @@
     "maxStack": 99,
     "itemMethod": "chest",
     "itemRarity": 4,
-    "resultId": { "$oid": "507f1f77bcf86cd799439203" }
+    "resultId": { "$oid": "507f1f77bcf86cd799439203" },
+    "itemPic": "https://media.istockphoto.com/id/2177128965/zh/%E5%90%91%E9%87%8F/hand-drawn-arrows-collection-set-simple-flat-arrows-isolated-on-white-background-arrow-mark.jpg?s=1024x1024&w=is&k=20&c=LhNd1DdPdWgSTTy5SyOUn2FyM7sjVnOTkgOO077bXmg="
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439104" },
@@ -41,7 +44,8 @@
     "maxStack": 50,
     "itemMethod": "randomEvent",
     "itemRarity": 1,
-    "resultId": { "$oid": "507f1f77bcf86cd799439204" }
+    "resultId": { "$oid": "507f1f77bcf86cd799439204" },
+    "itemPic": "https://media.istockphoto.com/id/2177128965/zh/%E5%90%91%E9%87%8F/hand-drawn-arrows-collection-set-simple-flat-arrows-isolated-on-white-background-arrow-mark.jpg?s=1024x1024&w=is&k=20&c=LhNd1DdPdWgSTTy5SyOUn2FyM7sjVnOTkgOO077bXmg="
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439105" },
@@ -52,7 +56,8 @@
     "maxStack": 50,
     "itemMethod": "randomEvent",
     "itemRarity": 2,
-    "resultId": { "$oid": "507f1f77bcf86cd799439205" }
+    "resultId": { "$oid": "507f1f77bcf86cd799439205" },
+    "itemPic": "https://media.istockphoto.com/id/2177128965/zh/%E5%90%91%E9%87%8F/hand-drawn-arrows-collection-set-simple-flat-arrows-isolated-on-white-background-arrow-mark.jpg?s=1024x1024&w=is&k=20&c=LhNd1DdPdWgSTTy5SyOUn2FyM7sjVnOTkgOO077bXmg="
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439106" },
@@ -63,7 +68,8 @@
     "maxStack": 20,
     "itemMethod": "scan",
     "itemRarity": 4,
-    "resultId": { "$oid": "507f1f77bcf86cd799439206" }
+    "resultId": { "$oid": "507f1f77bcf86cd799439206" },
+    "itemPic": "https://media.istockphoto.com/id/2177128965/zh/%E5%90%91%E9%87%8F/hand-drawn-arrows-collection-set-simple-flat-arrows-isolated-on-white-background-arrow-mark.jpg?s=1024x1024&w=is&k=20&c=LhNd1DdPdWgSTTy5SyOUn2FyM7sjVnOTkgOO077bXmg="
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439201" },
@@ -74,7 +80,8 @@
     "maxStack": 10,
     "itemMethod": "npc",
     "itemRarity": 3,
-    "resultId": null
+    "resultId": null,
+    "itemPic": "https://media.istockphoto.com/id/2177128965/zh/%E5%90%91%E9%87%8F/hand-drawn-arrows-collection-set-simple-flat-arrows-isolated-on-white-background-arrow-mark.jpg?s=1024x1024&w=is&k=20&c=LhNd1DdPdWgSTTy5SyOUn2FyM7sjVnOTkgOO077bXmg="
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439202" },
@@ -85,7 +92,8 @@
     "maxStack": 10,
     "itemMethod": "npc",
     "itemRarity": 4,
-    "resultId": null
+    "resultId": null,
+    "itemPic": "https://media.istockphoto.com/id/2177128965/zh/%E5%90%91%E9%87%8F/hand-drawn-arrows-collection-set-simple-flat-arrows-isolated-on-white-background-arrow-mark.jpg?s=1024x1024&w=is&k=20&c=LhNd1DdPdWgSTTy5SyOUn2FyM7sjVnOTkgOO077bXmg="
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439203" },
@@ -96,7 +104,8 @@
     "maxStack": 5,
     "itemMethod": "npc",
     "itemRarity": 5,
-    "resultId": null
+    "resultId": null,
+    "itemPic": "https://media.istockphoto.com/id/2177128965/zh/%E5%90%91%E9%87%8F/hand-drawn-arrows-collection-set-simple-flat-arrows-isolated-on-white-background-arrow-mark.jpg?s=1024x1024&w=is&k=20&c=LhNd1DdPdWgSTTy5SyOUn2FyM7sjVnOTkgOO077bXmg="
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439204" },
@@ -107,7 +116,8 @@
     "maxStack": 5,
     "itemMethod": "randomEvent",
     "itemRarity": 2,
-    "resultId": null
+    "resultId": null,
+    "itemPic": "https://media.istockphoto.com/id/2177128965/zh/%E5%90%91%E9%87%8F/hand-drawn-arrows-collection-set-simple-flat-arrows-isolated-on-white-background-arrow-mark.jpg?s=1024x1024&w=is&k=20&c=LhNd1DdPdWgSTTy5SyOUn2FyM7sjVnOTkgOO077bXmg="
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439205" },
@@ -118,7 +128,8 @@
     "maxStack": 3,
     "itemMethod": "randomEvent",
     "itemRarity": 3,
-    "resultId": null
+    "resultId": null,
+    "itemPic": "https://media.istockphoto.com/id/2177128965/zh/%E5%90%91%E9%87%8F/hand-drawn-arrows-collection-set-simple-flat-arrows-isolated-on-white-background-arrow-mark.jpg?s=1024x1024&w=is&k=20&c=LhNd1DdPdWgSTTy5SyOUn2FyM7sjVnOTkgOO077bXmg="
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439206" },
@@ -129,7 +140,8 @@
     "maxStack": 1,
     "itemMethod": "chest",
     "itemRarity": 5,
-    "resultId": null
+    "resultId": null,
+    "itemPic": "https://media.istockphoto.com/id/2177128965/zh/%E5%90%91%E9%87%8F/hand-drawn-arrows-collection-set-simple-flat-arrows-isolated-on-white-background-arrow-mark.jpg?s=1024x1024&w=is&k=20&c=LhNd1DdPdWgSTTy5SyOUn2FyM7sjVnOTkgOO077bXmg="
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439207" },
@@ -140,7 +152,8 @@
     "maxStack": 5,
     "itemMethod": "npc",
     "itemRarity": 3,
-    "resultId": null
+    "resultId": null,
+    "itemPic": "https://media.istockphoto.com/id/2177128965/zh/%E5%90%91%E9%87%8F/hand-drawn-arrows-collection-set-simple-flat-arrows-isolated-on-white-background-arrow-mark.jpg?s=1024x1024&w=is&k=20&c=LhNd1DdPdWgSTTy5SyOUn2FyM7sjVnOTkgOO077bXmg="
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439208" },
@@ -153,7 +166,8 @@
     "itemRarity": 3,
     "material": "魔法水晶",
     "isBlend": false,
-    "resultId": null
+    "resultId": null,
+    "itemPic": "https://media.istockphoto.com/id/2177128965/zh/%E5%90%91%E9%87%8F/hand-drawn-arrows-collection-set-simple-flat-arrows-isolated-on-white-background-arrow-mark.jpg?s=1024x1024&w=is&k=20&c=LhNd1DdPdWgSTTy5SyOUn2FyM7sjVnOTkgOO077bXmg="
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439209" },
@@ -164,7 +178,8 @@
     "maxStack": 3,
     "itemMethod": "scan",
     "itemRarity": 2,
-    "resultId": null
+    "resultId": null,
+    "itemPic": "https://media.istockphoto.com/id/2177128965/zh/%E5%90%91%E9%87%8F/hand-drawn-arrows-collection-set-simple-flat-arrows-isolated-on-white-background-arrow-mark.jpg?s=1024x1024&w=is&k=20&c=LhNd1DdPdWgSTTy5SyOUn2FyM7sjVnOTkgOO077bXmg="
   },
   {
     "itemId": { "$oid": "507f1f77bcf86cd799439210" },
@@ -175,6 +190,7 @@
     "maxStack": 1,
     "itemMethod": "randomEvent",
     "itemRarity": 5,
-    "resultId": null
+    "resultId": null,
+    "itemPic": "https://media.istockphoto.com/id/2177128965/zh/%E5%90%91%E9%87%8F/hand-drawn-arrows-collection-set-simple-flat-arrows-isolated-on-white-background-arrow-mark.jpg?s=1024x1024&w=is&k=20&c=LhNd1DdPdWgSTTy5SyOUn2FyM7sjVnOTkgOO077bXmg="
   }
 ]

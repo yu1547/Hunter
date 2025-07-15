@@ -42,9 +42,13 @@ async function importData() {
       return item;
     });
 
-    // 清空集合 (可選，取決於是否要保留舊資料)
-    await collection.deleteMany({});
-    console.log('已清空集合');
+    // 清空集合前先檢查現有文件數量
+    const existingCount = await collection.countDocuments({});
+    console.log(`集合中現有 ${existingCount} 筆資料`);
+
+    // 清空集合
+    const deleteResult = await collection.deleteMany({});
+    console.log(`已刪除 ${deleteResult.deletedCount} 筆舊資料`);
 
     // 插入資料
     const result = await collection.insertMany(items);
@@ -61,5 +65,4 @@ async function importData() {
 }
 
 // 執行匯入功能
-importData();
 importData();

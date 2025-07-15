@@ -6,6 +6,11 @@ const itemSchema = new Schema({
     type: Schema.Types.ObjectId,
     required: true,
     unique: true
+  },  
+  itemPic: {
+    type: String,
+    required: true,
+    unique: true
   },
   itemFunc: {
     type: String,

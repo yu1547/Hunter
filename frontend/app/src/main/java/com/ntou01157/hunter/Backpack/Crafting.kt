@@ -1,32 +1,39 @@
 package com.ntou01157.hunter
 
-// 第三步：檢查玩家背包是否符合配方需求
-
 object CraftingSystem {
-
-    // 檢查背包裡的道具是否符合配方需求
-    fun canCraft(inventory: List<Item>, recipe: Recipe): Boolean {
-        return recipe.requiredItems.all { (requiredId, requiredCount) ->
-            inventory.any { it.itemid == requiredId && it.count.value >= requiredCount }
+    // 檢查玩家背包是否有足夠的材料合成指定物品
+    fun canCraft(inventory: List<Item>, targetItemId: String): Boolean {
+        // 找出所有指向目標物品的材料
+        val requiredMaterials = inventory.filter { 
+            it.itemType == 0 && it.resultId == targetItemId 
         }
+        
+        // 若沒有任何材料指向該物品，則無法合成
+        if (requiredMaterials.isEmpty()) return false
+        
+        // 檢查每種材料是否都至少有1個
+        return requiredMaterials.all { it.count.value > 0 }
     }
 
     // 執行合成動作（會直接修改 inventory）
-    fun craftItem(inventory: MutableList<Item>, recipe: Recipe): Boolean {
-        if (!canCraft(inventory, recipe)) return false
+    fun craftItem(inventory: MutableList<Item>, targetItemId: String): Boolean {
+        if (!canCraft(inventory, targetItemId)) return false
 
-        // 扣掉素材
-        recipe.requiredItems.forEach { (requiredId, requiredCount) ->
-            inventory.find { it.itemid == requiredId }?.let {
-                it.count.value -= requiredCount
-            }
+        // 獲取所需的材料
+        val requiredMaterials = inventory.filter { 
+            it.itemType == 0
+        }
+        
+        // 減少每種材料的數量
+        requiredMaterials.forEach { material ->
+            material.count.value -= 1
         }
 
-        // 增加合成結果
-        val resultItem = inventory.find { it.itemid == recipe.resultItemId }
-        if (resultItem != null) {
-            resultItem.count.value += 1
-        }
+        // // 增加合成結果
+        // val resultItem = it.resultId
+        // if (resultItem != null) {
+        //     resultItem.count.value += 1
+        // }
 
         return true
     }
