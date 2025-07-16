@@ -3,9 +3,6 @@ package com.ntou01157.hunter
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import com.ntou01157.hunter.SupplyStation
-import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,21 +19,13 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Settings
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
-import android.location.Location
 import androidx.compose.ui.platform.LocalContext
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
-
 import kotlinx.coroutines.delay
 import com.ntou01157.hunter.ui.FavoritesScreen
-
-import com.google.maps.android.compose.*
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import com.ntou01157.hunter.Landmark
-import com.ntou01157.hunter.LandmarkMarker
 
 
 class Main : ComponentActivity() {
@@ -54,15 +43,9 @@ class Main : ComponentActivity() {
                 composable("bag") {
                     BagScreen(navController)
                 }
-
 //                composable("favorites") {
 //                    FavoritesScreen(navController)
 //                }
-
-                composable("favorites") {
-                    FavoritesScreen(navController)
-                }
-
                 composable("ranking") {
                     RankingScreen(navController)
                 }
