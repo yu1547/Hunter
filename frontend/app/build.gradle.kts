@@ -50,6 +50,9 @@ android {
 }
 
 dependencies {
+
+    implementation("com.google.firebase:firebase-firestore-ktx:25.1.4")
+
     implementation("androidx.navigation:navigation-compose:2.9.0")
     implementation("androidx.compose.material3:material3:1.2.1")
     implementation("com.google.android.gms:play-services-maps:19.2.0")
@@ -71,6 +74,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.appcompat)
+    implementation(libs.firebase.common.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

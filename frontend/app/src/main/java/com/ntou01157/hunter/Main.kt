@@ -1,5 +1,8 @@
 package com.ntou01157.hunter
 
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import com.ntou01157.hunter.SupplyStation
 
 import android.os.Bundle
@@ -23,11 +26,14 @@ import androidx.compose.material.icons.filled.Settings
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 import android.location.Location
+>>>>>>> d4f00f4ead1ce14603bbc0c70c65e551a58ffe68
 import androidx.compose.ui.platform.LocalContext
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
+import kotlinx.coroutines.delay
+import com.ntou01157.hunter.ui.FavoritesScreen
 import com.google.maps.android.compose.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -50,6 +56,9 @@ class Main : ComponentActivity() {
                 composable("bag") {
                     BagScreen(navController)
                 }
+//                composable("favorites") {
+//                    FavoritesScreen(navController)
+//                }
                 composable("favorites") {
                     FavoritesScreen(navController)
                 }
