@@ -349,7 +349,7 @@ fun BagScreen(navController: NavHostController) {
                         //     Log.e("BagScreen", "Invalid imageResId for detail view item: ${item.itemName} (pic: ${item.itemPic})")
                         // }
                         Image(
-                            painter = painterResource(id = R.drawable.ic_placeholder), // 之後要記得改成imageResId，而且要把上面註解取消
+                            painter = painterResource(id = R.drawable.default_itempic), // 之後要記得改成imageResId，而且要把上面註解取消
                             contentDescription = null,
                             modifier = Modifier.size(200.dp).padding(bottom = 8.dp)
                         )
