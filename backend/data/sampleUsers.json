@@ -1,0 +1,36 @@
+[
+  {
+    "username": "玩家1",
+    "backpackItems": [
+      {
+        "itemId": "507f1f77bcf86cd799439101",
+        "quantity": 5
+      },
+      {
+        "itemId": "507f1f77bcf86cd799439204",
+        "quantity": 2
+      },
+      {
+        "itemId": "507f1f77bcf86cd799439207",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "username": "玩家2",
+    "backpackItems": [
+      {
+        "itemId": "507f1f77bcf86cd799439102",
+        "quantity": 3
+      },
+      {
+        "itemId": "507f1f77bcf86cd799439105",
+        "quantity": 7
+      }
+    ]
+  },
+  {
+    "username": "玩家3",
+    "backpackItems": []
+  }
+]
