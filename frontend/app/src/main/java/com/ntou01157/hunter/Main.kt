@@ -56,9 +56,10 @@ class Main : ComponentActivity() {
                 composable("ranking") {
                     RankingScreen(navController)
                 }
-                composable("missions") {
-                    MissionsScreen(navController)
+                composable("tasklist") {
+                    TaskListScreen(navController)
                 }
+
             }
         }
     }
@@ -76,7 +77,7 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
     val missionLandmark = Landmark(
         spotId = "mission1",
         spotName = "(地標名)",
-        spotPhoto = R.drawable.default_itempic,
+        spotPhoto = R.drawable.item1,
         position = LatLng(25.149853, 121.778352)
     )
     //補給站
@@ -297,7 +298,7 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                 Text("排行榜")
             }
             Button(
-                onClick = { navController.navigate("missions") },
+                onClick = { navController.navigate("tasklist")},
                 colors = buttonColors
             ) {
                 Text("任務版")
