@@ -25,6 +25,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.ntou01157.hunter.Backpack.model.UserItem
+import com.ntou01157.hunter.Backpack.data.fetchUserItems
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import android.util.Log
@@ -45,7 +47,7 @@ class BagActivity : ComponentActivity() {
 fun BagScreen(navController: NavHostController) {
     // 初始化物品列表(從API取得)
     val coroutineScope = rememberCoroutineScope()
-    val allItems = remember { mutableStateListOf<Item>() }
+    val allItems = remember { mutableStateListOf<UserItem>() }
     val isLoading = remember { mutableStateOf(true) }
     val hasError = remember { mutableStateOf(false) }
     val errorMessage = remember { mutableStateOf("") }
@@ -76,20 +78,20 @@ fun BagScreen(navController: NavHostController) {
     }
     
     val snackbarHostState = remember { SnackbarHostState() }
-    var selectedItem by remember { mutableStateOf<Item?>(null) }
+    var selectedItem by remember { mutableStateOf<UserItem?>(null) }
     var filterState by remember { mutableStateOf(0) }
     var showCraftDialog by remember { mutableStateOf(false) }
 
     val filteredItems = when (filterState) {
-        1 -> allItems.filter { it.itemType == 0 && it.count.value > 0 }
-        2 -> allItems.filter { it.itemType == 1 && it.count.value > 0 }
+        1 -> allItems.filter { it.item.itemType == 0 && it.count.value > 0 }
+        2 -> allItems.filter { it.item.itemType == 1 && it.count.value > 0 }
         else -> allItems.filter { it.count.value > 0 }
     }
 
     // 如果選中的是素材(itemType為0)，找出可合成的結果物品
     val resultItem = remember(selectedItem) {
-        if (selectedItem?.itemType == 0 && selectedItem?.resultId != null) {
-            allItems.find { it.itemId == selectedItem?.resultId }
+        if (selectedItem?.item?.itemType == 0 && selectedItem?.item?.resultId != null) {
+            allItems.find { it.item.itemId == selectedItem?.item?.resultId }
         } else {
             null
         }
@@ -201,25 +203,25 @@ fun BagScreen(navController: NavHostController) {
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             modifier = Modifier.fillMaxSize()
                         ) {
-                            items(filteredItems) { item ->
+                            items(filteredItems) { userItem ->
                                 Box(
                                     modifier = Modifier
                                         .size(80.dp)
                                         .background(Color.White)
-                                        .clickable { selectedItem = item },
+                                        .clickable { selectedItem = userItem },
                                     contentAlignment = Alignment.BottomEnd
                                  ) {
-                                    // val imageResId = getDrawableId(item.itemPic)
+                                    // val imageResId = getDrawableId(userItem.item.itemPic)
                                     // if (imageResId == R.drawable.ic_placeholder) {
-                                    //     Log.e("BagScreen", "Invalid imageResId for item: ${item.itemName} (pic: ${item.itemPic})")
+                                    //     Log.e("BagScreen", "Invalid imageResId for item: ${userItem.item.itemName} (pic: ${userItem.item.itemPic})")
                                     // }
                                     Image(
                                         painter = painterResource(id = R.drawable.default_itempic), // 之後要記得改成imageResId，而且要把上面註解取消
-                                        contentDescription = item.itemName,
+                                        contentDescription = userItem.item.itemName,
                                         modifier = Modifier.fillMaxSize()
                                     )
                                     Text(
-                                        "${item.count.value}",
+                                        "${userItem.count.value}",
                                         color = Color.Black,
                                         modifier = Modifier.padding(4.dp),
                                         fontSize = 14.sp
@@ -246,13 +248,13 @@ fun BagScreen(navController: NavHostController) {
                     text = {
                         // 顯示合成後物品
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            val resultImageResId = getDrawableId(resultItem.itemPic)
+                            val resultImageResId = getDrawableId(resultItem.item.itemPic)
                             if (resultImageResId == R.drawable.ic_placeholder) {
-                                Log.e("BagScreen", "Invalid imageResId for resultItem: ${resultItem.itemName} (pic: ${resultItem.itemPic})")
+                                Log.e("BagScreen", "Invalid imageResId for resultItem: ${resultItem.item.itemName} (pic: ${resultItem.item.itemPic})")
                             }
                             Image(
                                 painter = painterResource(id = resultImageResId),
-                                contentDescription = resultItem.itemName,
+                                contentDescription = resultItem.item.itemName,
                                 modifier = Modifier.size(100.dp)
                             )
                             Spacer(modifier = Modifier.height(12.dp))
@@ -266,13 +268,13 @@ fun BagScreen(navController: NavHostController) {
                                 // 顯示當前選中的素材
                                 selectedItem?.let { material ->
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        val materialImageResId = getDrawableId(material.itemPic)
+                                        val materialImageResId = getDrawableId(material.item.itemPic)
                                         if (materialImageResId == R.drawable.ic_placeholder) {
-                                            Log.e("BagScreen", "Invalid imageResId for selected material: ${material.itemName} (pic: ${material.itemPic})")
+                                            Log.e("BagScreen", "Invalid imageResId for selected material: ${material.item.itemName} (pic: ${material.item.itemPic})")
                                         }
                                         Image(
                                             painter = painterResource(id = materialImageResId),
-                                            contentDescription = material.itemName,
+                                            contentDescription = material.item.itemName,
                                             modifier = Modifier.size(50.dp)
                                         )
                                         Text("x1")
@@ -281,18 +283,18 @@ fun BagScreen(navController: NavHostController) {
                                 
                                 // 顯示其他需要的素材
                                 allItems.filter { 
-                                    it.itemType == 0 && 
-                                    it.resultId == resultItem._id && 
-                                    it._id != selectedItem?._id 
+                                    it.item.itemType == 0 && 
+                                    it.item.resultId == resultItem.item._id && 
+                                    it.item._id != selectedItem?.item?._id 
                                 }.forEach { material ->
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        val materialImageResId = getDrawableId(material.itemPic)
+                                        val materialImageResId = getDrawableId(material.item.itemPic)
                                         if (materialImageResId == R.drawable.ic_placeholder) {
-                                            Log.e("BagScreen", "Invalid imageResId for other material: ${material.itemName} (pic: ${material.itemPic})")
+                                            Log.e("BagScreen", "Invalid imageResId for other material: ${material.item.itemName} (pic: ${material.item.itemPic})")
                                         }
                                         Image(
                                             painter = painterResource(id = materialImageResId),
-                                            contentDescription = material.itemName,
+                                            contentDescription = material.item.itemName,
                                             modifier = Modifier.size(50.dp)
                                         )
                                         Text("x1")
@@ -303,17 +305,17 @@ fun BagScreen(navController: NavHostController) {
                     },
                     confirmButton = {
                         Button(onClick = {
-                            val crafted = CraftingSystem.craftItem(allItems, resultItem._id)
+                            // val crafted = CraftingSystem.craftItem(allItems, resultItem.item._id) // TODO: Update CraftingSystem
                             // 顯示材料不足的訊息
-                            if (!crafted) {
-                                coroutineScope.launch {
-                                    snackbarHostState.showSnackbar("材料不足，無法合成")
-                            }
-                            } else {
-                                // 合成成功後清除選擇與對話框
-                                selectedItem = null
-                                showCraftDialog = false
-                            }
+                            // if (!crafted) {
+                            //     coroutineScope.launch {
+                            //         snackbarHostState.showSnackbar("材料不足，無法合成")
+                            // }
+                            // } else {
+                            //     // 合成成功後清除選擇與對話框
+                            //     selectedItem = null
+                            //     showCraftDialog = false
+                            // }
                         }) {
                             Text("合成")
                         }
@@ -324,7 +326,7 @@ fun BagScreen(navController: NavHostController) {
         }
 
         // 物品詳細資訊對話框
-        selectedItem?.let { item ->
+        selectedItem?.let { userItem ->
             AlertDialog(
                 onDismissRequest = { selectedItem = null },
                 confirmButton = {},
@@ -344,9 +346,9 @@ fun BagScreen(navController: NavHostController) {
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // val imageResId = getDrawableId(item.itemPic)
+                        // val imageResId = getDrawableId(userItem.item.itemPic)
                         // if (imageResId == R.drawable.ic_placeholder) {
-                        //     Log.e("BagScreen", "Invalid imageResId for detail view item: ${item.itemName} (pic: ${item.itemPic})")
+                        //     Log.e("BagScreen", "Invalid imageResId for detail view item: ${userItem.item.itemName} (pic: ${userItem.item.itemPic})")
                         // }
                         Image(
                             painter = painterResource(id = R.drawable.default_itempic), // 之後要記得改成imageResId，而且要把上面註解取消
@@ -358,18 +360,18 @@ fun BagScreen(navController: NavHostController) {
                                 .padding(horizontal = 8.dp),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("稀有度：${item.itemRarity}")
-                            Text("擁有 ${item.count.value} 件")
+                            Text("稀有度：${userItem.item.itemRarity}")
+                            Text("擁有 ${userItem.count.value} 件")
                         }
                         Spacer(modifier = Modifier.height(12.dp))
                         Column(modifier = Modifier.fillMaxWidth()) {
                             Text("物品介紹：", fontSize = 16.sp)
                             Text(
-                                text = item.itemEffect,
+                                text = userItem.item.itemEffect,
                                 modifier = Modifier.padding(top = 4.dp)
                             )
                         }
-                        if (item.itemType == 0) {
+                        if (userItem.item.itemType == 0) {
                             Spacer(modifier = Modifier.height(20.dp))
                             Button(
                                 onClick = { showCraftDialog = true },

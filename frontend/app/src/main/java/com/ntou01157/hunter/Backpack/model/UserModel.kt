@@ -2,7 +2,7 @@ package com.ntou01157.hunter.Backpack.model
 
 import com.google.gson.annotations.SerializedName
 
-// 用戶背包模型
+// 用戶模型
 data class User(
     @SerializedName("_id") val id: String,
     @SerializedName("username") val username: String,
