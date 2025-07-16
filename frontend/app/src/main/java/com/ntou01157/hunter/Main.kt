@@ -76,7 +76,7 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
     val missionLandmark = Landmark(
         spotId = "mission1",
         spotName = "(地標名)",
-        spotPhoto = R.drawable.item1,
+        spotPhoto = R.drawable.default_itempic,
         position = LatLng(25.149853, 121.778352)
     )
     //補給站

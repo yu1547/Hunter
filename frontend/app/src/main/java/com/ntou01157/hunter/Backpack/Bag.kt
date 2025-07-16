@@ -17,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -92,6 +93,12 @@ fun BagScreen(navController: NavHostController) {
         } else {
             null
         }
+    }
+
+    val context = LocalContext.current
+    fun getDrawableId(name: String): Int {
+        val resourceId = context.resources.getIdentifier(name, "drawable", context.packageName)
+        return if (resourceId == 0) R.drawable.ic_placeholder else resourceId
     }
 
     //頁面設計區
@@ -202,11 +209,12 @@ fun BagScreen(navController: NavHostController) {
                                         .clickable { selectedItem = item },
                                     contentAlignment = Alignment.BottomEnd
                                  ) {
-                                    if (item.imageResId == 0) {
-                                        Log.e("BagScreen", "Invalid imageResId for item: ${item.itemName} (_id: ${item._id})")
-                                    }
+                                    // val imageResId = getDrawableId(item.itemPic)
+                                    // if (imageResId == R.drawable.ic_placeholder) {
+                                    //     Log.e("BagScreen", "Invalid imageResId for item: ${item.itemName} (pic: ${item.itemPic})")
+                                    // }
                                     Image(
-                                        painter = painterResource(id = if (item.imageResId != 0) item.imageResId else R.drawable.ic_placeholder), // Fallback
+                                        painter = painterResource(id = R.drawable.default_itempic), // 之後要記得改成imageResId，而且要把上面註解取消
                                         contentDescription = item.itemName,
                                         modifier = Modifier.fillMaxSize()
                                     )
@@ -238,11 +246,12 @@ fun BagScreen(navController: NavHostController) {
                     text = {
                         // 顯示合成後物品
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            if (resultItem.imageResId == 0) {
-                                Log.e("BagScreen", "Invalid imageResId for resultItem: ${resultItem.itemName} (_id: ${resultItem._id})")
+                            val resultImageResId = getDrawableId(resultItem.itemPic)
+                            if (resultImageResId == R.drawable.ic_placeholder) {
+                                Log.e("BagScreen", "Invalid imageResId for resultItem: ${resultItem.itemName} (pic: ${resultItem.itemPic})")
                             }
                             Image(
-                                painter = painterResource(id = if (resultItem.imageResId != 0) resultItem.imageResId else R.drawable.ic_placeholder),
+                                painter = painterResource(id = resultImageResId),
                                 contentDescription = resultItem.itemName,
                                 modifier = Modifier.size(100.dp)
                             )
@@ -257,11 +266,12 @@ fun BagScreen(navController: NavHostController) {
                                 // 顯示當前選中的素材
                                 selectedItem?.let { material ->
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        if (material.imageResId == 0) {
-                                            Log.e("BagScreen", "Invalid imageResId for selected material: ${material.itemName} (_id: ${material._id})")
+                                        val materialImageResId = getDrawableId(material.itemPic)
+                                        if (materialImageResId == R.drawable.ic_placeholder) {
+                                            Log.e("BagScreen", "Invalid imageResId for selected material: ${material.itemName} (pic: ${material.itemPic})")
                                         }
                                         Image(
-                                            painter = painterResource(id = if (material.imageResId != 0) material.imageResId else R.drawable.ic_placeholder),
+                                            painter = painterResource(id = materialImageResId),
                                             contentDescription = material.itemName,
                                             modifier = Modifier.size(50.dp)
                                         )
@@ -276,11 +286,12 @@ fun BagScreen(navController: NavHostController) {
                                     it._id != selectedItem?._id 
                                 }.forEach { material ->
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        if (material.imageResId == 0) {
-                                            Log.e("BagScreen", "Invalid imageResId for other material: ${material.itemName} (_id: ${material._id})")
+                                        val materialImageResId = getDrawableId(material.itemPic)
+                                        if (materialImageResId == R.drawable.ic_placeholder) {
+                                            Log.e("BagScreen", "Invalid imageResId for other material: ${material.itemName} (pic: ${material.itemPic})")
                                         }
                                         Image(
-                                            painter = painterResource(id = if (material.imageResId != 0) material.imageResId else R.drawable.ic_placeholder),
+                                            painter = painterResource(id = materialImageResId),
                                             contentDescription = material.itemName,
                                             modifier = Modifier.size(50.dp)
                                         )
@@ -333,11 +344,12 @@ fun BagScreen(navController: NavHostController) {
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        if (item.imageResId == 0) {
-                            Log.e("BagScreen", "Invalid imageResId for detail view item: ${item.itemName} (_id: ${item._id})")
-                        }
+                        // val imageResId = getDrawableId(item.itemPic)
+                        // if (imageResId == R.drawable.ic_placeholder) {
+                        //     Log.e("BagScreen", "Invalid imageResId for detail view item: ${item.itemName} (pic: ${item.itemPic})")
+                        // }
                         Image(
-                            painter = painterResource(id = if (item.imageResId != 0) item.imageResId else R.drawable.ic_placeholder),
+                            painter = painterResource(id = R.drawable.ic_placeholder), // 之後要記得改成imageResId，而且要把上面註解取消
                             contentDescription = null,
                             modifier = Modifier.size(200.dp).padding(bottom = 8.dp)
                         )

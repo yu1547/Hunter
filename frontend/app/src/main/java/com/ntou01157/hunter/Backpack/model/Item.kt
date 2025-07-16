@@ -14,8 +14,15 @@ data class Item(
     @SerializedName("itemMethod") val itemMethod: String,
     @SerializedName("itemRarity") val itemRarity: Int,
     @SerializedName("resultId") val resultId: String? = null,
-    @SerializedName("imageResId") val imageResId: Int = R.drawable.item1, // 預設圖片
-    var quantity: Int = 1  // 本地屬性，不來自API
+    @SerializedName("itemPic") val itemPic: String = "default_itempic" // 預設圖片名稱
 ) {
-    var count: MutableState<Int> = mutableStateOf(quantity)  // 使用傳入的 quantity 初始化 count
+    // 數量由 UserBackpack 提供，不在 Item API 回應中
+    var quantity: Int = 0
+    // 用於 Compose UI 的可變狀態
+    var count: MutableState<Int> = mutableStateOf(quantity)
+
+    // 在物件建立後，根據 quantity 初始化 count
+    init {
+        count = mutableStateOf(quantity)
+    }
 }

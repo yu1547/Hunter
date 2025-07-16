@@ -67,7 +67,6 @@ suspend fun fetchUserItems(userId: String): SnapshotStateList<Item> = withContex
                 
                 // 更新物品數量為背包中的數量
                 item.quantity = backpackItem.quantity
-                // [FIX] 初始化 item.count，因為 Gson 不會處理 MutableState
                 item.count = mutableStateOf(backpackItem.quantity)
                 
                 Log.d("API", "成功獲取物品: ${item.itemName}, 數量: ${item.count.value}")
