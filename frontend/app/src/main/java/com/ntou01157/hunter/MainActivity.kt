@@ -1,8 +1,7 @@
-package com.ntou01157.hunter
-
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import com.ntou01157.hunter.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -31,4 +30,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+
 }
