@@ -14,13 +14,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.google.android.gms.maps.model.LatLng
 import com.ntou01157.hunter.R
-import com.ntou01157.hunter.models.Spot
+import com.ntou01157.hunter.models.*
 
 @Composable
 fun FavoritesScreen(
     navController: NavHostController,
+    user: User,
     pages: List<List<Spot>>,
     pageIndex: Int,
     onPageChange: (Int) -> Unit,
@@ -80,17 +80,19 @@ fun FavoritesScreen(
                             if (index < items.size) {
                                 val landmark = items[index]
 
+                                val isUnlocked = user.spotsScanLogs[landmark.spotId]?.isCheck == true
+
                                 Box(
                                     modifier = Modifier
                                         .weight(1f)
                                         .aspectRatio(1f)
-                                        .background(if (landmark.isUnlocked) Color.White else Color.LightGray)
+                                        .background(if (isUnlocked) Color.White else Color.LightGray)
                                         .clickable { onSpotClicked(landmark) },
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
                                         text = landmark.spotName,
-                                        color = if (landmark.isUnlocked) Color.Black else Color.Gray
+                                        color = if (isUnlocked) Color.Black else Color.Gray
                                     )
                                 }
                             } else {
@@ -158,16 +160,39 @@ fun FavoritesScreen(
 )
 @Composable
 fun FavoritesScreenPreview() {
+    val mockUser = User(
+        uid = "123",
+        displayName = "測試使用者",
+        email = "test@example.com",
+        age = "20",
+        gender = "男",
+        photoURL = "",
+        role = "player",
+        score = 0.0,
+        backpackItems = emptyList(),
+        missoins = emptyList(),
+        spotsScanLogs = mapOf(
+            "1" to SpotScanLogs("1", false),
+            "2" to SpotScanLogs("2", true),
+            "3" to SpotScanLogs("3", false),
+            "4" to SpotScanLogs("4", false)
+        ),
+        supplyScanLogs = emptyMap(),
+        settings = emptyMap(),
+        buff = emptyMap()
+    )
+
     val mockPages = listOf(
         listOf(
-            Spot("1", "地標A", "", LatLng(0.0, 0.0), false),
-            Spot("2", "寰宇之書", "", LatLng(0.0, 0.0), true),
-            Spot("3", "地標C", "", LatLng(0.0, 0.0), false),
-            Spot("4", "地標D", "", LatLng(0.0, 0.0), false)
+            Spot("1", "地標A", "", 0.0,0.0),
+            Spot("2", "寰宇之書", "",0.0,0.0),
+            Spot("3", "地標C", "", 0.0,0.0),
+            Spot("4", "地標D", "", 0.0,0.0)
         )
     )
     FavoritesScreen(
         navController = rememberNavController(),
+        user = mockUser,
         pages = mockPages,
         pageIndex = 0,
         onPageChange = {},
