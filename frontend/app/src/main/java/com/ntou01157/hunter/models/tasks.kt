@@ -2,7 +2,7 @@ package com.ntou01157.hunter.models
 
 import com.google.firebase.Timestamp
 
-data class Tasks (
+data class Task (
     val taskId: String,
     val taskName: String,
     val taskDescription: String,
@@ -10,7 +10,7 @@ data class Tasks (
     val taskTarget: String,
     val taskState: String,
     val checkPlaces: List<CheckPlace> = emptyList(),
-    val taskDuraion: Int,
+    val taskDuration: Long,
     val rewardItems: List<RewardItem> = emptyList(),
     val rewardScore: Int
 )

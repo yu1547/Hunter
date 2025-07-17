@@ -17,14 +17,17 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
 import kotlinx.coroutines.delay
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import com.ntou01157.hunter.models.Task
+
 
 @Composable
 fun TaskListScreen(navController: NavController) {
     val taskList = remember {
         mutableStateListOf(
-            Task(1, "任務1", "任務1的介紹", "任務1的獎勵", 3600_000),
-            Task(2, "任務2", "任務2的介紹", "任務2的獎勵", 7200_000),
-            Task(3, "任務3", "任務3的介紹", "任務3的獎勵", 1800_000)
+            Task("1", "任務一", "介紹任務一", "簡單", "完成1次探索", "未接受", taskDuration = 3600_000, rewardScore = 10),
+            Task("2", "任務二", "介紹任務二", "普通", "完成3次探索", "未接受", taskDuration = 7200_000, rewardScore = 20),
+            Task("3", "任務三", "介紹任務三", "困難", "打敗Boss", "未接受", taskDuration = 1800_000, rewardScore = 50)
         )
     }
 
@@ -72,13 +75,8 @@ fun TaskListScreen(navController: NavController) {
                             .fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(task.title, fontSize = 18.sp)
-                        if (task.isAccepted) {
-                            val time by task.remainingTimeMillis
-                            Text(formatMillis(time), color = Color.Gray)
-                        } else {
-                            Text("尚未接受", color = Color.Red)
-                        }
+                        Text(task.taskName, fontSize = 18.sp)
+                        Text(task.taskState, color = if (task.taskState == "已接受") Color.Gray else Color.Red)
                     }
                 }
             }
@@ -87,22 +85,26 @@ fun TaskListScreen(navController: NavController) {
         selectedTask?.let { task ->
             AlertDialog(
                 onDismissRequest = { selectedTask = null },
-                title = { Text(task.title) },
+                title = { Text(task.taskName) },
                 text = {
                     Column {
-                        Text("說明：${task.description}")
+                        Text("說明：${task.taskDescription}")
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("獎勵：${task.reward}")
+                        Text("目標：${task.taskTarget}")
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("任務持續時間：${formatMillis(task.initialTimeMillis)}")
-
+                        Text("難度：${task.taskDifficulty}")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("時間：${formatMillis(task.taskDuration)}")  // ← 修正拼字
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("獎勵分數：${task.rewardScore}")
                     }
                 },
                 confirmButton = {
-                    if (!task.isAccepted) {
+                    if (task.taskState == "未接受") {
                         TextButton(onClick = {
-                            task.isAccepted = true
-                            task.remainingTimeMillis.value = task.initialTimeMillis
+                            taskList.replace(task.taskId) { t ->
+                                t.copy(taskState = "已接受")
+                            }
                             selectedTask = null
                             showStartDialog = true
                         }) {
@@ -117,6 +119,7 @@ fun TaskListScreen(navController: NavController) {
                 shape = RoundedCornerShape(16.dp)
             )
         }
+
 
         if (showStartDialog) {
             AlertDialog(
@@ -133,5 +136,13 @@ fun TaskListScreen(navController: NavController) {
                 navController.navigate("main")
             }
         }
+    }
+}
+
+// 用於根據 taskId 更新某個任務的擴充函式
+fun SnapshotStateList<Task>.replace(taskId: String, updater: (Task) -> Task) {
+    val index = indexOfFirst { it.taskId == taskId }
+    if (index != -1) {
+        this[index] = updater(this[index])
     }
 }
