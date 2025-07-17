@@ -28,7 +28,7 @@ import com.ntou01157.hunter.mock.FakeUser
 import kotlinx.coroutines.delay
 import com.ntou01157.hunter.ui.BagScreen
 import com.ntou01157.hunter.ui.TaskListScreen
-import com.ntou01157.hunter.models.FakeUser
+import com.ntou01157.hunter.models.*
 
 
 class Main : ComponentActivity() {
