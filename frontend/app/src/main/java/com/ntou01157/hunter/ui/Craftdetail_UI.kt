@@ -15,14 +15,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ntou01157.hunter.CraftingSystem
-import com.ntou01157.hunter.Recipe
+import com.ntou01157.hunter.models.recipe
 import kotlinx.coroutines.launch
 import com.ntou01157.hunter.models.Item
 
 @Composable
 fun CraftDialog(
     allItems: MutableList<Item>,
-    recipes: List<Recipe>,
+    recipes: List<recipe>,
     selectedItem: Item?,
     onDismiss: () -> Unit,
     snackbarHostState: SnackbarHostState
