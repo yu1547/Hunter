@@ -12,19 +12,32 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.*
 import androidx.navigation.NavHostController
+import com.ntou01157.hunter.models.Item
+import com.ntou01157.hunter.models.BackpackItem
+import com.ntou01157.hunter.models.User
 import kotlinx.coroutines.launch
 
 @SuppressLint("UnrememberedMutableState")
 @Composable
-fun BagScreen(navController: NavHostController) {
+fun BagScreen(navController: NavHostController, user: User) {
+    val baseItems = listOf(
+        Item(1, "用於開啟寶箱", "金鑰匙", 1, "開啟寶箱", 0, "由銀鑰匙合成", "UR", false, R.drawable.item1),
+        Item(2, "讓我充數一下", "史萊姆", 1, "就很可愛讓你觀賞", 0, "路邊撿到的", "S", false, R.drawable.item2),
+        Item(3, "用來合成出史萊姆的素材", "史萊姆球", 0, "史萊姆球是史萊姆身體的一部分", 0, "做任務獲得", "R", true, R.drawable.item3),
+        Item(4, "就是水", "水滴", 0, "可以用來合成各種素材", 0, "做任務得到", "R", true, R.drawable.item4),
+        Item(5, "黃金碎片", "金鑰匙碎片", 0, "可以用來合成金鑰匙", 0, "做任務得到", "R", true, R.drawable.item5),
+    )
+
     val allItems = remember {
-        mutableStateListOf(
-            Item(1, "用於開啟寶箱", "金鑰匙", 1, "開啟寶箱", 2, "由銀鑰匙合成", "UR", false, R.drawable.item1),
-            Item(2, "讓我充數一下", "史萊姆", 1, "就很可愛讓你觀賞", 4, "路邊撿到的", "S", false, R.drawable.item2),
-            Item(3, "用來合成出史萊姆的素材", "史萊姆球", 0, "史萊姆球是史萊姆身體的一部分", 4, "做任務獲得", "R", true, R.drawable.item3),
-            Item(4, "就是水", "水滴", 0, "可以用來合成各種素材", 3, "做任務得到", "R", true, R.drawable.item4),
-            Item(5, "黃金碎片", "金鑰匙碎片", 0, "可以用來合成金鑰匙", 3, "做任務得到", "R", true, R.drawable.item5),
-        )
+        mutableStateListOf<Item>().apply {
+            baseItems.forEach { item ->
+                val match = user.backpackItems.find { it.itemId == item.itemid.toString() }
+                val quantity = match?.quantity ?: 0
+                val newItem = item.copy(initialCount = quantity)
+                newItem.count.value = quantity
+                add(newItem)
+            }
+        }
     }
 
     val coroutineScope = rememberCoroutineScope()

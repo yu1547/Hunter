@@ -1,23 +1,7 @@
 package com.ntou01157.hunter
 
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import com.ntou01157.hunter.R
+import com.ntou01157.hunter.models.Item
 
-data class Item(
-    val itemid: Int,
-    val itemFunc: String,
-    val itemName: String,
-    val itemType: Int,
-    val itemEffect: String,
-    val initialCount: Int,
-    val itemMethod: String,
-    val itemRarity: String,
-    val isblend: Boolean,
-    val imageResId: Int
-) {
-    var count: MutableState<Int> = mutableStateOf(initialCount)
-}
 
 // 所有可用的物品模板清單（初始值為 0）
 val allItemsTemplate = listOf(

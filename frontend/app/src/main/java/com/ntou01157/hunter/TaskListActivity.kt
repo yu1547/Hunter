@@ -3,17 +3,8 @@ package com.ntou01157.hunter
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import com.ntou01157.hunter.models.Task
 
-// 資料類別（功能邏輯會用到）
-data class Task(
-    val id: Int,
-    val title: String,
-    val description: String,
-    val reward: String,
-    val initialTimeMillis: Long,
-    var isAccepted: Boolean = false,
-    val remainingTimeMillis: MutableState<Long> = mutableStateOf(0L)
-)
 
 // 時間格式轉換
 fun formatMillis(millis: Long): String {
