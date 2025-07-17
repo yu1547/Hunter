@@ -24,8 +24,11 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
+import com.ntou01157.hunter.mock.FakeUser
 import kotlinx.coroutines.delay
-import com.ntou01157.hunter.ui.FavoritesScreen
+import com.ntou01157.hunter.ui.BagScreen
+import com.ntou01157.hunter.ui.TaskListScreen
+import com.ntou01157.hunter.models.FakeUser
 
 
 class Main : ComponentActivity() {
@@ -41,7 +44,7 @@ class Main : ComponentActivity() {
                     MainScreen(navController)
                 }
                 composable("bag") {
-                    BagScreen(navController)
+                    BagScreen(navController = navController, user = FakeUser)
                 }
 //                composable("favorites") {
 //                    FavoritesScreen(navController)

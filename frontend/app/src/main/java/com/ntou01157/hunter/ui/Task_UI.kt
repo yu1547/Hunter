@@ -1,4 +1,4 @@
-package com.ntou01157.hunter
+package com.ntou01157.hunter.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,6 +18,8 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import com.ntou01157.hunter.R
+import com.ntou01157.hunter.formatMillis
 import com.ntou01157.hunter.models.Task
 
 
