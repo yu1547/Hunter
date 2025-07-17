@@ -27,9 +27,9 @@ import com.ntou01157.hunter.models.Task
 fun TaskListScreen(navController: NavController) {
     val taskList = remember {
         mutableStateListOf(
-            Task("1", "任務一", "介紹任務一", "簡單", "完成1次探索", "未接受", taskDuration = 3600_000, rewardScore = 10),
-            Task("2", "任務二", "介紹任務二", "普通", "完成3次探索", "未接受", taskDuration = 7200_000, rewardScore = 20),
-            Task("3", "任務三", "介紹任務三", "困難", "打敗Boss", "未接受", taskDuration = 1800_000, rewardScore = 50)
+            Task("1", "任務一", "介紹任務一", "簡單", "11111", "未接受", taskDuration = 3600_000, rewardScore = 10),
+            Task("2", "任務二", "介紹任務二", "普通", "22222", "未接受", taskDuration = 7200_000, rewardScore = 20),
+            Task("3", "任務三", "介紹任務三", "困難", "33333", "未接受", taskDuration = 1800_000, rewardScore = 50)
         )
     }
 
