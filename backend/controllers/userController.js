@@ -73,8 +73,6 @@ const deleteUser = async (req, res) => {
   }
 };
 
-// 添加物品到背包、合成道具等功能已移至 backpackController.js
-
 module.exports = {
   getAllUsers,
   getUserById,
