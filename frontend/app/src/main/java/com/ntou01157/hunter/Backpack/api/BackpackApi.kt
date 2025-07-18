@@ -6,7 +6,9 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.POST
 import retrofit2.http.Path
 
 // API 接口定義
@@ -16,7 +18,13 @@ interface ApiService {
 
     @GET("api/users/{id}")
     suspend fun getUser(@Path("id") id: String): User
+
+    @POST("api/users/{id}/craft")
+    suspend fun craftItem(@Path("id") id: String, @Body body: CraftRequestBody): User
 }
+
+// 請求 Body 的資料類別
+data class CraftRequestBody(val itemId: String)
 
 // 創建 Retrofit 實例
 object RetrofitClient {
