@@ -26,21 +26,6 @@ async function importData() {
     // 讀取 JSON 檔案
     const rawData = fs.readFileSync(dataFilePath);
     let items = JSON.parse(rawData);
-    
-    // 轉換 MongoDB 的 ObjectId 字串為實際的 ObjectId 物件
-    items = items.map(item => {
-      // 轉換 itemId
-      if (item.itemId && item.itemId.$oid) {
-        item.itemId = new ObjectId(item.itemId.$oid);
-      }
-      
-      // 轉換 resultId (如果存在且不為 null)
-      if (item.resultId && item.resultId.$oid) {
-        item.resultId = new ObjectId(item.resultId.$oid);
-      }
-      
-      return item;
-    });
 
     // 清空集合前先檢查現有文件數量
     const existingCount = await collection.countDocuments({});

@@ -3,6 +3,7 @@ package com.ntou01157.hunter.Backpack.data
 import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import com.ntou01157.hunter.Backpack.api.CraftRequestBody
 import com.ntou01157.hunter.Backpack.api.RetrofitClient
 import com.ntou01157.hunter.Backpack.model.UserItem
 import kotlinx.coroutines.Dispatchers
@@ -44,5 +45,28 @@ suspend fun fetchUserItems(userId: String): SnapshotStateList<UserItem> = withCo
         Log.e("API", "API請求失敗: ${e.message}", e)
         // 如果API請求失敗，返回空列表
         mutableStateListOf()
+    }
+}
+
+// 合成物品
+suspend fun craftItem(userId: String, materialItemId: String): SnapshotStateList<UserItem> = withContext(Dispatchers.IO) {
+    try {
+        Log.d("API", "正在合成物品，使用者ID: $userId, 材料ID: $materialItemId")
+        val updatedUser = RetrofitClient.apiService.craftItem(userId, CraftRequestBody(materialItemId))
+        val userItems = mutableStateListOf<UserItem>()
+
+        for (backpackItem in updatedUser.backpackItems) {
+            try {
+                val itemDetails = RetrofitClient.apiService.getItem(backpackItem.itemId)
+                userItems.add(UserItem(item = itemDetails, quantity = backpackItem.quantity))
+            } catch (e: Exception) {
+                Log.e("API", "獲取合成後物品詳情失敗: ${backpackItem.itemId}", e)
+            }
+        }
+        Log.d("API", "物品合成成功")
+        userItems
+    } catch (e: Exception) {
+        Log.e("API", "物品合成請求失敗: ${e.message}", e)
+        throw e // 將例外向上拋出，以便 UI 層可以處理
     }
 }
