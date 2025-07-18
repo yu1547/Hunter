@@ -2,11 +2,6 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 const itemSchema = new Schema({
-  itemId: {
-    type: Schema.Types.ObjectId,
-    required: true,
-    unique: true
-  },  
   itemPic: {
     type: String,
     required: true,
