@@ -6,10 +6,11 @@ const {
   createUser,
   updateUser,
   deleteUser,
-  addItemToBackpack,
-  // removeItemFromBackpack,
-  craftItem,
 } = require('../controllers/userController');
+const {
+  addItemToBackpack,
+  craftItem,
+} = require('../controllers/backpackController');
 
 // 用戶 API
 router.get('/', getAllUsers);     // GET 所有用戶

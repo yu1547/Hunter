@@ -30,7 +30,7 @@ app.get('/', (req, res) => {
     res.send('Hunter 遊戲後端 API');
 });
 
-// 項目 API 路由
+// 道具 API 路由
 app.use('/api/items', itemRoutes);
 
 // 用戶 API 路由
