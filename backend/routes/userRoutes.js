@@ -7,7 +7,8 @@ const {
   updateUser,
   deleteUser,
   addItemToBackpack,
-  removeItemFromBackpack,
+  // removeItemFromBackpack,
+  craftItem,
 } = require('../controllers/userController');
 
 // 用戶 API
@@ -19,6 +20,7 @@ router.delete('/:id', deleteUser);// DELETE 刪除用戶
 
 // 背包道具 API
 router.post('/:id/backpack', addItemToBackpack);    // POST 添加物品到背包
-router.delete('/:id/backpack/:itemId', removeItemFromBackpack);  // DELETE 從背包移除物品
+// router.delete('/:id/backpack/:itemId', removeItemFromBackpack);  // DELETE 從背包移除物品
+router.post('/:id/craft', craftItem); // POST 合成道具
 
 module.exports = router;
