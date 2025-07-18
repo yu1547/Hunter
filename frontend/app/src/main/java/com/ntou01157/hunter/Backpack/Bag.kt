@@ -248,12 +248,12 @@ fun BagScreen(navController: NavHostController) {
                     text = {
                         // 顯示合成後物品
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            val resultImageResId = getDrawableId(resultItem.item.itemPic)
-                            if (resultImageResId == R.drawable.ic_placeholder) {
-                                Log.e("BagScreen", "Invalid imageResId for resultItem: ${resultItem.item.itemName} (pic: ${resultItem.item.itemPic})")
-                            }
+                            // val resultImageResId = getDrawableId(resultItem.item.itemPic)
+                            // if (resultImageResId == R.drawable.ic_placeholder) {
+                            //     Log.e("BagScreen", "Invalid imageResId for resultItem: ${resultItem.item.itemName} (pic: ${resultItem.item.itemPic})")
+                            // }
                             Image(
-                                painter = painterResource(id = resultImageResId),
+                                painter = painterResource(id = R.drawable.default_itempic),   // 之後要記得改成resultImageResId，而且要把上面註解取消
                                 contentDescription = resultItem.item.itemName,
                                 modifier = Modifier.size(100.dp)
                             )
@@ -268,12 +268,12 @@ fun BagScreen(navController: NavHostController) {
                                 // 顯示當前選中的素材
                                 selectedItem?.let { material ->
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        val materialImageResId = getDrawableId(material.item.itemPic)
-                                        if (materialImageResId == R.drawable.ic_placeholder) {
-                                            Log.e("BagScreen", "Invalid imageResId for selected material: ${material.item.itemName} (pic: ${material.item.itemPic})")
-                                        }
+                                        // val materialImageResId = getDrawableId(material.item.itemPic)
+                                        // if (materialImageResId == R.drawable.ic_placeholder) {
+                                        //     Log.e("BagScreen", "Invalid imageResId for selected material: ${material.item.itemName} (pic: ${material.item.itemPic})")
+                                        // }
                                         Image(
-                                            painter = painterResource(id = materialImageResId),
+                                            painter = painterResource(id = R.drawable.default_itempic), // 之後要記得改成materialImageResId，而且要把上面註解取消
                                             contentDescription = material.item.itemName,
                                             modifier = Modifier.size(50.dp)
                                         )
@@ -288,12 +288,12 @@ fun BagScreen(navController: NavHostController) {
                                     it.item._id != selectedItem?.item?._id 
                                 }.forEach { material ->
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        val materialImageResId = getDrawableId(material.item.itemPic)
-                                        if (materialImageResId == R.drawable.ic_placeholder) {
-                                            Log.e("BagScreen", "Invalid imageResId for other material: ${material.item.itemName} (pic: ${material.item.itemPic})")
-                                        }
+                                        // val materialImageResId = getDrawableId(material.item.itemPic)
+                                        // if (materialImageResId == R.drawable.ic_placeholder) {
+                                        //     Log.e("BagScreen", "Invalid imageResId for other material: ${material.item.itemName} (pic: ${material.item.itemPic})")
+                                        // }
                                         Image(
-                                            painter = painterResource(id = materialImageResId),
+                                            painter = painterResource(id = R.drawable.default_itempic), // 之後要記得改成materialImageResId，而且要把上面註解取消
                                             contentDescription = material.item.itemName,
                                             modifier = Modifier.size(50.dp)
                                         )
@@ -306,7 +306,7 @@ fun BagScreen(navController: NavHostController) {
                     confirmButton = {
                         Button(onClick = {
                             // val crafted = CraftingSystem.craftItem(allItems, resultItem.item._id) // TODO: Update CraftingSystem
-                            // 顯示材料不足的訊息
+                            // // 顯示材料不足的訊息
                             // if (!crafted) {
                             //     coroutineScope.launch {
                             //         snackbarHostState.showSnackbar("材料不足，無法合成")
