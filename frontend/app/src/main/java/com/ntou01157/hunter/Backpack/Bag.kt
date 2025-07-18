@@ -27,6 +27,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.ntou01157.hunter.Backpack.model.UserItem
 import com.ntou01157.hunter.Backpack.data.fetchUserItems
+import com.ntou01157.hunter.Backpack.data.craftItem
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import android.util.Log
@@ -53,7 +54,7 @@ fun BagScreen(navController: NavHostController) {
     val errorMessage = remember { mutableStateOf("") }
     
     // 從登入系統或設定中獲取用戶ID (目前使用硬編碼，實際應該從系統獲取)
-    val userId = remember { "6879fdbc125a5443a1d4badc" }
+    val userId = remember { "6879fdbc125a5443a1d4bade" }
     
     // 加載數據
     LaunchedEffect(key1 = userId) {
@@ -305,17 +306,37 @@ fun BagScreen(navController: NavHostController) {
                     },
                     confirmButton = {
                         Button(onClick = {
-                            // val crafted = CraftingSystem.craftItem(allItems, resultItem.item._id) // TODO: Update CraftingSystem
-                            // // 顯示材料不足的訊息
-                            // if (!crafted) {
-                            //     coroutineScope.launch {
-                            //         snackbarHostState.showSnackbar("材料不足，無法合成")
-                            // }
-                            // } else {
-                            //     // 合成成功後清除選擇與對話框
-                            //     selectedItem = null
-                            //     showCraftDialog = false
-                            // }
+                            coroutineScope.launch {
+                                val requiredMaterials = allItems.filter {
+                                    it.item.itemType == 0 && it.item.resultId == resultItem.item._id
+                                }
+
+                                val hasEnoughMaterials = requiredMaterials.all { material ->
+                                    allItems.any { userItem ->
+                                        userItem.item._id == material.item._id && userItem.count.value >= 1
+                                    }
+                                }
+
+                                if (hasEnoughMaterials) {
+                                    try {
+                                        var latestItems: List<UserItem>? = null
+                                        requiredMaterials.forEach { material ->
+                                            latestItems = craftItem(userId, material.item._id)
+                                        }
+                                        latestItems?.let {
+                                            allItems.clear()
+                                            allItems.addAll(it)
+                                        }
+                                        snackbarHostState.showSnackbar("合成成功！")
+                                        showCraftDialog = false
+                                        selectedItem = null
+                                    } catch (e: Exception) {
+                                        snackbarHostState.showSnackbar("合成失敗: ${e.message}")
+                                    }
+                                } else {
+                                    snackbarHostState.showSnackbar("材料不足，無法合成")
+                                }
+                            }
                         }) {
                             Text("合成")
                         }
