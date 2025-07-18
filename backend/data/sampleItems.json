@@ -1,6 +1,5 @@
 [
   {
-    "itemId": { "$oid": "507f1f77bcf86cd799439101" },
     "itemFunc": "無法使用，僅作為合成素材",
     "itemName": "銅鑰匙碎片",
     "itemType": 0,
@@ -8,11 +7,10 @@
     "maxStack": 99,
     "itemMethod": "chest",
     "itemRarity": 2,
-    "resultId": { "$oid": "507f1f77bcf86cd799439201" },
+    "resultId": null,
     "itemPic": "copper_piece"
   },
   {
-    "itemId": { "$oid": "507f1f77bcf86cd799439102" },
     "itemFunc": "無法使用，僅作為合成素材",
     "itemName": "銀鑰匙碎片",
     "itemType": 0,
@@ -20,11 +18,10 @@
     "maxStack": 99,
     "itemMethod": "chest",
     "itemRarity": 3,
-    "resultId": { "$oid": "507f1f77bcf86cd799439202" },
+    "resultId": null,
     "itemPic": "silver_piece"
   },
   {
-    "itemId": { "$oid": "507f1f77bcf86cd799439103" },
     "itemFunc": "無法使用，僅作為合成素材",
     "itemName": "金鑰匙碎片",
     "itemType": 0,
@@ -32,11 +29,10 @@
     "maxStack": 99,
     "itemMethod": "chest",
     "itemRarity": 4,
-    "resultId": { "$oid": "507f1f77bcf86cd799439203" },
+    "resultId": null,
     "itemPic": "gold_piece"
   },
   {
-    "itemId": { "$oid": "507f1f77bcf86cd799439104" },
     "itemFunc": "無法使用，僅作為合成素材",
     "itemName": "普通的史萊姆黏液",
     "itemType": 0,
@@ -44,11 +40,10 @@
     "maxStack": 50,
     "itemMethod": "randomEvent",
     "itemRarity": 1,
-    "resultId": { "$oid": "507f1f77bcf86cd799439204" },
+    "resultId": null,
     "itemPic": "ordinary_slime_mucus"
   },
   {
-    "itemId": { "$oid": "507f1f77bcf86cd799439105" },
     "itemFunc": "無法使用，僅作為合成素材",
     "itemName": "黏稠的史萊姆黏液",
     "itemType": 0,
@@ -56,11 +51,10 @@
     "maxStack": 50,
     "itemMethod": "randomEvent",
     "itemRarity": 2,
-    "resultId": { "$oid": "507f1f77bcf86cd799439205" },
+    "resultId": null,
     "itemPic": "viscous_slime_mucus"
   },
   {
-    "itemId": { "$oid": "507f1f77bcf86cd799439106" },
     "itemFunc": "無法使用，僅作為合成素材",
     "itemName": "散落的地圖殘片",
     "itemType": 0,
@@ -68,11 +62,10 @@
     "maxStack": 20,
     "itemMethod": "scan",
     "itemRarity": 4,
-    "resultId": { "$oid": "507f1f77bcf86cd799439206" },
+    "resultId": null,
     "itemPic": "map_fragment"
   },
   {
-    "itemId": { "$oid": "507f1f77bcf86cd799439201" },
     "itemFunc": "點擊使用，開啟銅寶箱",
     "itemName": "銅鑰匙",
     "itemType": 1,
@@ -84,7 +77,6 @@
     "itemPic": "copper_key"
   },
   {
-    "itemId": { "$oid": "507f1f77bcf86cd799439202" },
     "itemFunc": "點擊使用，開啟銀寶箱",
     "itemName": "銀鑰匙",
     "itemType": 1,
@@ -96,7 +88,6 @@
     "itemPic": "silver_key"
   },
   {
-    "itemId": { "$oid": "507f1f77bcf86cd799439203" },
     "itemFunc": "點擊使用，開啟金寶箱",
     "itemName": "金鑰匙",
     "itemType": 1,
@@ -108,7 +99,6 @@
     "itemPic": "gold_key"
   },
   {
-    "itemId": { "$oid": "507f1f77bcf86cd799439204" },
     "itemFunc": "點擊使用，召喚小史萊姆",
     "itemName": "小史萊姆",
     "itemType": 1,
@@ -120,7 +110,6 @@
     "itemPic": "small_slime"
   },
   {
-    "itemId": { "$oid": "507f1f77bcf86cd799439205" },
     "itemFunc": "點擊使用，召喚大史萊姆",
     "itemName": "大史萊姆",
     "itemType": 1,
@@ -132,7 +121,6 @@
     "itemPic": "big_slime"
   },
   {
-    "itemId": { "$oid": "507f1f77bcf86cd799439206" },
     "itemFunc": "點擊使用，觸發金色寶箱事件",
     "itemName": "寶藏圖",
     "itemType": 1,
@@ -144,7 +132,6 @@
     "itemPic": "treasure_map"
   },
   {
-    "itemId": { "$oid": "507f1f77bcf86cd799439207" },
     "itemFunc": "點擊使用，立即刷新一項任務",
     "itemName": "時間沙漏 - 加速",
     "itemType": 1,
@@ -156,7 +143,6 @@
     "itemPic": "hourglass_acceleration"
   },
   {
-    "itemId": { "$oid": "507f1f77bcf86cd799439208" },
     "itemFunc": "點擊使用，增加限時任務時間",
     "itemName": "時間沙漏 - 減速",
     "itemType": 1,
@@ -170,7 +156,6 @@
     "itemPic": "hourglass_deceleration"
   },
   {
-    "itemId": { "$oid": "507f1f77bcf86cd799439209" },
     "itemFunc": "點擊使用，提高對史萊姆的傷害",
     "itemName": "火把",
     "itemType": 1,
@@ -182,7 +167,6 @@
     "itemPic": "torch"
   },
   {
-    "itemId": { "$oid": "507f1f77bcf86cd799439210" },
     "itemFunc": "點擊使用，提高物品獲取數量及品質",
     "itemName": "古樹的枝幹",
     "itemType": 1,
