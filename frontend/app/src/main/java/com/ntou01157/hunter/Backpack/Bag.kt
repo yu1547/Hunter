@@ -53,7 +53,7 @@ fun BagScreen(navController: NavHostController) {
     val errorMessage = remember { mutableStateOf("") }
     
     // 從登入系統或設定中獲取用戶ID (目前使用硬編碼，實際應該從系統獲取)
-    val userId = remember { "687376d131e0ca881ea42604" }
+    val userId = remember { "6879fdbc125a5443a1d4badc" }
     
     // 加載數據
     LaunchedEffect(key1 = userId) {
@@ -91,7 +91,7 @@ fun BagScreen(navController: NavHostController) {
     // 如果選中的是素材(itemType為0)，找出可合成的結果物品
     val resultItem = remember(selectedItem) {
         if (selectedItem?.item?.itemType == 0 && selectedItem?.item?.resultId != null) {
-            allItems.find { it.item.itemId == selectedItem?.item?.resultId }
+            allItems.find { it.item._id == selectedItem?.item?.resultId }
         } else {
             null
         }
