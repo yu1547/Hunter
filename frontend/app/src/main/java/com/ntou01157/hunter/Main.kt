@@ -66,12 +66,13 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
         containerColor = Color(0xFFbc8f8f),
         contentColor = Color.White
     )
-    //打卡點
-    val missionLandmark = Landmark(
-        spotId = "mission1",
-        spotName = "(地標名)",
-        spotPhoto = R.drawable.item1,
-        position = LatLng(25.149853, 121.778352)
+    //打卡點 假資料
+    val missionLandmark = Spot(
+        spotId = "打卡點1",
+        spotName = "(地標)",
+        spotPhoto = "",
+        latitude = 25.149853,
+        longitude = 121.778352
     )
     //補給站
     val supplyStations = remember {
@@ -156,8 +157,8 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                 })
             }
 
-            //顯示打卡點
-            LandmarkMarker(landmark = missionLandmark, navController = navController)
+            //顯示打卡點 Sopt_UI.kt
+            spotMarker(spot = missionLandmark)
 
         }
         //補給站領取資源視窗
