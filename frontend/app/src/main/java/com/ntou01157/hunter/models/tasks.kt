@@ -8,7 +8,6 @@ data class Task (
     val taskDescription: String,
     val taskDifficulty: String,
     val taskTarget: String,
-    val taskState: String,
     val checkPlaces: List<CheckPlace> = emptyList(),
     val taskDuration: Long,
     val rewardItems: List<RewardItem> = emptyList(),
