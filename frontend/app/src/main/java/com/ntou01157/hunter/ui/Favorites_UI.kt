@@ -178,7 +178,11 @@ fun FavoritesScreenPreview() {
             "4" to SpotScanLogs("4", false)
         ),
         supplyScanLogs = emptyMap(),
-        settings = emptyMap(),
+        settings = Settings(
+            music = true,
+            notification = true,
+            language = "zh-TW"
+        ),
         buff = emptyMap()
     )
 

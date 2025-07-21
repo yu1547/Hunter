@@ -18,9 +18,9 @@ data class User (
     val refreshAt: Timestamp = Timestamp.now(),
     val spotsScanLogs: Map<String, SpotScanLogs> = emptyMap(),
     val supplyScanLogs: Map<String, SupplyScanLog> = emptyMap(),
-    val settings: Map<String, Settings> = emptyMap(),
+    val settings: Settings = Settings(language = "zh-TW"),
     val buff: Map<String, Buff> = emptyMap(),
-    )
+)
 
 data class BackpackItem(
     val itemId: String,
@@ -46,7 +46,7 @@ data class SupplyScanLog(
 
 data class Settings(
     val music: Boolean = false,
-    val notifications: Boolean = false,
+    val notification: Boolean = false,
     val language: String // ="zh-TW"
 )
 
