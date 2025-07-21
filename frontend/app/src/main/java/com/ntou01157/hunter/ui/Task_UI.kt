@@ -1,5 +1,6 @@
 package com.ntou01157.hunter.ui
 
+import java.security.Timestamp
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -21,19 +22,33 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.ntou01157.hunter.R
 import com.ntou01157.hunter.formatMillis
 import com.ntou01157.hunter.models.Task
+import com.ntou01157.hunter.data.getTasks
+import com.ntou01157.hunter.data.getTestUser
+import com.ntou01157.hunter.model.model_api.UserTask
 
 
 @Composable
 fun TaskListScreen(navController: NavController) {
-    val taskList = remember {
-        mutableStateListOf(
-            Task("1", "任務一", "介紹任務一", "簡單", "11111", taskDuration = 3600_000, rewardScore = 10),
-            Task("2", "任務二", "介紹任務二", "普通", "22222", taskDuration = 7200_000, rewardScore = 20),
-            Task("3", "任務三", "介紹任務三", "困難", "33333", taskDuration = 1800_000, rewardScore = 50)
-        )
+    val allTasks = remember { getTasks() }
+    val user = remember { getTestUser() }
+
+    // 結合任務和使用者狀態來建立 UserTask 列表
+    val userTaskList = remember {
+        mutableStateListOf<UserTask>().apply {
+            // 根據 user.missions 來判斷每個任務的狀態
+            allTasks.forEach { task ->
+                val mission = user.missions.find { it.taskId == task.taskId }
+                val state = if (mission != null && mission.state == "available") {
+                    "未接受"
+                } else {
+                    "已接受"
+                }
+                add(UserTask(task = task, state = state))
+            }
+        }
     }
 
-    var selectedTask by remember { mutableStateOf<Task?>(null) }
+    var selectedUserTask by remember { mutableStateOf<UserTask?>(null) }
     var showStartDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -64,12 +79,12 @@ fun TaskListScreen(navController: NavController) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(taskList) { task ->
+            items(userTaskList) { userTask ->
                 Card(
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { selectedTask = task }
+                        .clickable { selectedUserTask = userTask }
                 ) {
                     Row(
                         modifier = Modifier
@@ -77,16 +92,17 @@ fun TaskListScreen(navController: NavController) {
                             .fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(task.taskName, fontSize = 18.sp)
-//                        Text(missions.state, color = if (missions.state == "已接受") Color.Gray else Color.Red)
+                        Text(userTask.task.taskName, fontSize = 18.sp)
+                        Text(userTask.state, color = if (userTask.state == "已接受") Color.Gray else Color.Red)
                     }
                 }
             }
         }
 
-        selectedTask?.let { task ->
+        selectedUserTask?.let { userTask ->
+            val task = userTask.task
             AlertDialog(
-                onDismissRequest = { selectedTask = null },
+                onDismissRequest = { selectedUserTask = null },
                 title = { Text(task.taskName) },
                 text = {
                     Column {
@@ -102,24 +118,23 @@ fun TaskListScreen(navController: NavController) {
                     }
                 },
                 confirmButton = {
-                    TextButton(onClick = { selectedTask = null }) {
+                    if (userTask.state == "未接受") {
+                        TextButton(onClick = {
+                            val index = userTaskList.indexOf(userTask)
+                            if (index != -1) {
+                                userTaskList[index] = userTask.copy(state = "已接受")
+                            }
+                            selectedUserTask = null
+                            showStartDialog = true
+                        }) {
+                            Text("接受任務")
+                        }
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { selectedUserTask = null }) {
                         Text("關閉")
                     }
-//                    if (missions.state == "未接受") {
-//                        TextButton(onClick = {
-//                            taskList.replace(task.taskId) { t ->
-//                                t.copy(state = "已接受")
-//                            }
-//                            selectedTask = null
-//                            showStartDialog = true
-//                        }) {
-//                            Text("接受任務")
-//                        }
-//                    } else {
-//                        TextButton(onClick = { selectedTask = null }) {
-//                            Text("關閉")
-//                        }
-//                    }
                 },
                 shape = RoundedCornerShape(16.dp)
             )
