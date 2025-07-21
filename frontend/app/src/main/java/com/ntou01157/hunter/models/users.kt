@@ -14,7 +14,7 @@ data class User (
     val role: String,
     val score: Double,
     val backpackItems: List<BackpackItem> = emptyList(),
-    val missoins: List<Task> = emptyList(),
+    val missions: List<Mission> = emptyList(),
     val refreshAt: Timestamp = Timestamp.now(),
     val spotsScanLogs: Map<String, SpotScanLogs> = emptyMap(),
     val supplyScanLogs: Map<String, SupplyScanLog> = emptyMap(),
@@ -25,6 +25,13 @@ data class User (
 data class BackpackItem(
     val itemId: String,
     val quantity: Int
+)
+
+data class Mission(
+    val taskId: String,
+    val state: String,
+    val acceptedAt: Timestamp = Timestamp.now(),
+    val expireAt: Timestamp = Timestamp.now()
 )
 
 data class SpotScanLogs(

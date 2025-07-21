@@ -1,9 +1,10 @@
-package com.ntou01157.hunter.Backpack.model
+// package com.ntou01157.hunter.Backpack.model
+package com.ntou01157.hunter.model.model_api
 
 import com.google.gson.annotations.SerializedName
 
 data class Item(
-    @SerializedName("_id") val _id: String,
+    @SerializedName("_id") val itemId: String,
     @SerializedName("itemFunc") val itemFunc: String,
     @SerializedName("itemName") val itemName: String,
     @SerializedName("itemType") val itemType: Int,
