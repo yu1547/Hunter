@@ -1,11 +1,8 @@
 package com.ntou01157.hunter
 
-import com.ntou01157.hunter.SupplyStation
-
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,18 +19,14 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Settings
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
-import android.location.Location
 import androidx.compose.ui.platform.LocalContext
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
-import com.google.maps.android.compose.*
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import com.ntou01157.hunter.Landmark
-import com.ntou01157.hunter.LandmarkMarker
-
+import com.ntou01157.hunter.mock.FakeUser
+import com.ntou01157.hunter.ui.*
+import com.ntou01157.hunter.models.*
 
 class Main : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,7 +41,7 @@ class Main : ComponentActivity() {
                     MainScreen(navController)
                 }
                 composable("bag") {
-                    BagScreen(navController)
+                    BagScreen(navController = navController, user = FakeUser)
                 }
                 composable("favorites") {
                     FavoritesScreen(navController)
@@ -73,26 +66,38 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
         containerColor = Color(0xFFbc8f8f),
         contentColor = Color.White
     )
-    //打卡點
-    val missionLandmark = Landmark(
-        spotId = "mission1",
-        spotName = "(地標名)",
-        spotPhoto = R.drawable.item1,
-        position = LatLng(25.149853, 121.778352)
+    //打卡點 假資料
+    val missionLandmark = Spot(
+        spotId = "打卡點1",
+        spotName = "(地標)",
+        spotPhoto = "",
+        latitude = 25.149853,
+        longitude = 121.778352
     )
     //補給站
     val supplyStations = remember {
         listOf(
-            SupplyStation("station1", LatLng(25.149034, 121.779087)),
-            SupplyStation("station2", LatLng(25.149836, 121.779452))
+            Supply(
+                supplyId = "station1",
+                name = "補給站 1",
+                latitude = 25.149034,
+                longitude = 121.779087
+            ),
+            Supply(
+                supplyId = "station2",
+                name = "補給站 2",
+                latitude = 25.149836,
+                longitude = 121.779452
+            )
         )
     }
 
     //紀錄當前點擊的補給站
-    var selectedStation by remember { mutableStateOf<SupplyStation?>(null) }
+    var selectedSupply by remember { mutableStateOf<Supply?>(null) }
     var showSupplyDialog by remember { mutableStateOf(false) }
+    val user: User = FakeUser
+    val supplyLog = selectedSupply?.supplyId?.let { user.supplyScanLogs[it] }
 
-    //初始地圖位置
 
     val context = LocalContext.current
     //檢查權限
@@ -121,7 +126,6 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
         }
     }
 
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -131,7 +135,7 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             cameraPositionState = cameraPositionState,
             uiSettings = MapUiSettings(myLocationButtonEnabled = true),
             properties = MapProperties(isMyLocationEnabled = true),
-            onMapClick = { selectedStation = null }//點擊地圖時關閉彈窗
+            onMapClick = { selectedSupply = null }//點擊地圖時關閉彈窗
         ){//顯示玩家位置
             userLocation?.let {
                 Marker(
@@ -142,74 +146,31 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             }
             //顯示補給站
             supplyStations.forEach { station ->
-                Marker(
-                    state = MarkerState(position = station.position),
-                    title = "補給站",
-                    snippet = station.spotId,
-                    onClick = {
-                        selectedStation = station
-                        showSupplyDialog = true
-                        true
-                    }
-                )
+                SupplyMarker(supply = Supply(
+                    supplyId = station.supplyId,
+                    name = station.name,
+                    latitude = station.latitude,
+                    longitude = station.longitude
+                ), onClick = {
+                    selectedSupply = it
+                    showSupplyDialog = true
+                })
             }
-            //顯示打卡點
-            LandmarkMarker(landmark = missionLandmark, navController = navController)
+
+            //顯示打卡點 Sopt_UI.kt
+            spotMarker(spot = missionLandmark)
 
         }
         //補給站領取資源視窗
-        if (showSupplyDialog && selectedStation != null) {
-            val station = selectedStation!!
-            var cooldownText by remember {mutableStateOf(station.formattedRemainingCooldown()) }
-
-            //每秒更新一次倒數字串
-            LaunchedEffect(station.spotId, showSupplyDialog) {
-                while (showSupplyDialog && !station.isAvailable()) {
-                    cooldownText = station.formattedRemainingCooldown()
-                    delay(1000)
-                }
-            }
-            AlertDialog(
-                onDismissRequest = { showSupplyDialog = false },
-                confirmButton = {},
-                title = {
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        Text("補給站", modifier = Modifier.align(Alignment.Center))
-                        IconButton(
-                            onClick = { showSupplyDialog = false },
-                            modifier = Modifier.align(Alignment.TopEnd)
-                        ) {
-                            Icon(Icons.Default.Close, contentDescription = "關閉")
-                        }
-                    }
+        if (showSupplyDialog && selectedSupply != null) {
+            SupplyDialog(
+                supply = selectedSupply!!,
+                onDismiss = { showSupplyDialog = false },
+                onCollect = {
+                    showSupplyDialog = false
                 },
-
-                text = {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        contentAlignment = Alignment.Center
-                    ){
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            if (station.isAvailable()) {
-                                Text("點擊下面按鈕領取資源！", style = MaterialTheme.typography.bodyLarge)
-                                Spacer(modifier = Modifier.height(10.dp))
-                                Button(onClick = {
-                                    station.nextClaimTime = System.currentTimeMillis()
-                                    showSupplyDialog = false
-                                }) {
-                                    Text("領取資源")
-                                }
-                            } else {
-                                Text(
-                                    "還需等待 $cooldownText 才能再次領取資源。",
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                            }
-                        }
-                    }
-                }
+                isAvailable = isSupplyAvailable(supplyLog?.nextClaimTime),
+                remainingTimeFormatted = { formattedRemainingCooldown(supplyLog?.nextClaimTime) }
             )
         }
 

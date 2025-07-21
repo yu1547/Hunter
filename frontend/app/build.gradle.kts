@@ -50,6 +50,9 @@ android {
 }
 
 dependencies {
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation(platform("com.google.firebase:firebase-bom:32.7.2"))
+
     implementation("androidx.navigation:navigation-compose:2.9.0")
     implementation("androidx.compose.material3:material3:1.2.1")
     implementation("com.google.android.gms:play-services-maps:19.2.0")
