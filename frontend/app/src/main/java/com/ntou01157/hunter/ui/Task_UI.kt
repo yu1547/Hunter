@@ -27,9 +27,9 @@ import com.ntou01157.hunter.models.Task
 fun TaskListScreen(navController: NavController) {
     val taskList = remember {
         mutableStateListOf(
-            Task("1", "任務一", "介紹任務一", "簡單", "11111", "未接受", taskDuration = 3600_000, rewardScore = 10),
-            Task("2", "任務二", "介紹任務二", "普通", "22222", "未接受", taskDuration = 7200_000, rewardScore = 20),
-            Task("3", "任務三", "介紹任務三", "困難", "33333", "未接受", taskDuration = 1800_000, rewardScore = 50)
+            Task("1", "任務一", "介紹任務一", "簡單", "11111", taskDuration = 3600_000, rewardScore = 10),
+            Task("2", "任務二", "介紹任務二", "普通", "22222", taskDuration = 7200_000, rewardScore = 20),
+            Task("3", "任務三", "介紹任務三", "困難", "33333", taskDuration = 1800_000, rewardScore = 50)
         )
     }
 
@@ -78,7 +78,7 @@ fun TaskListScreen(navController: NavController) {
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(task.taskName, fontSize = 18.sp)
-                        Text(task.taskState, color = if (task.taskState == "已接受") Color.Gray else Color.Red)
+//                        Text(missions.state, color = if (missions.state == "已接受") Color.Gray else Color.Red)
                     }
                 }
             }
@@ -102,21 +102,24 @@ fun TaskListScreen(navController: NavController) {
                     }
                 },
                 confirmButton = {
-                    if (task.taskState == "未接受") {
-                        TextButton(onClick = {
-                            taskList.replace(task.taskId) { t ->
-                                t.copy(taskState = "已接受")
-                            }
-                            selectedTask = null
-                            showStartDialog = true
-                        }) {
-                            Text("接受任務")
-                        }
-                    } else {
-                        TextButton(onClick = { selectedTask = null }) {
-                            Text("關閉")
-                        }
+                    TextButton(onClick = { selectedTask = null }) {
+                        Text("關閉")
                     }
+//                    if (missions.state == "未接受") {
+//                        TextButton(onClick = {
+//                            taskList.replace(task.taskId) { t ->
+//                                t.copy(state = "已接受")
+//                            }
+//                            selectedTask = null
+//                            showStartDialog = true
+//                        }) {
+//                            Text("接受任務")
+//                        }
+//                    } else {
+//                        TextButton(onClick = { selectedTask = null }) {
+//                            Text("關閉")
+//                        }
+//                    }
                 },
                 shape = RoundedCornerShape(16.dp)
             )

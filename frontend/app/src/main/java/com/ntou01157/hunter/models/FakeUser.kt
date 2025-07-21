@@ -4,7 +4,7 @@ import com.google.firebase.Timestamp
 import com.ntou01157.hunter.models.*
 
 val FakeUser = User(
-    uid = "123",
+    uid = "6879fdbc125a5443a1d4bade",
     displayName = "測試用戶",
     email = "test@example.com",
     age = "20",

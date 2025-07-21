@@ -170,7 +170,7 @@ fun FavoritesScreenPreview() {
         role = "player",
         score = 0.0,
         backpackItems = emptyList(),
-        missoins = emptyList(),
+        missions = emptyList(),
         spotsScanLogs = mapOf(
             "1" to SpotScanLogs("1", false),
             "2" to SpotScanLogs("2", true),

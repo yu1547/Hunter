@@ -1,7 +1,7 @@
-package com.ntou01157.hunter.Backpack.api
+package com.ntou01157.hunter.api
 
-import com.ntou01157.hunter.Backpack.model.Item
-import com.ntou01157.hunter.Backpack.model.User
+import com.ntou01157.hunter.model.model_api.Item
+import com.ntou01157.hunter.model.model_api.User
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
