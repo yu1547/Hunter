@@ -24,6 +24,8 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
+import androidx.compose.ui.window.Dialog
+import androidx.compose.foundation.shape.RoundedCornerShape
 import com.ntou01157.hunter.mock.FakeUser
 import com.ntou01157.hunter.ui.*
 import com.ntou01157.hunter.models.*
@@ -187,39 +189,21 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             )
         }
 
-        if (showDialog) { //顯示視窗訊息
-            AlertDialog(
-                onDismissRequest = { showDialog = false },
-                confirmButton = {},
-                title = {
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        Text("設定", modifier = Modifier.align(Alignment.Center))
-                        IconButton(
-                            onClick = { showDialog = false },
-                            modifier = Modifier.align(Alignment.TopEnd)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "關閉"
-                            )
-                        }
-                    }
-                },
-                text = {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(80.dp)
-                    ) {
-                        Text(
-                            "設定相關東西",
-                            modifier = Modifier.align(Alignment.Center),
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    }
+        if (showDialog) {
+            Dialog(onDismissRequest = { showDialog = false }) {
+                Surface(
+                    shape = RoundedCornerShape(24.dp),
+                    color = Color(0xFFF6EDF7), // 淺粉紫背景，可自改
+                    tonalElevation = 4.dp,
+                    modifier = Modifier
+                        .width(280.dp) // ← 控制寬度
+                        .wrapContentHeight()
+                ) {
+                    SettingDialog(user = FakeUser, onDismiss = { showDialog = false })
                 }
-            )
+            }
         }
+
 
         Column(
             modifier = Modifier.fillMaxSize(),
