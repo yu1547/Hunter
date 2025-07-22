@@ -38,7 +38,7 @@ fun TaskListScreen(navController: NavController) {
         mutableStateListOf<UserTask>().apply {
             // 根據 user.missions 來判斷每個任務的狀態
             allTasks.forEach { task ->
-                val mission = user.missions[task.taskId]
+                val mission = user.missions.find { it.taskId == task.taskId }
                 val state = if (mission != null && mission.state == "available") {
                     "未接受"
                 } else {
