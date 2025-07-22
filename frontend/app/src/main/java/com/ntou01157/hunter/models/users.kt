@@ -16,10 +16,10 @@ data class User (
     val backpackItems: List<BackpackItem> = emptyList(),
     val missions: List<Mission> = emptyList(),
     val refreshAt: Timestamp = Timestamp.now(),
-    val spotsScanLogs: Map<String, SpotScanLogs> = emptyMap(),
-    val supplyScanLogs: Map<String, SupplyScanLog> = emptyMap(),
+    val spotsScanLogs: Map<String, Boolean> = emptyMap(),
+    val supplyScanLogs: Map<String, Timestamp> = emptyMap(),
     val settings: Settings = Settings(language = "zh-TW"),
-    val buff: Map<String, Buff> = emptyMap(),
+    val buff: Map<String, Int> = emptyMap(),
 )
 
 data class BackpackItem(

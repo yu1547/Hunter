@@ -16,6 +16,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.ntou01157.hunter.R
 import com.ntou01157.hunter.models.*
+import com.ntou01157.hunter.models.User
 
 @Composable
 fun FavoritesScreen(
@@ -80,7 +81,7 @@ fun FavoritesScreen(
                             if (index < items.size) {
                                 val landmark = items[index]
 
-                                val isUnlocked = user.spotsScanLogs[landmark.spotId]?.isCheck == true
+                                val isUnlocked = user.spotsScanLogs[landmark.spotId] == true
 
                                 Box(
                                     modifier = Modifier
