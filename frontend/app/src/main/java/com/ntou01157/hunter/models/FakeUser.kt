@@ -17,14 +17,8 @@ val FakeUser = User(
         BackpackItem(itemId = "3", quantity = 5)
     ) ,
     supplyScanLogs = mapOf(
-        "station1" to SupplyScanLog(
-            spotId = "station1",
-            nextClaimTime = Timestamp.now() // 設現在冷卻完成，可以領
-        ),
-        "station2" to SupplyScanLog(
-            spotId = "station2",
-            nextClaimTime = Timestamp.now()
-        )
+        "station1" to Timestamp.now(),
+        "station2" to Timestamp.now()
     ),
     settings = Settings(
         music = true,
