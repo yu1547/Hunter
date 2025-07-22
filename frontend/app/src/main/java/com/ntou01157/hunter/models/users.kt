@@ -14,7 +14,7 @@ data class User (
     val role: String,
     val score: Double,
     val backpackItems: List<BackpackItem> = emptyList(),
-    val missions: Map<String, Mission> = emptyMap(),
+    val missions: List<Mission> = emptyList(),
     val refreshAt: Timestamp = Timestamp.now(),
     val spotsScanLogs: Map<String, SpotScanLogs> = emptyMap(),
     val supplyScanLogs: Map<String, SupplyScanLog> = emptyMap(),
@@ -28,13 +28,13 @@ data class BackpackItem(
 )
 
 data class Mission(
+    val taskId: String,
     val state: String,
     val acceptedAt: Timestamp = Timestamp.now(),
     val expireAt: Timestamp = Timestamp.now()
 )
 
 data class SpotScanLogs(
-    val spotId: String,
     val isCheck: Boolean = false
 )
 
@@ -46,10 +46,9 @@ data class SupplyScanLog(
 data class Settings(
     val music: Boolean = false,
     val notification: Boolean = false,
-    val language: String // ="zh-TW"
+    val language: String
 )
 
 data class Buff(
-    val buffId: String,
     val isBuff: Int = 0
 )
