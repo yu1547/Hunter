@@ -25,5 +25,11 @@ val FakeUser = User(
             spotId = "station2",
             nextClaimTime = Timestamp.now()
         )
+    ),
+    settings = Settings(
+        music = true,
+        notification = true,
+        language = "zh-TW"
     )
+
 )

@@ -1,5 +1,6 @@
 package com.ntou01157.hunter.ui
 
+import androidx.compose.foundation.Image
 import java.security.Timestamp
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -59,13 +60,16 @@ fun TaskListScreen(navController: NavController) {
                     .padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_home),
-                    contentDescription = "Home",
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clickable { navController.navigate("main") }
-                )
+                IconButton(
+                    onClick = { navController.navigate("main") },
+                    modifier = Modifier.padding(top = 25.dp, bottom = 4.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_home),
+                        contentDescription = "回首頁",
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
                 Spacer(modifier = Modifier.width(12.dp))
                 Text("任務清單", fontSize = 22.sp)
             }
