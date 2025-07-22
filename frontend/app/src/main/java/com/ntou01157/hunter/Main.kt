@@ -27,6 +27,7 @@ import com.google.android.gms.maps.model.CameraPosition
 import androidx.compose.ui.window.Dialog
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.ntou01157.hunter.mock.FakeUser
+import com.ntou01157.hunter.models.User
 import com.ntou01157.hunter.ui.*
 import com.ntou01157.hunter.models.*
 
@@ -171,8 +172,8 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                 onCollect = {
                     showSupplyDialog = false
                 },
-                isAvailable = isSupplyAvailable(supplyLog?.nextClaimTime),
-                remainingTimeFormatted = { formattedRemainingCooldown(supplyLog?.nextClaimTime) }
+                isAvailable = isSupplyAvailable(supplyLog),
+                remainingTimeFormatted = { formattedRemainingCooldown(supplyLog) }
             )
         }
 
