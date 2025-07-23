@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.ntou01157.hunter.R
+import com.ntou01157.hunter.models.*
 
 @Composable
 fun RankingScreen(rankResponse: RankResponse, navController: NavController) {
@@ -65,7 +66,7 @@ fun RankingScreen(rankResponse: RankResponse, navController: NavController) {
 }
 
 @Composable
-fun RankingItem(rank: Int? = null, user: UserRankEntry, rankText: String = "") {
+fun RankingItem(rank: Int? = null, user: UserRanking, rankText: String = "") {
     Row(
         modifier = Modifier
             .fillMaxWidth()
