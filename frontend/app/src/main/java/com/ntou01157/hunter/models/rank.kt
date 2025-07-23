@@ -1,13 +1,13 @@
 package com.ntou01157.hunter.models
 
 data class RankResponse(
-    val rankList: List<UserRankEntry>,
-    val userRank: UserRankEntry
+    val rankList: List<UserRanking>,
+    val userRank: UserRanking
 )
 
-data class UserRankEntry(
-    val rank: Int = 0,
-    val userId: String = "",
-    val username: String = "",
-    val score: Int = 0
+data class UserRanking(
+    val rank: Int,
+    val userId: String,
+    val username: String,
+    val score: Int
 )
