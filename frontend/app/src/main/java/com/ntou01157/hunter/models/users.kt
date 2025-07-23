@@ -17,7 +17,7 @@ data class User (
     val missions: List<Mission> = emptyList(),
     val refreshAt: Timestamp = Timestamp.now(),
     val spotsScanLogs: Map<String, Boolean> = emptyMap(),
-    val supplyScanLogs: Map<String, Timestamp> = emptyMap(),
+    val supplyScanLogs: MutableMap<String, Timestamp> = mutableMapOf(),
     val settings: Settings = Settings(language = "zh-TW"),
     val buff: Map<String, Int> = emptyMap(),
 )
@@ -38,7 +38,7 @@ data class SpotScanLogs(
     val isCheck: Boolean = false
 )
 
-data class SupplyScanLog(
+data class SupplyScanLogs(
     val spotId: String,
     val nextClaimTime: Timestamp = Timestamp(946684800, 0) // 2000-01-01T00:00:00Z
 )
