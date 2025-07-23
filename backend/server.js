@@ -3,6 +3,7 @@ const cors = require('cors');
 const { connectDB } = require('./config/db');
 const itemRoutes = require('./routes/itemRoutes');
 const userRoutes = require('./routes/userRoutes');
+const taskRoutes = require('./routes/taskRoutes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const mongoose = require('mongoose');
@@ -35,6 +36,9 @@ app.use('/api/items', itemRoutes);
 
 // 用戶 API 路由
 app.use('/api/users', userRoutes);
+
+// 任務 API 路由
+app.use('/api/tasks', taskRoutes);
 
 app.listen(PORT, () => {
     console.log(`伺服器運行於 http://localhost:${PORT}`);

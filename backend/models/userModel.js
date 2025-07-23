@@ -15,6 +15,39 @@ const userSchema = new Schema({
       min: 1
     }
   }],
+  missions: [{
+    taskId: {
+      type: String,
+      required: true
+    },
+    state: {
+      type: String,
+      enum: ['available', 'in_progress', 'completed', 'claimed', 'declined'],
+      required: true
+    },
+    acceptedAt: {
+      type: Date,
+      default: null
+    },
+    expiresAt: {
+      type: Date,
+      default: null
+    },
+    declinedAt: {
+      type: Date,
+      default: null
+    },
+    checkPlaces: [{
+      spotId: {
+        type: String,
+        required: true
+      },
+      isCheck: {
+        type: Boolean,
+        default: false
+      }
+    }]
+  }],
   // 可加入其他用戶屬性，如用戶名稱、等級等
   username: {
     type: String,

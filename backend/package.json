@@ -5,8 +5,10 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "import-data": "node scripts/importData.js",
+    "import-items": "node scripts/importItems.js",
     "import-users": "node scripts/importUsers.js",
+    "import-tasks": "node scripts/importTasks.js",
+    "update-result-id": "node scripts/updateResultId.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
