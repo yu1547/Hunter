@@ -6,14 +6,28 @@ const { ObjectId } = require('mongodb');
 const { getMongoClient } = require('../config/db');
 
 // --- 請在此處設定 ---
-// 要更新的用戶 ID (請替換為實際的用戶 _id 字串)
+// 要更新的用戶 ID
 const userIdToUpdate = '6879fdbc125a5443a1d4bade'; 
 
-// 新的任務 ID 列表 (請根據您的 quest schema 修改)
-// 這裡假設 quest 的 ID 也是 ObjectId
-const newQuestIds = [
-  new ObjectId("688085695aa0d66ff4d2077b"), // 請替換為實際的任務 ID
-  new ObjectId("688085695aa0d66ff4d2077c"), // 請替換為實際的任務 ID
+// 新的任務列表
+// 根據 userModel.js 的 missions schema 結構來建立
+const newMissions = [
+  {
+    taskId: "688085695aa0d66ff4d2077b",
+    state: 'available',
+    acceptedAt: null,
+    expiresAt: null,
+    declinedAt: null,
+    checkPlaces: [] // 根據需要添加 checkPlaces
+  },
+  {
+    taskId: "688085695aa0d66ff4d2077c",
+    state: 'claimed',
+    acceptedAt: null,
+    expiresAt: null,
+    declinedAt: null,
+    checkPlaces: []
+  },
 ];
 // --------------------
 
@@ -41,7 +55,7 @@ async function updateUserQuests() {
     // 更新指定用戶的當前任務列表
     const result = await collection.updateOne(
       { _id: userObjectId },
-      { $set: { currentQuests: newQuestIds } }
+      { $set: { missions: newMissions } }
     );
 
     if (result.matchedCount === 0) {
