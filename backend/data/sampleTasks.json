@@ -1,0 +1,54 @@
+[
+  {
+    "taskName": "新手尋寶教學",
+    "taskDescription": "熟悉遊戲的基本操作，找到你的第一個寶藏！",
+    "taskDifficulty": "easy",
+    "taskTarget": "在15分鐘內，前往教學指定地點並打卡。",
+    "checkPlace": [
+      {
+        "spotId": "6879fdbc125a5443a1d4bade"
+      }
+    ],
+    "taskDuraion": 900,
+    "rewardItems": [
+      {
+        "itemId": "6879f3220cd4005e634e32b7",
+        "quantity": 3
+      }
+    ],
+    "rewardScore": 10,
+    "isLLM": false
+  },
+  {
+    "taskName": "史萊姆大掃除",
+    "taskDescription": "最近史萊姆有點多，幫忙清理一下吧。",
+    "taskDifficulty": "normal",
+    "taskTarget": "收集5個「普通的史萊姆黏液」。",
+    "checkPlace": [],
+    "taskDuraion": null,
+    "rewardItems": [
+      {
+        "itemId": "6879f3220cd4005e634e32c9",
+        "quantity": 1
+      }
+    ],
+    "rewardScore": 25,
+    "isLLM": false
+  },
+  {
+    "taskName": "失落的地圖",
+    "taskDescription": "一位神秘的NPC似乎遺失了他珍貴的地圖，你需要找到所有殘片並將其復原。",
+    "taskDifficulty": "hard",
+    "taskTarget": "收集3個「散落的地圖殘片」並合成為「寶藏圖」。",
+    "checkPlace": [],
+    "taskDuraion": 3600,
+    "rewardItems": [
+      {
+        "itemId": "6879f3220cd4005e634e32c5",
+        "quantity": 1
+      }
+    ],
+    "rewardScore": 100,
+    "isLLM": false
+  }
+]
