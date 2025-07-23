@@ -1,0 +1,35 @@
+{
+  "rankList": [
+    {
+      "userId": "user001",
+      "username": "Alice",
+      "score": 1500
+    },
+    {
+      "userId": "user002",
+      "username": "Bob",
+      "score": 1400
+    },
+    {
+      "userId": "user003",
+      "username": "Charlie",
+      "score": 1300
+    },
+    {
+      "userId": "user004",
+      "username": "Diana",
+      "score": 1200
+    },
+    {
+      "userId": "user005",
+      "username": "Evan",
+      "score": 1100
+    }
+  ],
+  "userRank": {
+    "rank": 6,
+    "userId": "user999",
+    "username": "You",
+    "score": 1000
+  }
+}

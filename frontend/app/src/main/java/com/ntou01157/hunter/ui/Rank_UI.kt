@@ -16,21 +16,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.ntou01157.hunter.R
-import com.ntou01157.hunter.models.*
-import com.ntou01157.hunter.mock.FakeUser
-
-data class User(
-    val rank: Int
-)
 
 @Composable
-fun RankingScreen(userRankings: List<User>, currentUser: User, navController: NavController) {
+fun RankingScreen(rankResponse: RankResponse, navController: NavController) {
+    val rankList = rankResponse.rankList
+    val currentUser = rankResponse.userRank
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF2E3E3))
     ) {
-        // 排行榜主體
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -38,13 +34,12 @@ fun RankingScreen(userRankings: List<User>, currentUser: User, navController: Na
                 .background(Color(0xFFDDDDDD), shape = RoundedCornerShape(12.dp))
                 .padding(12.dp)
         ) {
-            userRankings.forEachIndexed { index, user ->
-                RankingItem(rank = index + 1, user = user)
+            rankList.forEach {
+                RankingItem(rank = it.rank, user = it)
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }
 
-        // 左上首頁按鈕
         IconButton(
             onClick = { navController.navigate("main") },
             modifier = Modifier.padding(top = 25.dp, bottom = 4.dp)
@@ -56,13 +51,12 @@ fun RankingScreen(userRankings: List<User>, currentUser: User, navController: Na
             )
         }
 
-        // 最底部顯示自己的排名卡
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
                 .padding(8.dp),
-            shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
+            shape = RoundedCornerShape(0.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White)
         ) {
             RankingItem(user = currentUser, rankText = "(${currentUser.rank})")
@@ -71,7 +65,7 @@ fun RankingScreen(userRankings: List<User>, currentUser: User, navController: Na
 }
 
 @Composable
-fun RankingItem(rank: Int? = null, user: User, rankText: String = "") {
+fun RankingItem(rank: Int? = null, user: UserRankEntry, rankText: String = "") {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -79,7 +73,6 @@ fun RankingItem(rank: Int? = null, user: User, rankText: String = "") {
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 顯示排名數字
         if (rank != null) {
             Text(
                 text = "$rank",
@@ -89,7 +82,6 @@ fun RankingItem(rank: Int? = null, user: User, rankText: String = "") {
             )
         }
 
-        // 圓形頭像 Placeholder
         Box(
             modifier = Modifier
                 .size(48.dp)
@@ -99,15 +91,15 @@ fun RankingItem(rank: Int? = null, user: User, rankText: String = "") {
         Spacer(modifier = Modifier.width(12.dp))
 
         Column {
-            Text(text = FakeUser.displayName, fontSize = 18.sp)
-            Text(text = "積分：${FakeUser.score.toInt()}", fontSize = 14.sp)
+            Text(text = user.username, fontSize = 18.sp)
+            Text(text = "積分：${user.score}", fontSize = 14.sp)
         }
 
         Spacer(modifier = Modifier.weight(1f))
 
-        // 顯示自己的名次標籤
         if (rankText.isNotEmpty()) {
             Text(text = rankText, fontSize = 18.sp)
         }
     }
 }
+
