@@ -60,7 +60,7 @@ fun RankingScreen(rankResponse: RankResponse, navController: NavController) {
             shape = RoundedCornerShape(0.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White)
         ) {
-            RankingItem(user = currentUser, rankText = "(${currentUser.rank})")
+            RankingItem(user = currentUser, rankText = "${currentUser.rank}")
         }
     }
 }
