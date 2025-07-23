@@ -13,9 +13,13 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.ntou01157.hunter.models.Supply
+import com.ntou01157.hunter.models.User
+import com.ntou01157.hunter.isSupplyAvailable
+import com.ntou01157.hunter.formattedRemainingCooldown
+import com.google.firebase.Timestamp
 import kotlinx.coroutines.delay
 
-// Marker Composable
+// 補給站地圖上的圖標
 @SuppressLint("UnrememberedMutableState")
 @Composable
 fun SupplyMarker(
@@ -33,7 +37,7 @@ fun SupplyMarker(
     )
 }
 
-// Dialog Composable
+// 對話框
 @Composable
 fun SupplyDialog(
     supply: Supply,
@@ -42,21 +46,12 @@ fun SupplyDialog(
     isAvailable: Boolean,
     remainingTimeFormatted: () -> String
 ) {
-    var cooldownText by remember { mutableStateOf(remainingTimeFormatted()) }
-
-    LaunchedEffect(supply.supplyId) {
-        while (!isAvailable) {
-            cooldownText = remainingTimeFormatted()
-            delay(1000)
-        }
-    }
-
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {},
         title = {
             Box(modifier = Modifier.fillMaxWidth()) {
-                Text("補給站", modifier = Modifier.align(Alignment.Center))
+                Text("-補給站-", modifier = Modifier.align(Alignment.Center))
                 IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.TopEnd)) {
                     Icon(Icons.Default.Close, contentDescription = "關閉")
                 }
@@ -65,18 +60,56 @@ fun SupplyDialog(
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 if (isAvailable) {
-                    Text("點擊按鈕領取資源！", style = MaterialTheme.typography.bodyLarge)
+                    Text("點擊按鈕領取資源！")
                     Spacer(modifier = Modifier.height(10.dp))
-                    Button(onClick = {
-                        onCollect()
-                        onDismiss()
-                    }) {
+                    Button(onClick = onCollect) {
                         Text("領取資源")
                     }
                 } else {
-                    Text("還需等待 $cooldownText 才能再次領取資源。", style = MaterialTheme.typography.bodyLarge)
+                    Text("還需等待 ${remainingTimeFormatted()} 才能再次領取資源。")
                 }
             }
+        }
+    )
+}
+
+// 補給站冷卻時間更新
+fun Timestamp.plusSeconds(seconds: Long): Timestamp {
+    return Timestamp(this.seconds + seconds, this.nanoseconds)
+}
+
+fun collectSupply(user: User, supplyId: String) {
+    val cooldownSeconds = 15 * 60L
+    val nextClaim = Timestamp.now().plusSeconds(cooldownSeconds)
+    user.supplyScanLogs[supplyId] = nextClaim
+}
+
+@Composable
+fun SupplyHandlerDialog(
+    supply: Supply,
+    user: User,
+    onDismiss: () -> Unit
+) {
+    val nextClaimTime = user.supplyScanLogs[supply.supplyId]
+    var isAvailable by remember { mutableStateOf(isSupplyAvailable(nextClaimTime)) }
+    var cooldownText by remember { mutableStateOf(formattedRemainingCooldown(nextClaimTime)) }
+
+    LaunchedEffect(nextClaimTime) {
+        while (!isAvailable) {
+            cooldownText = formattedRemainingCooldown(user.supplyScanLogs[supply.supplyId])
+            isAvailable = isSupplyAvailable(user.supplyScanLogs[supply.supplyId])
+            delay(1000)
+        }
+    }
+
+    SupplyDialog(
+        supply = supply,
+        isAvailable = isAvailable,
+        remainingTimeFormatted = { cooldownText },
+        onDismiss = onDismiss,
+        onCollect = {
+            collectSupply(user, supply.supplyId)
+            onDismiss()
         }
     )
 }

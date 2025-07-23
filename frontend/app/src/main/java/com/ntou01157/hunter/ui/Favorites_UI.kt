@@ -16,6 +16,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.ntou01157.hunter.R
 import com.ntou01157.hunter.models.*
+import com.ntou01157.hunter.models.User
 
 @Composable
 fun FavoritesScreen(
@@ -80,7 +81,7 @@ fun FavoritesScreen(
                             if (index < items.size) {
                                 val landmark = items[index]
 
-                                val isUnlocked = user.spotsScanLogs[landmark.spotId]?.isCheck == true
+                                val isUnlocked = user.spotsScanLogs[landmark.spotId] == true
 
                                 Box(
                                     modifier = Modifier
@@ -153,57 +154,4 @@ fun FavoritesScreen(
             text = { Text("此地標尚未解鎖，請先前往現場打卡！") }
         )
     }
-}
-
-@Preview(showBackground = true, widthDp = 400, heightDp = 800,
-    device = "spec:width=411dp,height=891dp"
-)
-@Composable
-fun FavoritesScreenPreview() {
-    val mockUser = User(
-        uid = "123",
-        displayName = "測試使用者",
-        email = "test@example.com",
-        age = "20",
-        gender = "男",
-        photoURL = "",
-        role = "player",
-        score = 0.0,
-        backpackItems = emptyList(),
-        missions = emptyList(),
-        spotsScanLogs = mapOf(
-            "1" to SpotScanLogs("1", false),
-            "2" to SpotScanLogs("2", true),
-            "3" to SpotScanLogs("3", false),
-            "4" to SpotScanLogs("4", false)
-        ),
-        supplyScanLogs = emptyMap(),
-        settings = Settings(
-            music = true,
-            notification = true,
-            language = "zh-TW"
-        ),
-        buff = emptyMap()
-    )
-
-    val mockPages = listOf(
-        listOf(
-            Spot("1", "地標A", "", 0.0,0.0),
-            Spot("2", "寰宇之書", "",0.0,0.0),
-            Spot("3", "地標C", "", 0.0,0.0),
-            Spot("4", "地標D", "", 0.0,0.0)
-        )
-    )
-    FavoritesScreen(
-        navController = rememberNavController(),
-        user = mockUser,
-        pages = mockPages,
-        pageIndex = 0,
-        onPageChange = {},
-        onSpotClicked = {},
-        selectedSpot = null,
-        onDismissSpotDialog = {},
-        showLockedDialog = false,
-        onDismissLockedDialog = {}
-    )
 }
