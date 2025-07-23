@@ -30,6 +30,8 @@ import com.ntou01157.hunter.mock.FakeUser
 import com.ntou01157.hunter.models.User
 import com.ntou01157.hunter.ui.*
 import com.ntou01157.hunter.models.*
+import com.ntou01157.hunter.models.SupplyRepository
+
 
 class Main : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -78,24 +80,7 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
         longitude = 121.778352
     )
     //補給站
-    val supplyStations = remember {
-        listOf(
-            Supply(
-                supplyId = "station1",
-                name = "補給站 1",
-                latitude = 25.149034,
-                longitude = 121.779087
-            ),
-            Supply(
-                supplyId = "station2",
-                name = "補給站 2",
-                latitude = 25.149836,
-                longitude = 121.779452
-            )
-        )
-    }
-
-    //紀錄當前點擊的補給站
+    val supplyStations = remember { SupplyRepository.supplyStations }
     var selectedSupply by remember { mutableStateOf<Supply?>(null) }
     var showSupplyDialog by remember { mutableStateOf(false) }
     val user: User = FakeUser
@@ -147,36 +132,25 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                     //snippet = "Player"
                 )
             }
+            //顯示打卡點 Sopt_UI.kt
+            spotMarker(spot = missionLandmark)
+
             //顯示補給站
-            supplyStations.forEach { station ->
-                SupplyMarker(supply = Supply(
-                    supplyId = station.supplyId,
-                    name = station.name,
-                    latitude = station.latitude,
-                    longitude = station.longitude
-                ), onClick = {
+            supplyStations.forEach { supply ->
+                SupplyMarker(supply = supply, onClick = {
                     selectedSupply = it
                     showSupplyDialog = true
                 })
             }
-
-            //顯示打卡點 Sopt_UI.kt
-            spotMarker(spot = missionLandmark)
-
         }
         //補給站領取資源視窗
         if (showSupplyDialog && selectedSupply != null) {
-            SupplyDialog(
+            SupplyHandlerDialog(
                 supply = selectedSupply!!,
-                onDismiss = { showSupplyDialog = false },
-                onCollect = {
-                    showSupplyDialog = false
-                },
-                isAvailable = isSupplyAvailable(supplyLog),
-                remainingTimeFormatted = { formattedRemainingCooldown(supplyLog) }
+                user = user,
+                onDismiss = { showSupplyDialog = false }
             )
         }
-
         IconButton(
             onClick = { showDialog = true },
             modifier = Modifier
@@ -200,11 +174,15 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                         .width(280.dp) // ← 控制寬度
                         .wrapContentHeight()
                 ) {
-                    SettingDialog(user = FakeUser, onDismiss = { showDialog = false })
+                    SettingDialog(
+                        user = FakeUser,
+                        onDismiss = { showDialog = false },
+                        onNameChange = {newName -> },
+                        onLogout = {}
+                    )
                 }
             }
         }
-
 
         Column(
             modifier = Modifier.fillMaxSize(),
