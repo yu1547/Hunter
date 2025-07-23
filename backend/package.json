@@ -9,6 +9,7 @@
     "import-users": "node scripts/importUsers.js",
     "import-tasks": "node scripts/importTasks.js",
     "update-result-id": "node scripts/updateResultId.js",
+    "update-user-missions": "node scripts/updateUserMissions.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

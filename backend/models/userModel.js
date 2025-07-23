@@ -22,7 +22,7 @@ const userSchema = new Schema({
     },
     state: {
       type: String,
-      enum: ['available', 'in_progress', 'completed', 'claimed', 'declined'],
+      enum: ['available', 'in_progress', 'completed', 'claimed', 'declined', 'deleted'],
       required: true
     },
     acceptedAt: {
@@ -33,7 +33,7 @@ const userSchema = new Schema({
       type: Date,
       default: null
     },
-    declinedAt: {
+    refreshedAt: { // 拒絕任務後，可刷新的時間
       type: Date,
       default: null
     },
@@ -57,9 +57,9 @@ const userSchema = new Schema({
     type: Date,
     default: Date.now
   }
-});
+}, { collection: 'users' });
 
 // 明確指定集合名稱為 'users'
-const User = mongoose.model('User', userSchema, 'users');
+const User = mongoose.model('User', userSchema);
 
 module.exports = User;
