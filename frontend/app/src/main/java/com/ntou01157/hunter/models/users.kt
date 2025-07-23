@@ -16,10 +16,10 @@ data class User (
     val backpackItems: List<BackpackItem> = emptyList(),
     val missions: List<Mission> = emptyList(),
     val refreshAt: Timestamp = Timestamp.now(),
-    val spotsScanLogs: Map<String, SpotScanLogs> = emptyMap(),
-    val supplyScanLogs: Map<String, SupplyScanLog> = emptyMap(),
+    val spotsScanLogs: Map<String, Boolean> = emptyMap(),
+    val supplyScanLogs: MutableMap<String, Timestamp> = mutableMapOf(),
     val settings: Settings = Settings(language = "zh-TW"),
-    val buff: Map<String, Buff> = emptyMap(),
+    val buff: Map<String, Int> = emptyMap(),
 )
 
 data class BackpackItem(
@@ -35,11 +35,10 @@ data class Mission(
 )
 
 data class SpotScanLogs(
-    val spotId: String,
     val isCheck: Boolean = false
 )
 
-data class SupplyScanLog(
+data class SupplyScanLogs(
     val spotId: String,
     val nextClaimTime: Timestamp = Timestamp(946684800, 0) // 2000-01-01T00:00:00Z
 )
@@ -47,10 +46,9 @@ data class SupplyScanLog(
 data class Settings(
     val music: Boolean = false,
     val notification: Boolean = false,
-    val language: String // ="zh-TW"
+    val language: String
 )
 
 data class Buff(
-    val buffId: String,
     val isBuff: Int = 0
 )
