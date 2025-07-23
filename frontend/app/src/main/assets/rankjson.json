@@ -1,0 +1,41 @@
+{
+  "rankList": [
+    {
+      "userId": "user123",
+      "username": "PlayerOne",
+      "userImg": "",
+      "score": 950
+    },
+    {
+      "userId": "user456",
+      "username": "PlayerTwo",
+      "userImg": "",
+      "score": 870
+    },
+    {
+      "userId": "user789",
+      "username": "PlayerThree",
+      "userImg": "",
+      "score": 830
+    },
+    {
+      "userId": "user321",
+      "username": "PlayerFour",
+      "userImg": "",
+      "score": 800
+    },
+    {
+      "userId": "user999",
+      "username": "You",
+      "userImg": "",
+      "score": 720
+    }
+  ],
+  "userRank": {
+    "rank": 5,
+    "userId": "user999",
+    "username": "You",
+    "userImg": "",
+    "score": 720
+  }
+}
