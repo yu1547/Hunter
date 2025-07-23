@@ -16,15 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.ntou01157.hunter.R
-import com.ntou01157.hunter.mock.FakeUser
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.navigation.compose.rememberNavController
 import com.ntou01157.hunter.models.*
-
-data class User(
-    val rank: Int
-)
-
 
 @Composable
 fun RankingScreen(rankResponse: RankResponse, navController: NavController) {
@@ -51,7 +43,7 @@ fun RankingScreen(rankResponse: RankResponse, navController: NavController) {
 
         IconButton(
             onClick = { navController.navigate("main") },
-            modifier = Modifier.padding(top = 18.dp, bottom = 4.dp)
+            modifier = Modifier.padding(top = 25.dp, bottom = 4.dp)
         ) {
             Image(
                 painter = painterResource(id = R.drawable.ic_home),
@@ -111,18 +103,3 @@ fun RankingItem(rank: Int? = null, user: UserRanking, rankText: String = "") {
         }
     }
 }
-
-@Preview(showBackground = true) //預覽
-@Composable
-fun RankingScreenPreview() {
-    val fakeUsers = List(10) { User(rank = it + 1) }
-    val myUser = User(rank = 28)
-    val navController = rememberNavController()
-
-    RankingScreen(
-        userRankings = fakeUsers,
-        currentUser = myUser,
-        navController = navController
-    )
-}
-
