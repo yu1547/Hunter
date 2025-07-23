@@ -15,9 +15,10 @@ object RankingRepository {
             val userObj = rankListJsonArray.getJSONObject(i)
             rankList.add(
                 UserRanking(
-                    rank = userObj.getInt("rank"),
+                    rank = i+1,
                     userId = userObj.getString("userId"),
                     username = userObj.getString("username"),
+                    userImg = userObj.getString("userImg"),
                     score = userObj.getInt("score")
                 )
             )
@@ -28,6 +29,7 @@ object RankingRepository {
             rank = userRankObj.getInt("rank"),
             userId = userRankObj.getString("userId"),
             username = userRankObj.getString("username"),
+            userImg = userRankObj.getString("userImg"),
             score = userRankObj.getInt("score")
         )
 

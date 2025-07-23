@@ -9,5 +9,6 @@ data class UserRanking(
     val rank: Int,
     val userId: String,
     val username: String,
+    val userImg: String,
     val score: Int
 )
