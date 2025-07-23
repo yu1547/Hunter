@@ -1,0 +1,40 @@
+{
+  "rankList": [
+    {
+      "rank": 1,
+      "userId": "user123",
+      "username": "PlayerOne",
+      "score": 950
+    },
+    {
+      "rank": 2,
+      "userId": "user456",
+      "username": "PlayerTwo",
+      "score": 870
+    },
+    {
+      "rank": 3,
+      "userId": "user789",
+      "username": "PlayerThree",
+      "score": 830
+    },
+    {
+      "rank": 4,
+      "userId": "user321",
+      "username": "PlayerFour",
+      "score": 800
+    },
+    {
+      "rank": 5,
+      "userId": "user999",
+      "username": "You",
+      "score": 720
+    }
+  ],
+  "userRank": {
+    "rank": 5,
+    "userId": "user999",
+    "username": "You",
+    "score": 720
+  }
+}
