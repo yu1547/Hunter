@@ -50,7 +50,8 @@ class Main : ComponentActivity() {
                     FavoritesScreen(navController)
                 }
                 composable("ranking") {
-                    RankingScreen(navController)
+                    val rankResponse = RankingRepository.parseRankingJson(rank)
+                    RankingScreen(rankResponse = rankResponse, navController = navController)
                 }
                 composable("tasklist") {
                     TaskListScreen(navController)
