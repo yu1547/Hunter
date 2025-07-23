@@ -25,7 +25,7 @@ fun getTestUser(): User {
             )
         ),
         spotsScanLogs = emptyMap(),
-        supplyScanLogs = emptyMap(),
+        supplyScanLogs = mutableMapOf(),
         settings = Settings(
             music = true,
             notification = true,

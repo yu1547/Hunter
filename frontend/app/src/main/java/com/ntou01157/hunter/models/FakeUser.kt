@@ -16,7 +16,7 @@ val FakeUser = User(
         BackpackItem(itemId = "1", quantity = 2),
         BackpackItem(itemId = "3", quantity = 5)
     ) ,
-    supplyScanLogs = mapOf(
+    supplyScanLogs = mutableMapOf(
         "station1" to Timestamp.now(),
         "station2" to Timestamp.now()
     ),

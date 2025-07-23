@@ -14,14 +14,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.input.TextFieldValue
 import com.ntou01157.hunter.models.User
 import com.ntou01157.hunter.mock.FakeUser
+import androidx.compose.material.icons.filled.Edit
 
 @Composable
-fun SettingDialog(user: User, onDismiss: () -> Unit) {
+fun SettingDialog(
+    user: User,
+    onDismiss: () -> Unit,
+    onNameChange: (String) -> Unit,
+    onLogout: () -> Unit
+) {
     var musicEnabled by remember { mutableStateOf(user.settings.music) }
     var notificationsEnabled by remember { mutableStateOf(user.settings.notification) }
     var selectedLanguage by remember { mutableStateOf(user.settings.language) }
+
+    var isEditingName by remember { mutableStateOf(false) }
+    var nameText by remember { mutableStateOf(user.displayName) }
 
     Surface(
         modifier = Modifier
@@ -44,6 +54,29 @@ fun SettingDialog(user: User, onDismiss: () -> Unit) {
                 }
             }
 
+            Column {
+                Text("名稱", style = MaterialTheme.typography.titleMedium)
+                OutlinedTextField(
+                    value = nameText,
+                    onValueChange = { if (isEditingName) nameText = it },
+                    enabled = isEditingName,
+                    modifier = Modifier.fillMaxWidth(),
+                    trailingIcon = {
+                        IconButton(onClick = {
+                            if (isEditingName) {
+                                onNameChange(nameText.trim())
+                            }
+                            isEditingName = !isEditingName
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = if (isEditingName) "確定修改" else "編輯名稱"
+                            )
+                        }
+                    }
+                )
+            }
+
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -64,6 +97,16 @@ fun SettingDialog(user: User, onDismiss: () -> Unit) {
 
             Text("語言", style = MaterialTheme.typography.titleMedium)
             LanguageDropdown(selected = selectedLanguage, onSelect = { selectedLanguage = it })
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Button(
+                onClick = onLogout,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE57373)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("登出", color = Color.White)
+            }
         }
     }
 }
