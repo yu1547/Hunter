@@ -27,14 +27,6 @@ async function importData() {
     const rawData = fs.readFileSync(dataFilePath);
     let users = JSON.parse(rawData);
     
-    // 轉換 MongoDB 的 ObjectId 字串為實際的 ObjectId 物件 (如果需要)
-    users = users.map(user => {
-      // 如果 user 有包含 ObjectId 格式的字段，在這裡處理
-      if (user._id && user._id.$oid) {
-        user._id = new ObjectId(user._id.$oid);
-      }
-      return user;
-    });
 
     // 清空集合
     await collection.deleteMany({});
