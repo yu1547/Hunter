@@ -4,6 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,6 +29,15 @@ import com.google.maps.android.compose.*
 import com.ntou01157.hunter.mock.FakeUser
 import com.ntou01157.hunter.models.*
 import com.ntou01157.hunter.models.SupplyRepository
+import com.ntou01157.hunter.models.User
+import com.ntou01157.hunter.temp.RankingRepository
+import com.ntou01157.hunter.ui.*
+import com.ntou01157.hunter.models.*
+import com.ntou01157.hunter.ui.*
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Close
 
 
 class Main : ComponentActivity() {
@@ -38,6 +50,7 @@ class Main : ComponentActivity() {
                 context.assets.open("rankjson.json").bufferedReader().use { it.readText() }
             }
             val rankResponse = remember { RankingRepository.parseRankingJson(jsonString) }
+
             NavHost(navController = navController, startDestination = "login") {
                 composable("login") {
                     LoginScreen(navController)
@@ -129,7 +142,7 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                 SupplyMarker(supply = supply, onClick = {
                     selectedSupply = it
                     showSupplyDialog = true
-                }
+                })
             }
         }
 
@@ -151,7 +164,6 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             Dialog(onDismissRequest = { showDialog = false }) {
                 Surface(
                     shape = RoundedCornerShape(24.dp),
-                    color = Color(0xFFF6EDF7), // 淺粉紫背景，可自改
                     color = Color(0xFFF6EDF7),
                     tonalElevation = 4.dp,
                     modifier = Modifier.width(280.dp).wrapContentHeight()
@@ -175,8 +187,6 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             Button(
                 onClick = { navController.navigate("bag") },
                 colors = buttonColors,
-                    .size(width = 120.dp, height = 120.dp)
-                    .padding(bottom = 60.dp)
                 modifier = Modifier.align(Alignment.CenterHorizontally).size(120.dp).padding(bottom = 60.dp)
             ) {
                 Text("背包", fontSize = 20.sp)
@@ -184,12 +194,10 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
         }
 
         Column(
-                .align(Alignment.CenterEnd)
             modifier = Modifier.align(Alignment.CenterEnd).padding(end = 10.dp, bottom = 320.dp),
             verticalArrangement = Arrangement.spacedBy(30.dp),
             horizontalAlignment = Alignment.End
         ) {
-                colors = buttonColors
             Button(onClick = { navController.navigate("favorites") }, colors = buttonColors) {
                 Text("收藏冊")
             }
