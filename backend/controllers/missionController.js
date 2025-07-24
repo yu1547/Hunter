@@ -58,86 +58,6 @@ const declineTask = async (req, res) => {
   }
 };
 
-// 輔助函數：刷新用戶任務
-const _refreshUserMissions = async (user) => {
-  const now = new Date();
-  let needsRefresh = false;
-
-  // 檢查 declined 任務是否已到刷新時間
-  user.missions.forEach(mission => {
-    if (mission.state === 'declined' && mission.refreshedAt && now > mission.refreshedAt) {
-      mission.state = 'claimed'; // 標記為可替換
-      needsRefresh = true;
-    }
-    // 如果任務本身就是 claimed 狀態，也需要刷新
-    if (mission.state === 'claimed') {
-      needsRefresh = true;
-    }
-  });
-
-  // 確保用戶始終有5個任務
-  const missionsToFill = 5 - user.missions.length;
-  if (missionsToFill > 0) {
-    needsRefresh = true;
-  }
-
-  if (!needsRefresh) {
-    return user; // 不需要刷新，直接返回
-  }
-
-  // 找出所有需要被替換的任務索引
-  const replaceableIndices = user.missions
-    .map((mission, index) => (mission.state === 'claimed' ? index : -1))
-    .filter(index => index !== -1);
-  
-  const numToReplace = replaceableIndices.length;
-  const numToAddNew = 5 - user.missions.length;
-  const totalNewTasksNeeded = numToReplace + Math.max(0, numToAddNew);
-
-  if (totalNewTasksNeeded > 0) {
-    // 找出用戶當前所有任務ID，避免分配重複任務
-    const currentUserTaskIds = user.missions.map(m => m.taskId.toString());
-
-    // 從資料庫獲取新的、不重複的任務
-    const newTasks = await Task.find({
-      _id: { $nin: currentUserTaskIds }
-    }).limit(totalNewTasksNeeded);
-
-    if (newTasks.length > 0) {
-      let newTaskIndex = 0;
-
-      // 替換 'claimed' 狀態的任務
-      replaceableIndices.forEach(index => {
-        if (newTaskIndex < newTasks.length) {
-          const newTask = newTasks[newTaskIndex++];
-          user.missions[index] = {
-            taskId: newTask._id.toString(),
-            state: 'available',
-            acceptedAt: null,
-            expiresAt: null,
-            refreshedAt: null,
-            checkPlaces: []
-          };
-        }
-      });
-
-      // 填充任務直到滿5個
-      while (user.missions.length < 5 && newTaskIndex < newTasks.length) {
-        const newTask = newTasks[newTaskIndex++];
-        user.missions.push({
-          taskId: newTask._id.toString(),
-          state: 'available',
-          acceptedAt: null,
-          expiresAt: null,
-          refreshedAt: null,
-          checkPlaces: []
-        });
-      }
-    }
-  }
-  return user;
-};
-
 // 完成任務 (由其他遊戲邏輯觸發，例如打卡成功)
 const completeTask = async (req, res) => {
   const { userId, taskId } = req.params;
@@ -202,12 +122,9 @@ const claimReward = async (req, res) => {
 
     mission.state = 'claimed';
     
-    // 領取獎勵後刷新任務
-    let refreshedUser = await _refreshUserMissions(user);
-    
-    await refreshedUser.save();
+    await user.save();
 
-    res.status(200).json({ user: refreshedUser, message: isOvertime ? "任務超時，已領取道具獎勵，但無積分獎勵" : "獎勵已領取" });
+    res.status(200).json({ user, message: isOvertime ? "任務超時，已領取道具獎勵，但無積分獎勵" : "獎勵已領取" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -220,7 +137,79 @@ const refreshMissions = async (req, res) => {
     let user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: '找不到用戶' });
 
-    user = await _refreshUserMissions(user);
+    const now = new Date();
+    let needsRefresh = false;
+
+    // 檢查 declined 任務是否已到刷新時間
+    user.missions.forEach(mission => {
+      if (mission.state === 'declined' && mission.refreshedAt && now > mission.refreshedAt) {
+        mission.state = 'claimed'; // 標記為可替換
+        needsRefresh = true;
+      }
+      // 如果任務本身就是 claimed 狀態，也需要刷新
+      if (mission.state === 'claimed') {
+        needsRefresh = true;
+      }
+    });
+
+    // 確保用戶始終有5個任務
+    const missionsToFill = 5 - user.missions.length;
+    if (missionsToFill > 0) {
+      needsRefresh = true;
+    }
+
+    if (needsRefresh) {
+      // 找出所有需要被替換的任務索引
+      const replaceableIndices = user.missions
+        .map((mission, index) => (mission.state === 'claimed' ? index : -1))
+        .filter(index => index !== -1);
+      
+      const numToReplace = replaceableIndices.length;
+      const numToAddNew = 5 - user.missions.length;
+      const totalNewTasksNeeded = numToReplace + Math.max(0, numToAddNew);
+
+      if (totalNewTasksNeeded > 0) {
+        // 找出用戶當前所有任務ID，避免分配重複任務
+        const currentUserTaskIds = user.missions.map(m => m.taskId.toString());
+
+        // 從資料庫獲取新的、不重複的任務
+        const newTasks = await Task.find({
+          _id: { $nin: currentUserTaskIds }
+        }).limit(totalNewTasksNeeded);
+
+        if (newTasks.length > 0) {
+          let newTaskIndex = 0;
+
+          // 替換 'claimed' 狀態的任務
+          replaceableIndices.forEach(index => {
+            if (newTaskIndex < newTasks.length) {
+              const newTask = newTasks[newTaskIndex++];
+              user.missions[index] = {
+                taskId: newTask._id.toString(),
+                state: 'available',
+                acceptedAt: null,
+                expiresAt: null,
+                refreshedAt: null,
+                checkPlaces: []
+              };
+            }
+          });
+
+          // 填充任務直到滿5個
+          while (user.missions.length < 5 && newTaskIndex < newTasks.length) {
+            const newTask = newTasks[newTaskIndex++];
+            user.missions.push({
+              taskId: newTask._id.toString(),
+              state: 'available',
+              acceptedAt: null,
+              expiresAt: null,
+              refreshedAt: null,
+              checkPlaces: []
+            });
+          }
+        }
+      }
+    }
 
     await user.save();
     

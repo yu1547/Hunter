@@ -21,7 +21,9 @@ fun getTestUser(): User {
                 taskId = "1",
                 state = "available",
                 acceptedAt = Timestamp.now(),
-                expireAt = Timestamp.now()
+                expiresAt = Timestamp.now(),
+                refreshedAt = Timestamp.now(),
+                checkPlaces = emptyList()
             )
         ),
         spotsScanLogs = emptyMap(),

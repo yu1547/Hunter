@@ -1,7 +1,9 @@
 package com.ntou01157.hunter.api
 
+import com.google.gson.annotations.SerializedName
 import com.ntou01157.hunter.model.model_api.Item
 import com.ntou01157.hunter.model.model_api.User
+import com.ntou01157.hunter.model.model_api.Task
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -21,10 +23,36 @@ interface ApiService {
 
     @POST("api/users/{id}/craft")
     suspend fun craftItem(@Path("id") id: String, @Body body: CraftRequestBody): User
+
+    // --- Task endpoints ---
+    @GET("api/tasks/{id}")
+    suspend fun getTask(@Path("id") id: String): Task
+
+    // --- Mission endpoints ---
+    @POST("api/users/{userId}/missions/refresh")
+    suspend fun refreshMissions(@Path("userId") userId: String): User
+
+    @POST("api/users/{userId}/missions/{taskId}/accept")
+    suspend fun acceptTask(@Path("userId") userId: String, @Path("taskId") taskId: String): User
+
+    @POST("api/users/{userId}/missions/{taskId}/decline")
+    suspend fun declineTask(@Path("userId") userId: String, @Path("taskId") taskId: String): User
+
+    @POST("api/users/{userId}/missions/{taskId}/complete")
+    suspend fun completeTask(@Path("userId") userId: String, @Path("taskId") taskId: String): User
+
+    @POST("api/users/{userId}/missions/{taskId}/claim")
+    suspend fun claimReward(@Path("userId") userId: String, @Path("taskId") taskId: String): UserResponse
 }
 
 // 請求 Body 的資料類別
 data class CraftRequestBody(val itemId: String)
+
+// 處理後端回傳 { user, message } 格式的資料類別
+data class UserResponse(
+    @SerializedName("user") val user: User,
+    @SerializedName("message") val message: String?
+)
 
 // 創建 Retrofit 實例
 object RetrofitClient {

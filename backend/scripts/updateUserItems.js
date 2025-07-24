@@ -7,13 +7,13 @@ const { getMongoClient } = require('../config/db');
 
 // --- 請在此處設定 ---
 // 要更新的用戶 ID (請替換為實際的用戶 _id 字串)
-const userIdToUpdate = '6879fdbc125a5443a1d4bade'; 
+const userIdToUpdate = '6880f31469ff254ed2fb0cc1'; 
 
 // 新的道具列表 (請根據您的 item schema 修改)
 // 這裡假設 item 的 ID 也是 ObjectId
 const newItems = [
-  { "itemId": new ObjectId("6879f3220cd4005e634e32b7"), "quantity": 10 },
-  { "itemId": new ObjectId("6879f3220cd4005e634e32bd"), "quantity": 5 },
+  { "itemId": new ObjectId("6880f3f7d80b975b33f23e2e"), "quantity": 10 },
+  { "itemId": new ObjectId("6880f3f7d80b975b33f23e2f"), "quantity": 5 },
 ];
 // --------------------
 
