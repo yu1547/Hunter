@@ -59,7 +59,7 @@ class Main : ComponentActivity() {
                     MainScreen(navController)
                 }
                 composable("bag") {
-                    BagScreen(navController = navController, userId = "6879fdbc125a5443a1d4bade")
+                    BagScreen(navController = navController, userId = "6880f31469ff254ed2fb0cc1")
                 }
                 composable("favorites") {
                     FavoritesScreen(navController)

@@ -30,8 +30,15 @@ data class BackpackItem(
 data class Mission(
     val taskId: String,
     val state: String,
-    val acceptedAt: Timestamp = Timestamp.now(),
-    val expireAt: Timestamp = Timestamp.now()
+    val acceptedAt: Timestamp?,
+    val expiresAt: Timestamp?,
+    val refreshedAt: Timestamp?,
+    val checkPlaces: List<CheckPlace> = emptyList()
+)
+
+data class CheckPlace(
+    val spotId: String,
+    val isCheck: Boolean
 )
 
 data class SpotScanLogs(
