@@ -38,14 +38,15 @@ class BagActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
             NavHost(navController = navController, startDestination = "bag") {
-                composable("bag") { BagScreen(navController, "6880f31469ff254ed2fb0cc1") }
+                composable("bag") { BagScreen(navController) }
             }
         }
     }
 }
 
 @Composable
-fun BagScreen(navController: NavHostController, userId: String) {
+fun BagScreen(navController: NavHostController) {
+    val userId = "6880f31469ff254ed2fb0cc1"
     // 初始化物品列表(從API取得)
     val coroutineScope = rememberCoroutineScope()
     val allItems = remember { mutableStateListOf<UserItem>() }
