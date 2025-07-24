@@ -1,11 +1,6 @@
 // TaskData.kt
 package com.ntou01157.hunter
 
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import com.ntou01157.hunter.models.Task
-
-
 // 時間格式轉換
 fun formatMillis(millis: Long): String {
     val hours = millis / 3600000

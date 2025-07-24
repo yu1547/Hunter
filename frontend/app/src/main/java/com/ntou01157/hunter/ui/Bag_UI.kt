@@ -38,7 +38,7 @@ class BagActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
             NavHost(navController = navController, startDestination = "bag") {
-                composable("bag") { BagScreen(navController, "6879fdbc125a5443a1d4bade") }
+                composable("bag") { BagScreen(navController, "6880f31469ff254ed2fb0cc1") }
             }
         }
     }
