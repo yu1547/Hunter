@@ -7,13 +7,13 @@ const { getMongoClient } = require('../config/db');
 
 // --- 請在此處設定 ---
 // 要更新的用戶 ID
-const userIdToUpdate = '6880cca75d87b7a375ad3277'; 
+const userIdToUpdate = '6880f31469ff254ed2fb0cc1'; 
 
 // 新的任務列表
 // 根據 userModel.js 的 missions schema 結構來建立
 const newMissions = [
   {
-    taskId: new ObjectId("688085695aa0d66ff4d2077b").toString(),
+    taskId: new ObjectId("6880f402d811af7d01d9ec1f").toString(),
     state: 'available',
     acceptedAt: null,
     expiresAt: null,
@@ -21,7 +21,7 @@ const newMissions = [
     checkPlaces: [] // 根據需要添加 checkPlaces
   },
   {
-    taskId: new ObjectId("688085695aa0d66ff4d2077c").toString(),
+    taskId: new ObjectId("6880f402d811af7d01d9ec20").toString(),
     state: 'claimed',
     acceptedAt: null,
     expiresAt: null,
