@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const User = require('../models/userModel'); 
+const User = require('../models/userModel');
 
 // 取得設定
 const getSettings = async (req, res) => {
