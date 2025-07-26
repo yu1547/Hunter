@@ -1,0 +1,29 @@
+{
+  "rankList": [
+    {
+      "userId": "user123",
+      "username": "玩家1",
+      "userImg": "",
+      "score": 950
+    },
+    {
+      "userId": "user456",
+      "username": "玩家2",
+      "userImg": "",
+      "score": 800
+    },
+    {
+      "userId": "user789",
+      "username": "玩家3",
+      "userImg": "",
+      "score": 830
+    }
+  ],
+  "userRank": {
+    "rank": 5,
+    "userId": "user999",
+    "username": "You",
+    "userImg": "",
+    "score": 720
+  }
+}
