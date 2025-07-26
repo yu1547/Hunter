@@ -30,14 +30,33 @@ import com.ntou01157.hunter.mock.FakeUser
 import com.ntou01157.hunter.models.*
 import com.ntou01157.hunter.models.SupplyRepository
 import com.ntou01157.hunter.models.User
-import com.ntou01157.hunter.temp.RankingRepository
-import com.ntou01157.hunter.ui.*
-import com.ntou01157.hunter.models.*
+//import com.ntou01157.hunter.temp.RankingRepository
 import com.ntou01157.hunter.ui.*
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Close
+
+//import com.ntou01157.hunter.temp.RankingRepository // 已移除，確認註解或刪除
+import com.ntou01157.hunter.ui.*
+//import java.io.BufferedReader // 不再需要讀取本地文件，確認註解或刪除
+//import java.io.InputStreamReader // 不再需要讀取本地文件，確認註解或刪除
+import androidx.compose.material.icons.filled.Close
+// import com.ntou01157.hunter.api.ApiService.kt // <-- 這個導入是錯誤的，應為 RetrofitClient
+import com.ntou01157.hunter.api.RetrofitClient // <-- 確保導入 RetrofitClient
+import com.ntou01157.hunter.data.RankRepository // <-- 導入我們自己的 RankRepository
+
+class MainApplication : android.app.Application() {
+
+    // 聲明為 lateinit var，因為它會在 onCreate 中初始化
+    lateinit var rankRepository: RankRepository
+
+    override fun onCreate() {
+        super.onCreate()
+        // 在這裡初始化 RankRepository，使用 RetrofitClient 提供的 rankApiService
+        rankRepository = RankRepository(RetrofitClient.rankApiService)
+    }
+}
+
 
 
 class Main : ComponentActivity() {
@@ -46,10 +65,11 @@ class Main : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
             val context = LocalContext.current
-            val jsonString = remember {
-                context.assets.open("rankjson.json").bufferedReader().use { it.readText() }
-            }
-            val rankResponse = remember { RankingRepository.parseRankingJson(jsonString) }
+//            val jsonString = remember {
+//                context.assets.open("rankjson.json").bufferedReader().use { it.readText() }
+//            }
+//            val rankResponse = remember { RankingRepository.parseRankingJson(jsonString) }
+//            val rankRepository = (context.applicationContext as MainApplication).rankRepository
 
             NavHost(navController = navController, startDestination = "login") {
                 composable("login") {
@@ -65,7 +85,7 @@ class Main : ComponentActivity() {
                     FavoritesScreen(navController)
                 }
                 composable("ranking") {
-                    RankingScreen(rankResponse = rankResponse, navController = navController)
+                    RankingScreen(navController = navController)
                 }
                 composable("tasklist") {
                     TaskListScreen(navController)
