@@ -26,12 +26,47 @@ fun SettingDialog(
     onNameChange: (String) -> Unit,
     onLogout: () -> Unit
 ) {
-    var musicEnabled by remember { mutableStateOf(user.settings.music) }
-    var notificationsEnabled by remember { mutableStateOf(user.settings.notification) }
-    var selectedLanguage by remember { mutableStateOf(user.settings.language) }
+    var musicEnabled by remember { mutableStateOf(false) }
+    var notificationsEnabled by remember { mutableStateOf(false) }
+    var selectedLanguage by remember { mutableStateOf("zh-TW") }
 
     var isEditingName by remember { mutableStateOf(false) }
     var nameText by remember { mutableStateOf(user.displayName) }
+
+    // 🔄 開啟畫面時從後端載入使用者設定
+    LaunchedEffect(user._id) {
+        ApiClient.settingsApi.getSettings(user._id).enqueue(object : Callback<UserSettings> {
+            override fun onResponse(call: Call<UserSettings>, response: Response<UserSettings>) {
+                response.body()?.let {
+                    musicEnabled = it.music
+                    notificationsEnabled = it.notification
+                    selectedLanguage = it.language
+                }
+            }
+
+            override fun onFailure(call: Call<UserSettings>, t: Throwable) {
+                Log.e("SettingDialog", "取得設定失敗：${t.message}")
+            }
+        })
+    }
+
+    // 🔄 寫入後端
+    fun updateSettings() {
+        val settings = UserSettings(
+            music = musicEnabled,
+            notification = notificationsEnabled,
+            language = selectedLanguage
+        )
+        ApiClient.settingsApi.updateSettings(user._id, settings).enqueue(object : Callback<UserSettings> {
+            override fun onResponse(call: Call<UserSettings>, response: Response<UserSettings>) {
+                Log.d("SettingDialog", "設定已更新")
+            }
+
+            override fun onFailure(call: Call<UserSettings>, t: Throwable) {
+                Log.e("SettingDialog", "更新失敗：${t.message}")
+            }
+        })
+    }
 
     Surface(
         modifier = Modifier
@@ -83,7 +118,10 @@ fun SettingDialog(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("聲音", style = MaterialTheme.typography.titleMedium)
-                CustomSwitch(isOn = musicEnabled, onToggle = { musicEnabled = it })
+                CustomSwitch(isOn = musicEnabled, onToggle = {
+                    musicEnabled = it
+                    updateSettings()
+                })
             }
 
             Row(
@@ -92,11 +130,17 @@ fun SettingDialog(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("通知", style = MaterialTheme.typography.titleMedium)
-                CustomSwitch(isOn = notificationsEnabled, onToggle = { notificationsEnabled = it })
+                CustomSwitch(isOn = notificationsEnabled, onToggle = {
+                    notificationsEnabled = it
+                    updateSettings()
+                })
             }
 
             Text("語言", style = MaterialTheme.typography.titleMedium)
-            LanguageDropdown(selected = selectedLanguage, onSelect = { selectedLanguage = it })
+            LanguageDropdown(selected = selectedLanguage, onSelect = {
+                selectedLanguage = it
+                updateSettings()
+            })
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -110,6 +154,7 @@ fun SettingDialog(
         }
     }
 }
+
 
 @Composable
 fun CustomSwitch(isOn: Boolean, onToggle: (Boolean) -> Unit) {
@@ -164,5 +209,4 @@ fun LanguageDropdown(selected: String, onSelect: (String) -> Unit) {
         }
     }
 }
-
 

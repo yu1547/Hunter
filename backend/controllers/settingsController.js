@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const User = require('../models/User'); // 根據你的 userSchema 所在位置調整路徑
+const User = require('../models/userModel'); 
 
 // 取得設定
 const getSettings = async (req, res) => {
