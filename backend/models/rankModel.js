@@ -2,10 +2,7 @@
 
 const mongoose = require('mongoose');
 
-// 這個 Schema 定義了排行榜中每個條目的結構
-// 它不會被直接用於創建一個 MongoDB Collection
-// 而是作為一種數據格式的約定，供控制器在查詢 User 數據後進行轉換
-const rankItemSchema = mongoose.Schema({
+const rankSchema = mongoose.Schema({
       userId: {
         type: String,
         required: true,
@@ -26,4 +23,4 @@ const rankItemSchema = mongoose.Schema({
     }
 );
 
-module.exports = mongoose.model('RankItem', rankItemSchema);
+module.exports = mongoose.model('Rank', rankSchema,'ranks');

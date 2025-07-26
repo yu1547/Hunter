@@ -7,7 +7,7 @@ const { getMongoClient } = require('../config/db'); // 引入您的 MongoDB 連�
 // 資料庫名稱
 const dbName = 'Hunter';
 // 集合名稱 (User 模型對應的集合通常是 'users')
-const collectionName = 'users';
+const collectionName = 'ranks';
 // JSON 資料檔案路徑 (假設 sampleRanks.json 放在 data 目錄下)
 const dataFilePath = path.join(__dirname, '../data/sampleRanks.json'); // 確保路徑正確
 
@@ -61,6 +61,7 @@ async function importRankData() {
       }
 
       const userDataToSet = {
+        userId:rankUser.userId,
         username: rankUser.username || rankUser.userId || `玩家_${identifier}`,
         userImg: rankUser.userImg || null,
         score: rankUser.score,

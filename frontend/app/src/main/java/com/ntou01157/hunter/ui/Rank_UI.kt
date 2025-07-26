@@ -19,6 +19,7 @@ import com.ntou01157.hunter.R
 import com.ntou01157.hunter.models.*
 
 import androidx.compose.runtime.* // 導入必要的 compose runtime 函式
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext // 新增 LocalContext 導入
 import androidx.lifecycle.viewmodel.compose.viewModel // 導入 ViewModel 相關函式
 import com.ntou01157.hunter.MainApplication // 導入您的 Application 類
@@ -26,15 +27,16 @@ import com.ntou01157.hunter.utils.NetworkResult // 導入 NetworkResult
 import com.ntou01157.hunter.models.model_api.RankItem // 確保導入正確的 RankItem
 import com.ntou01157.hunter.models.model_api.UserRank
 
-fun convertRankItemToUserRanking(rankItem: RankItem): UserRanking {
-    return UserRanking(
-        rank = 0, // 這裡的 rank 會在 RankingScreen 中根據索引重新計算或由後端提供
-        userId = rankItem.userId,
-        username = rankItem.username,
-        userImg = rankItem.userImg ?: "", // 處理可能的 null
-        score = rankItem.score
-    )
-}
+//fun convertRankItemToUserRanking(rankItem: RankItem): UserRanking {
+//    return UserRanking(
+//        rank = 0, // 這裡的 rank 會在 RankingScreen 中根據索引重新計算或由後端提供
+//        userId = rankItem.userId,
+//        username = rankItem.username,
+//        userImg = rankItem.userImg ?: "", // 處理可能的 null
+//        score = rankItem.score
+//    )
+//}
+
 
 @Composable
 fun RankingScreen(navController: NavController) {
@@ -43,22 +45,16 @@ fun RankingScreen(navController: NavController) {
         factory = RankingViewModelFactory(application)
     )
 
-    // 觀察 ViewModel 中的 rankData 狀態
     val rankDataState by rankingViewModel.rankData.collectAsState()
-
-//    val rankList = rankResponse.rankList
-//    val currentUser = rankResponse.userRank
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF2E3E3))
-        )
-    {
+    ) {
         // 根據數據狀態顯示不同的 UI
         when (rankDataState) {
             is NetworkResult.Loading -> {
-                // 數據載入中，顯示進度指示器或載入訊息
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
@@ -82,50 +78,61 @@ fun RankingScreen(navController: NavController) {
                             .background(Color(0xFFDDDDDD), shape = RoundedCornerShape(12.dp))
                             .padding(12.dp)
                     ) {
+                        // 排行榜列表標題 (可選)
+                        Text(
+                            text = "頂級獵人排行榜",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF8B4513),
+                            modifier = Modifier.padding(bottom = 12.dp).align(Alignment.CenterHorizontally)
+                        )
+
                         // 檢查 rankList 是否為空
                         if (rankList.isNotEmpty()) {
+                            // 使用 LazyColumn 提高長列表性能
+                            // 如果排行榜項目不多，直接使用 Column 也可以
                             rankList.forEachIndexed { index, item ->
-                                // RankingItem 期望 UserRanking 類型，但這裡的 rankList 包含 RankItem
-                                // 需要將 RankItem 轉換為 UserRanking，或修改 RankingItem 參數類型
-                                // 這裡我假設 RankingItem 也能直接處理 RankItem 或進行轉換
-                                RankingItem(rank = index + 1, rankItem = item)
+                                // 直接傳遞 RankItem，並計算排名
+                                RankingListItem(rank = index + 1, rankItem = item)
                                 Spacer(modifier = Modifier.height(8.dp))
                             }
                         } else {
                             Text(
                                 text = "目前排行榜沒有數據。",
-                                modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 20.dp),
+                                modifier = Modifier
+                                    .align(Alignment.CenterHorizontally)
+                                    .padding(top = 20.dp),
                                 color = Color.Gray
                             )
                         }
                     }
 
                     // 顯示當前使用者排名 (如果存在)
-                    currentUser?.let {
+                    currentUser?.let { userRank ->
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .align(Alignment.BottomCenter)
-                                .padding(8.dp),
-                            shape = RoundedCornerShape(0.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White)
+                                .padding(horizontal = 8.dp, vertical = 4.dp), // 調整 padding
+                            shape = RoundedCornerShape(0.dp), // 底部卡片通常不需要圓角
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF0F5)) // 更顯眼的顏色
                         ) {
-                            // UserRanking 模型的 rank 屬性是 Int，這裡直接使用
-//                            RankingItem(user = it, rankText = "${it.rank}")
-                            RankingItem(userRank = it, rankText = "${it.rank}")
+                            // 使用另一個 Composable 或在 RankingListItem 中加一個標誌
+                            // 這裡我們假設 RankingUserItem 專用於顯示當前用戶排名
+                            RankingUserItem(userRank = userRank)
                         }
                     }
                 } else {
-                    // 數據為空，但狀態是成功（例如，後端返回空列表）
+                    // 數據為空，但狀態是成功（例如，後端返回空列表），這是一種特殊情況
                     Text(
                         text = "未找到排行榜數據。",
-                        modifier = Modifier.align(Alignment.Center)
+                        modifier = Modifier.align(Alignment.Center),
+                        color = Color.Gray
                     )
                 }
             }
             is NetworkResult.Error -> {
                 val errorMessage = (rankDataState as NetworkResult.Error).message
-                // 數據加載失敗，顯示錯誤訊息
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
@@ -133,7 +140,6 @@ fun RankingScreen(navController: NavController) {
                 ) {
                     Text("載入排行榜失敗: $errorMessage", color = Color.Red, fontSize = 18.sp)
                     Spacer(modifier = Modifier.height(16.dp))
-                    // 可以添加一個重試按鈕
                     Button(onClick = { rankingViewModel.fetchRankData() }) {
                         Text("重試")
                     }
@@ -144,7 +150,9 @@ fun RankingScreen(navController: NavController) {
         // 回首頁按鈕，位置保持不變
         IconButton(
             onClick = { navController.navigate("main") },
-            modifier = Modifier.padding(top = 25.dp, bottom = 4.dp)
+            modifier = Modifier
+                .align(Alignment.TopStart) // 固定在左上角
+                .padding(top = 25.dp, start = 16.dp)
         ) {
             Image(
                 painter = painterResource(id = R.drawable.ic_home),
@@ -153,63 +161,11 @@ fun RankingScreen(navController: NavController) {
             )
         }
     }
-//    {
-//        Column(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .padding(top = 64.dp, bottom = 96.dp, start = 16.dp, end = 16.dp)
-//                .background(Color(0xFFDDDDDD), shape = RoundedCornerShape(12.dp))
-//                .padding(12.dp)
-//        ) {
-//            rankList.forEach {
-//                RankingItem(rank = it.rank, user = it)
-//                Spacer(modifier = Modifier.height(8.dp))
-//            }
-//        }
-//
-//        IconButton(
-//            onClick = { navController.navigate("main") },
-//            modifier = Modifier.padding(top = 25.dp, bottom = 4.dp)
-//        ) {
-//            Image(
-//                painter = painterResource(id = R.drawable.ic_home),
-//                contentDescription = "回首頁",
-//                modifier = Modifier.size(40.dp)
-//            )
-//        }
-//
-//        Card(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .align(Alignment.BottomCenter)
-//                .padding(8.dp),
-//            shape = RoundedCornerShape(0.dp),
-//            colors = CardDefaults.cardColors(containerColor = Color.White)
-//        ) {
-//            RankingItem(user = currentUser, rankText = "${currentUser.rank}")
-//        }
-//    }
 }
 
-// 輔助函數：將 RankItem 轉換為 UserRanking
-// 您原有的 UserRanking 定義在 models/rank.kt 中，而 RankItem 在 models/model_api 中。
-// 這裡假設 RankItem 的結構可以與 UserRanking 兼容，或者您可以調整 UserRanking 的定義
-// 或者修改 RankingItem Composable，讓它直接接收 RankItem。
-// 為了不改動 RankingItem 的簽名，我們提供一個轉換函數
-
-
+// 用於排行榜列表項目的 Composable (只有排名和 RankItem 數據)
 @Composable
-fun RankingItem(
-    rank: Int? = null, // 用於排行榜列表項目的動態排名
-    rankItem: RankItem? = null, // 用於排行榜列表中的一般用戶
-    userRank: UserRank? = null, // 用於當前用戶的排名 (userRank)
-    rankText: String = "" // 如果 rankItem 或 userRank 中的 rank 需要特別顯示
-) {    // 根據傳入的參數決定顯示哪種數據
-    val userId = rankItem?.userId ?: userRank?.userId ?: ""
-    val username = rankItem?.username ?: userRank?.username ?: "未知用戶"
-    val userImg = rankItem?.userImg ?: userRank?.userImg
-    val score = rankItem?.score ?: userRank?.score ?: 0
-
+fun RankingListItem(rank: Int, rankItem: RankItem) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -217,32 +173,73 @@ fun RankingItem(
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (rank != null) {
-            Text(
-                text = "$rank",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.width(32.dp)
-            )
-        }
-
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .background(Color.LightGray, shape = CircleShape)
+        Text(
+            text = "$rank",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.width(32.dp),
+            color = Color(0xFF4B0082)
         )
 
         Spacer(modifier = Modifier.width(12.dp))
 
+        // *** START: 修改這裡的頭像顯示邏輯 ***
+        // 暫時用一個純色圓圈作為佔位符
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .background(Color.Gray, shape = CircleShape) // 使用灰色圓圈作為預設頭像
+        )
+        // *** END: 修改這裡的頭像顯示邏輯 ***
+
+        Spacer(modifier = Modifier.width(12.dp))
+
         Column {
-            Text(text = username, fontSize = 18.sp)
-            Text(text = "積分：$score", fontSize = 14.sp)
+            Text(text = rankItem.username, fontSize = 18.sp, fontWeight = FontWeight.Medium)
+            Text(text = "積分：${rankItem.score}", fontSize = 14.sp, color = Color.Gray)
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+    }
+}
+
+@Composable
+fun RankingUserItem(userRank: UserRank) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFFE0FFFF), RoundedCornerShape(12.dp))
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "${userRank.rank}",
+            fontSize = 26.sp,
+            fontWeight = FontWeight.Black,
+            color = Color(0xFFB22222),
+            modifier = Modifier.width(40.dp)
+        )
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        // *** START: 修改這裡的頭像顯示邏輯 ***
+        // 暫時用一個純色圓圈作為佔位符
+        Box(
+            modifier = Modifier
+                .size(56.dp) // 當前用戶頭像可以大一點
+                .background(Color.Gray, shape = CircleShape) // 使用灰色圓圈作為預設頭像
+        )
+        // *** END: 修改這裡的頭像顯示邏輯 ***
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column {
+            Text(text = userRank.username, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+            Text(text = "我的積分：${userRank.score}", fontSize = 16.sp, color = Color.DarkGray)
         }
 
         Spacer(modifier = Modifier.weight(1f))
 
-        if (rankText.isNotEmpty()) {
-            Text(text = rankText, fontSize = 18.sp)
-        }
+        Text(text = " (你)", fontSize = 16.sp, color = Color.Black, fontWeight = FontWeight.SemiBold)
     }
 }
