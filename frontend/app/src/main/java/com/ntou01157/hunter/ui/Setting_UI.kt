@@ -1,23 +1,24 @@
 package com.ntou01157.hunter.ui
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.text.input.TextFieldValue
 import com.ntou01157.hunter.models.User
-import com.ntou01157.hunter.mock.FakeUser
-import androidx.compose.material.icons.filled.Edit
+import com.ntou01157.hunter.model.model_api.UserSettings
+import com.ntou01157.hunter.data.SettingsRepository
+import kotlinx.coroutines.launch
 
 @Composable
 fun SettingDialog(
@@ -26,6 +27,7 @@ fun SettingDialog(
     onNameChange: (String) -> Unit,
     onLogout: () -> Unit
 ) {
+    val coroutineScope = rememberCoroutineScope()
     var musicEnabled by remember { mutableStateOf(false) }
     var notificationsEnabled by remember { mutableStateOf(false) }
     var selectedLanguage by remember { mutableStateOf("zh-TW") }
@@ -33,39 +35,43 @@ fun SettingDialog(
     var isEditingName by remember { mutableStateOf(false) }
     var nameText by remember { mutableStateOf(user.displayName) }
 
-    // 🔄 開啟畫面時從後端載入使用者設定
-    LaunchedEffect(user._id) {
-        ApiClient.settingsApi.getSettings(user._id).enqueue(object : Callback<UserSettings> {
-            override fun onResponse(call: Call<UserSettings>, response: Response<UserSettings>) {
-                response.body()?.let {
+    val userId = "6880f31469ff254ed2fb0cc1"
+
+    // ⏬ 初始化設定資料
+    LaunchedEffect(Unit) {
+        coroutineScope.launch {
+            try {
+                val settings = SettingsRepository.fetchSettings(userId)
+                settings?.let {
                     musicEnabled = it.music
                     notificationsEnabled = it.notification
                     selectedLanguage = it.language
                 }
+            } catch (e: Exception) {
+                Log.e("SettingDialog", "取得設定失敗：${e.message}")
             }
-
-            override fun onFailure(call: Call<UserSettings>, t: Throwable) {
-                Log.e("SettingDialog", "取得設定失敗：${t.message}")
-            }
-        })
+        }
     }
 
-    // 🔄 寫入後端
+    // ✅ 更新設定
     fun updateSettings() {
-        val settings = UserSettings(
-            music = musicEnabled,
-            notification = notificationsEnabled,
-            language = selectedLanguage
-        )
-        ApiClient.settingsApi.updateSettings(user._id, settings).enqueue(object : Callback<UserSettings> {
-            override fun onResponse(call: Call<UserSettings>, response: Response<UserSettings>) {
-                Log.d("SettingDialog", "設定已更新")
+        coroutineScope.launch {
+            val settings = UserSettings(
+                music = musicEnabled,
+                notification = notificationsEnabled,
+                language = selectedLanguage
+            )
+            try {
+                val success = SettingsRepository.updateSettings(userId, settings)
+                if (success) {
+                    Log.d("SettingDialog", "設定已更新")
+                } else {
+                    Log.e("SettingDialog", "更新失敗")
+                }
+            } catch (e: Exception) {
+                Log.e("SettingDialog", "更新異常：${e.message}")
             }
-
-            override fun onFailure(call: Call<UserSettings>, t: Throwable) {
-                Log.e("SettingDialog", "更新失敗：${t.message}")
-            }
-        })
+        }
     }
 
     Surface(
@@ -155,10 +161,8 @@ fun SettingDialog(
     }
 }
 
-
 @Composable
 fun CustomSwitch(isOn: Boolean, onToggle: (Boolean) -> Unit) {
-    val label = if (isOn) "ON" else "OFF"
     val backgroundColor = if (isOn) Color(0xFFEFE6E6) else Color(0xFFD9CCCC)
 
     Box(
@@ -174,14 +178,14 @@ fun CustomSwitch(isOn: Boolean, onToggle: (Boolean) -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            if (isOn) Text("ON", modifier = Modifier.padding(start = 6.dp), fontSize = 10.sp)
+            if (!isOn) Text("OFF", modifier = Modifier.padding(start = 6.dp), fontSize = 10.sp)
             Box(
                 modifier = Modifier
                     .size(24.dp)
                     .padding(2.dp)
                     .background(Color.White, shape = RoundedCornerShape(12.dp))
             )
-            if (!isOn) Text("OFF", modifier = Modifier.padding(end = 6.dp), fontSize = 10.sp)
+            if (isOn) Text("ON", modifier = Modifier.padding(end = 6.dp), fontSize = 10.sp)
         }
     }
 }
@@ -209,4 +213,3 @@ fun LanguageDropdown(selected: String, onSelect: (String) -> Unit) {
         }
     }
 }
-
