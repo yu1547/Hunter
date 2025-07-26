@@ -4,6 +4,7 @@ import com.google.gson.annotations.SerializedName
 import com.ntou01157.hunter.model.model_api.Item
 import com.ntou01157.hunter.model.model_api.User
 import com.ntou01157.hunter.model.model_api.Task
+import com.ntou01157.hunter.model.model_api.Settings
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -12,6 +13,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.PUT
 
 // API 接口定義
 interface ApiService {
@@ -43,6 +45,16 @@ interface ApiService {
 
     @POST("api/users/{userId}/missions/{taskId}/claim")
     suspend fun claimReward(@Path("userId") userId: String, @Path("taskId") taskId: String): UserResponse
+
+    // --- Settings endpoints ---
+
+    @GET("api/settings/{id}")
+    suspend fun fetchSettings(@Path("id") id: String): Settings
+
+    @PUT("api/settings/{id}")
+    suspend fun updateSettings(@Path("id") id: String, @Body settings: Settings)
+
+
 }
 
 // 請求 Body 的資料類別
