@@ -8,7 +8,8 @@ data class User(
     @SerializedName("_id") val id: String,
     @SerializedName("username") val username: String,
     @SerializedName("backpackItems") val backpackItems: List<BackpackItem>,
-    @SerializedName("missions") val missions: List<Mission> = emptyList()
+    @SerializedName("missions") val missions: List<Mission> = emptyList(),
+    @SerializedName("settings") val settings: Settings
     // 其他用戶屬性...
 )
 
@@ -27,6 +28,12 @@ data class Mission(
     @SerializedName("refreshedAt") val refreshedAt: Date?,
     @SerializedName("checkPlaces") val checkPlaces: List<CheckPlace> = emptyList()
 )
+data class UserSettings(
+    @SerializedName("music") val music: Boolean,
+    @SerializedName("notification") val notification: Boolean,
+    @SerializedName("language") val language: String
+)
+
 
 // 任務打卡點狀態
 data class CheckPlace(

@@ -15,19 +15,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ntou01157.hunter.models.User
-import com.ntou01157.hunter.model.model_api.UserSettings
-import com.ntou01157.hunter.data.SettingsRepository
+import com.ntou01157.hunter.api.RetrofitClient
+import com.ntou01157.hunter.model.model_api.User as ApiUser
+import com.ntou01157.hunter.model.model_api.BackpackItem
+import com.ntou01157.hunter.model.model_api.Mission
+import androidx.compose.ui.platform.LocalContext
+import com.ntou01157.hunter.model.model_api.Settings as ApiSettings
+import com.ntou01157.hunter.models.User as UiUser
+import com.ntou01157.hunter.models.Settings as UiSettings
 import kotlinx.coroutines.launch
+import com.ntou01157.hunter.temp.MusicPlayerManager
 
 @Composable
 fun SettingDialog(
-    user: User,
+    user: UiUser,
     onDismiss: () -> Unit,
     onNameChange: (String) -> Unit,
     onLogout: () -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+
     var musicEnabled by remember { mutableStateOf(false) }
     var notificationsEnabled by remember { mutableStateOf(false) }
     var selectedLanguage by remember { mutableStateOf("zh-TW") }
@@ -35,14 +43,14 @@ fun SettingDialog(
     var isEditingName by remember { mutableStateOf(false) }
     var nameText by remember { mutableStateOf(user.displayName) }
 
-    val userId = "6880f31469ff254ed2fb0cc1"
+    val userId = "68846d797609912e5e6ba9b0"
 
     // ⏬ 初始化設定資料
     LaunchedEffect(Unit) {
         coroutineScope.launch {
             try {
-                val settings = SettingsRepository.fetchSettings(userId)
-                settings?.let {
+                val fetchedUser = RetrofitClient.apiService.getUser(userId)
+                fetchedUser.settings?.let {
                     musicEnabled = it.music
                     notificationsEnabled = it.notification
                     selectedLanguage = it.language
@@ -53,26 +61,31 @@ fun SettingDialog(
         }
     }
 
-    // ✅ 更新設定
     fun updateSettings() {
         coroutineScope.launch {
-            val settings = UserSettings(
-                music = musicEnabled,
-                notification = notificationsEnabled,
-                language = selectedLanguage
-            )
             try {
-                val success = SettingsRepository.updateSettings(userId, settings)
-                if (success) {
-                    Log.d("SettingDialog", "設定已更新")
+                val updatedSettings = ApiSettings(
+                    music = musicEnabled,
+                    notification = notificationsEnabled,
+                    language = selectedLanguage
+                )
+                RetrofitClient.apiService.updateSettings(userId, updatedSettings)
+                Log.d("SettingDialog", "設定已送出")
+
+                // 音樂控制
+                if (musicEnabled) {
+                    MusicPlayerManager.playMusic(context)
                 } else {
-                    Log.e("SettingDialog", "更新失敗")
+                    MusicPlayerManager.pauseMusic()
                 }
+
             } catch (e: Exception) {
-                Log.e("SettingDialog", "更新異常：${e.message}")
+                Log.e("SettingDialog", "更新設定失敗：${e.message}")
             }
         }
     }
+
+
 
     Surface(
         modifier = Modifier
@@ -178,14 +191,14 @@ fun CustomSwitch(isOn: Boolean, onToggle: (Boolean) -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            if (!isOn) Text("OFF", modifier = Modifier.padding(start = 6.dp), fontSize = 10.sp)
+            if (isOn) Text("ON", modifier = Modifier.padding(start = 6.dp), fontSize = 10.sp)
             Box(
                 modifier = Modifier
                     .size(24.dp)
                     .padding(2.dp)
                     .background(Color.White, shape = RoundedCornerShape(12.dp))
             )
-            if (isOn) Text("ON", modifier = Modifier.padding(end = 6.dp), fontSize = 10.sp)
+            if (!isOn) Text("OFF", modifier = Modifier.padding(end = 6.dp), fontSize = 10.sp)
         }
     }
 }
