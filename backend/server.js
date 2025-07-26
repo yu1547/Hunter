@@ -5,6 +5,7 @@ const itemRoutes = require('./routes/itemRoutes');
 const userRoutes = require('./routes/userRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const missionRoutes = require('./routes/missionRoutes'); // 引入 mission 路由
+const settingsRoutes = require('./routes/settingsRoutes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const mongoose = require('mongoose');
@@ -40,6 +41,8 @@ app.use('/api/users', userRoutes);
 
 // 任務 API 路由
 app.use('/api/tasks', taskRoutes);
+
+app.use('/api/settings', settingsRoutes);
 
 // 使用者任務操作 API 路由
 app.use('/api', missionRoutes);
