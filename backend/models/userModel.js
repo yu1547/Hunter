@@ -48,6 +48,20 @@ const userSchema = new Schema({
       }
     }]
   }],
+  settings: {
+    music: {
+      type: Boolean,
+      default: true  // 預設開啟音效
+    },
+    notification: {
+      type: Boolean,
+      default: true  // 預設開啟推播通知
+    },
+    language: {
+      type: String,
+      default: 'zh-TW'  // 預設語言
+    }
+  },
   // 可加入其他用戶屬性，如用戶名稱、等級等
   username: {
     type: String,
