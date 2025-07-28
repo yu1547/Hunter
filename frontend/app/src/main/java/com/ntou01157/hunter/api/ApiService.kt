@@ -2,10 +2,12 @@ package com.ntou01157.hunter.api
 
 import com.google.gson.annotations.SerializedName
 import com.ntou01157.hunter.models.model_api.Item
+import com.ntou01157.hunter.models.model_api.RankResponse
 import com.ntou01157.hunter.models.model_api.User
 import com.ntou01157.hunter.models.model_api.Task
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
@@ -27,6 +29,9 @@ interface ApiService {
     // --- Task endpoints ---
     @GET("api/tasks/{id}")
     suspend fun getTask(@Path("id") id: String): Task
+
+    @GET("api/rank/{userId}") // Changed "api/ranks" to "api/rank" for consistency with backend routes
+    suspend fun getRank(@Path("userId") userId: String): Response<RankResponse>
 
     // --- Mission endpoints ---
     @POST("api/users/{userId}/missions/refresh")
@@ -73,22 +78,5 @@ object RetrofitClient {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(ApiService::class.java)
-    }
-    // 可以額外提供獲取 RankApi 的方式
-    val rankApiService: RankApi by lazy { // <-- 新增這部分
-        // 增加日誌攔截器以查看網路請求和回應的詳細資訊
-        val logging = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
-        }
-        val client = OkHttpClient.Builder()
-            .addInterceptor(logging)
-            .build()
-
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .client(client)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create(RankApi::class.java)
     }
 }
