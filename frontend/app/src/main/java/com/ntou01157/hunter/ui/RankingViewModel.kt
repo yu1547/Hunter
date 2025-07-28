@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+
 /**
  * 處理排行榜數據獲取和狀態管理的 ViewModel。
  */
@@ -23,20 +24,15 @@ class RankingViewModel(private val rankRepository: RankRepository) : ViewModel()
     private val _rankData = MutableStateFlow<NetworkResult<RankResponse>>(NetworkResult.Loading())
     val rankData: StateFlow<NetworkResult<RankResponse>> = _rankData.asStateFlow()
 
-    init {
-        // ViewModel 初始化時自動觸發數據加載
-        fetchRankData()
-    }
-
     /**
      * 從數據儲存庫獲取排行榜數據。
      */
-    fun fetchRankData() {
+    fun fetchRankData(userId: String) {
         viewModelScope.launch {
             // 在每次請求開始前，將狀態設置為 Loading
             _rankData.value = NetworkResult.Loading()
             // 調用 Repository 獲取數據，並更新 StateFlow 的值
-            _rankData.value = rankRepository.getRank()
+            _rankData.value = rankRepository.getRank(userId)
         }
     }
 }
