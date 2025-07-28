@@ -17,6 +17,8 @@ const convertRankItemToDisplay = (rankItem) => {
 
 const getRank = async (req, res) => {
   try {
+    const requestedUserId = req.params.userId;
+
     // 1. 獲取前 100 名的排行榜資料
     const topRankItems = await Rank.find({})
       // 修正：select 中使用 userId
@@ -31,18 +33,15 @@ const getRank = async (req, res) => {
     let userRank = null;
     // 檢查是否有登入使用者以及其 ID
     // 假設 req.user.userId 存放當前登入使用者的 ID
-    if (req.user && req.user.userId) {
-      const currentUserId = req.user.userId;
-
-      // 嘗試從已經獲取的前 100 名中找到當前使用者，避免重複查詢
-      const foundInTopRank = rankList.find(item => item.userId === currentUserId);
+    if (requestedUserId) {
+      const foundInTopRank = rankList.find(item => item.userId === requestedUserId);
 
       if (foundInTopRank) {
         // 如果使用者在前 100 名內，直接從 rankList 中獲取資訊並計算排名
         // 注意：這裡的排名是基於 topRankItems 陣列中的索引
-        const userIndexInTop = topRankItems.findIndex(item => item.userId === currentUserId);
+        const userIndexInTop = topRankItems.findIndex(item => item.userId === requestedUserId);
         userRank = {
-          rank: userIndexInTop !== -1 ? userIndexInTop + 1 : -1, // 如果找到就加1，否則為-1 (理論上會找到)
+          rank: userIndexInTop !== -1 ? userIndexInTop + 1 : -1, // Rank is index + 1
           ...foundInTopRank
         };
       } else {
@@ -56,12 +55,11 @@ const getRank = async (req, res) => {
 
         // 找到當前使用者的索引，即為其排名 (索引 + 1)
         // 修正：findIndex 中使用 item.userId
-        const userIndex = allRankItemsSortedByScore.findIndex(item => item.userId === currentUserId);
+        const userIndex = allRankItemsSortedByScore.findIndex(item => item.userId === requestedUserId);
 
         if (userIndex !== -1) {
           // 查找到當前使用者的完整資料
-          const currentUserRankDoc = await Rank.findOne({ userId: currentUserId })
-            // 修正：select 中使用 userId
+          const currentUserRankDoc = await Rank.findOne({ userId: requestedUserId })
             .select('userId username userImg score')
             .lean();
 
