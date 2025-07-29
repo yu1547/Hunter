@@ -77,7 +77,7 @@ def handle_chat_request(prompt, conversation_history, enable_self_check=True):
         print(f"\n🗨️ 回覆內容：\n{response}\n")
         return response
 
-def handle_route_request(user_location, candidate_landmarks, enable_self_check=True):
+def handle_route_request(user_location, candidate_landmarks, enable_self_check=True,api_key=None):
     """處理路線規劃請求"""
     # 在此處，我們假設路線請求總是直接生成路線，
     # 未來的擴充可以加入更多與 LLM 的互動。
