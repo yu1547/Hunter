@@ -193,6 +193,27 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             }
         }
 
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            Button(
+                onClick = {
+                    // 模擬點擊其中一個補給站
+                    selectedSupply = supplyStations.firstOrNull()
+                    showSupplyDialog = true
+                },
+                colors = buttonColors
+            ) {
+                Text("補給站")
+            }
+
+
+        }
+
+
         Column(
             modifier = Modifier.align(Alignment.CenterEnd).padding(end = 10.dp, bottom = 320.dp),
             verticalArrangement = Arrangement.spacedBy(30.dp),
