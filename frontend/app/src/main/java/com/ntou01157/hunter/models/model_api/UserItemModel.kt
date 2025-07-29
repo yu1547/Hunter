@@ -1,4 +1,4 @@
-package com.ntou01157.hunter.model.model_api
+package com.ntou01157.hunter.models.model_api
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf

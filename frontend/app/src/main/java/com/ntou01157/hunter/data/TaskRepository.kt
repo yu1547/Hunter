@@ -2,8 +2,8 @@ package com.ntou01157.hunter.data
 
 import android.util.Log
 import com.ntou01157.hunter.api.RetrofitClient
-import com.ntou01157.hunter.model.model_api.UserTask
-import com.ntou01157.hunter.model.model_api.Task
+import com.ntou01157.hunter.models.model_api.UserTask
+import com.ntou01157.hunter.models.model_api.Task
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
