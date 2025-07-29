@@ -57,6 +57,11 @@ const userSchema = new Schema({
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  spotsScanLogs: {
+    type: Map,
+    of: Boolean,
+    default: {}
   }
 }, { collection: 'users' });
 
