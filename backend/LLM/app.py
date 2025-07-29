@@ -6,7 +6,7 @@ import json
 
 app = Flask(__name__)
 load_dotenv()
-# Session 需要一個 secret key
+# 設定 Flask 的 session 密鑰
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "a-default-secret-key-for-development")
 GOOGLE_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 
@@ -52,7 +52,6 @@ def route():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    # 模擬來自 js_to_py.json 的請求進行測試
     # try:
     #     with open("js_to_py.json", "r", encoding="utf-8") as f:
     #         test_data = json.load(f)
@@ -67,5 +66,4 @@ if __name__ == '__main__':
     #     print("js_to_py.json not found, skipping /route test.")
     # except Exception as e:
     #     print(f"An error occurred during /route test request: {e}")
-
-    app.run(host="0.0.0.0", port=5000, debug=True,use_reloader=False)
+    app.run(host="0.0.0.0", port=5050, debug=True, use_reloader=False)

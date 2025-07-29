@@ -1,0 +1,35 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hunter-backend
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      - llm
+    networks:
+      - hunter-net
+
+  llm:
+    build:
+      context: ./LLM
+      dockerfile: Dockerfile
+    container_name: hunter-llm
+    ports:
+      - "5050:5000"
+    env_file:
+      - .env
+    volumes:
+      - ./LLM:/app
+    networks:
+      - hunter-net
+
+networks:
+  hunter-net:
+    driver: bridge
