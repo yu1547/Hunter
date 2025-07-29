@@ -1,11 +1,13 @@
 package com.ntou01157.hunter.api
 
 import com.google.gson.annotations.SerializedName
-import com.ntou01157.hunter.model.model_api.Item
-import com.ntou01157.hunter.model.model_api.User
-import com.ntou01157.hunter.model.model_api.Task
+import com.ntou01157.hunter.models.model_api.Item
+import com.ntou01157.hunter.models.model_api.RankResponse
+import com.ntou01157.hunter.models.model_api.User
+import com.ntou01157.hunter.models.model_api.Task
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
@@ -27,6 +29,9 @@ interface ApiService {
     // --- Task endpoints ---
     @GET("api/tasks/{id}")
     suspend fun getTask(@Path("id") id: String): Task
+
+    @GET("api/rank/{userId}") // Changed "api/ranks" to "api/rank" for consistency with backend routes
+    suspend fun getRank(@Path("userId") userId: String): Response<RankResponse>
 
     // --- Mission endpoints ---
     @POST("api/users/{userId}/missions/refresh")
