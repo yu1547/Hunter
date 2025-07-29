@@ -8,6 +8,7 @@ app = Flask(__name__)
 load_dotenv()
 # Session 需要一個 secret key
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "a-default-secret-key-for-development")
+GOOGLE_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -45,26 +46,26 @@ def route():
 
     try:
         # 呼叫 rag_v1 中的路線處理函式
-        mission_result = rag_v1.handle_route_request(user_location, candidate_landmarks, enable_self_check)
+        mission_result = rag_v1.handle_route_request(user_location, candidate_landmarks, enable_self_check,GOOGLE_API_KEY)
         return jsonify(mission_result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     # 模擬來自 js_to_py.json 的請求進行測試
-    try:
-        with open("js_to_py.json", "r", encoding="utf-8") as f:
-            test_data = json.load(f)
+    # try:
+    #     with open("js_to_py.json", "r", encoding="utf-8") as f:
+    #         test_data = json.load(f)
         
-        with app.test_request_context('/route', method='POST', json=test_data):
-            client = app.test_client()
-            response = client.post('/route', json=test_data)
-            print("\n--- Test Response for /route ---")
-            print(json.dumps(response.get_json(), indent=2, ensure_ascii=False))
-            print("------------------------------\n")
-    except FileNotFoundError:
-        print("js_to_py.json not found, skipping /route test.")
-    except Exception as e:
-        print(f"An error occurred during /route test request: {e}")
+    #     with app.test_request_context('/route', method='POST', json=test_data):
+    #         client = app.test_client()
+    #         response = client.post('/route', json=test_data)
+    #         print("\n--- Test Response for /route ---")
+    #         print(json.dumps(response.get_json(), indent=2, ensure_ascii=False))
+    #         print("------------------------------\n")
+    # except FileNotFoundError:
+    #     print("js_to_py.json not found, skipping /route test.")
+    # except Exception as e:
+    #     print(f"An error occurred during /route test request: {e}")
 
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True,use_reloader=False)
