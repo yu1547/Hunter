@@ -5,6 +5,8 @@ const itemRoutes = require('./routes/itemRoutes');
 const userRoutes = require('./routes/userRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const missionRoutes = require('./routes/missionRoutes'); // 引入 mission 路由
+const dropRoutes = require('./routes/dropRoutes');//掉落機制
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const mongoose = require('mongoose');
@@ -27,6 +29,11 @@ mongoose.connection.once('open', async () => {
 app.use(cors());
 app.use(express.json());
 
+//debug
+const testRoutes = require('./routes/testRoutes');
+app.use('/api/debug', testRoutes);
+
+
 // 基本路由
 app.get('/', (req, res) => {
     res.send('Hunter 遊戲後端 API');
@@ -41,8 +48,14 @@ app.use('/api/users', userRoutes);
 // 任務 API 路由
 app.use('/api/tasks', taskRoutes);
 
+// 掉落機制
+app.use('/api/drop', dropRoutes);
+
 // 使用者任務操作 API 路由
 app.use('/api', missionRoutes);
+
+
+
 
 app.listen(PORT, () => {
     console.log(`伺服器運行於 http://localhost:${PORT}`);
