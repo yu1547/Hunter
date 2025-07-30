@@ -22,11 +22,13 @@ services:
       dockerfile: Dockerfile
     container_name: hunter-llm
     ports:
-      - "5050:5000"
+      - "5050:5050"
     env_file:
       - .env
     volumes:
       - ./LLM:/app
+    environment:
+      - OLLAMA_HOST=http://host.docker.internal:11434
     networks:
       - hunter-net
 
