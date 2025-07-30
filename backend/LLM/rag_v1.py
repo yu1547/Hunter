@@ -17,12 +17,21 @@ load_dotenv()
 
 # 初始化 RAG 所需的資源
 doc = "rule.txt"
-paragraphs = parse_paragraph(doc)
-embeddings = cache_embeddings(doc, paragraphs)
+paragraphs = None
+embeddings = None
+
+def get_embeddings():
+    global paragraphs, embeddings
+    if paragraphs is None or embeddings is None:
+        paragraphs = parse_paragraph(doc)
+        embeddings = cache_embeddings(doc, paragraphs)
+    return paragraphs, embeddings
+
 api_key = os.getenv("GOOGLE_API_KEY")
 
 def handle_chat_request(prompt, conversation_history, enable_self_check=True):
     """處理聊天請求，包含 RAG 和自我檢查邏輯"""
+    paragraphs, embeddings = get_embeddings()
     question_type = classify_question_type(prompt)
     print(f"🧠 問題分類結果：{question_type}")
     prompt_embedding = ollama.embeddings(model="ycchen/breeze-7b-instruct-v1_0", prompt=prompt)["embedding"]

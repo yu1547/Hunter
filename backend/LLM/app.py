@@ -44,11 +44,15 @@ def route():
     if not user_location or not candidate_landmarks:
         return jsonify({"error": "Missing userLocation or candidateLandmarks"}), 400
 
+    if not GOOGLE_API_KEY:
+        return jsonify({"error": "Missing GOOGLE_MAPS_API_KEY in environment"}), 500
+
     try:
         # 呼叫 rag_v1 中的路線處理函式
-        mission_result = rag_v1.handle_route_request(user_location, candidate_landmarks, enable_self_check,GOOGLE_API_KEY)
+        mission_result = rag_v1.handle_route_request(user_location, candidate_landmarks, enable_self_check, GOOGLE_API_KEY)
         return jsonify(mission_result)
     except Exception as e:
+        print("Error in /route:", e)  # 印出詳細錯誤訊息
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
