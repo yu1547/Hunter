@@ -192,8 +192,8 @@ const refreshMissions = async (req, res) => {
                 acceptedAt: null,
                 expiresAt: null,
                 refreshedAt: null,
-                checkPlaces: Array.isArray(newTask.checkPlace)
-                  ? newTask.checkPlace.map(spotId => ({
+                checkPlaces: Array.isArray(newTask.checkPlaces)
+                  ? newTask.checkPlaces.map(spotId => ({
                       spotId: spotId.toString(),
                       isCheck: false
                     }))
@@ -212,8 +212,8 @@ const refreshMissions = async (req, res) => {
               acceptedAt: null,
               expiresAt: null,
               refreshedAt: null,
-              checkPlaces: Array.isArray(newTask.checkPlace)
-                ? newTask.checkPlace.map(spotId => ({
+              checkPlaces: Array.isArray(newTask.checkPlaces)
+                ? newTask.checkPlaces.map(spotId => ({
                     spotId: spotId.toString(),
                     isCheck: false
                   }))
@@ -271,7 +271,7 @@ const createLLMMission = async (req, res) => {
       taskDescription: result.taskDescription || '',
       taskDifficulty: result.taskDifficulty === 'medium' ? 'normal' : (result.taskDifficulty || 'easy'),
       taskTarget: result.taskTarget || '',
-      checkPlace: result.route ? result.route.map(r => r.id) : [],
+      checkPlaces: result.route ? result.route.map(r => r.id) : [],
       taskDuration: result.taskDuration || null,
       rewardItems: [],
       rewardScore: 0,
@@ -281,15 +281,15 @@ const createLLMMission = async (req, res) => {
     // 存入 tasks collection
     const createdTask = await Task.create(newTask);
 
-    // 加入 user.missions，狀態設為 in_progress，checkPlaces 同步 task.checkPlace
+    // 加入 user.missions，狀態設為 in_progress，checkPlaces 同步 task.checkPlaces
     user.missions.push({
       taskId: createdTask._id.toString(),
       state: 'in_progress',
       acceptedAt: new Date(),
       expiresAt: newTask.taskDuration ? new Date(Date.now() + newTask.taskDuration) : null,
       refreshedAt: null,
-      checkPlaces: Array.isArray(createdTask.checkPlace)
-        ? createdTask.checkPlace.map(spotId => ({
+      checkPlaces: Array.isArray(createdTask.checkPlaces)
+        ? createdTask.checkPlaces.map(spotId => ({
             spotId: spotId.toString(),
             isCheck: false
           }))

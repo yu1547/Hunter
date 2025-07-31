@@ -34,7 +34,7 @@ const taskSchema = new Schema({
     type: String,
     required: true
   },
-  checkPlace: {
+  checkPlaces: {
     type: [Schema.Types.ObjectId], // 直接儲存 ObjectId 陣列
     ref: 'Spot',
     default: []
