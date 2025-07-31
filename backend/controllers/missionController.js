@@ -1,5 +1,7 @@
 const User = require('../models/userModel');
 const Task = require('../models/taskModel');
+const Spot = require('../models/spotModel'); // 需有 Spot model
+const axios = require('axios'); // 用於呼叫 Flask
 const mongoose = require('mongoose');
 
 // 接受任務
@@ -190,7 +192,13 @@ const refreshMissions = async (req, res) => {
                 acceptedAt: null,
                 expiresAt: null,
                 refreshedAt: null,
-                checkPlaces: []
+                checkPlaces: Array.isArray(newTask.checkPlace)
+                  ? newTask.checkPlace.map(spotId => ({
+                      spotId: spotId.toString(),
+                      isCheck: false
+                    }))
+                  : [],
+                isLLM: newTask.isLLM || false
               };
             }
           });
@@ -204,7 +212,12 @@ const refreshMissions = async (req, res) => {
               acceptedAt: null,
               expiresAt: null,
               refreshedAt: null,
-              checkPlaces: []
+              checkPlaces: Array.isArray(newTask.checkPlace)
+                ? newTask.checkPlace.map(spotId => ({
+                    spotId: spotId.toString(),
+                    isCheck: false
+                  }))
+                : []
             });
           }
         }
@@ -213,13 +226,85 @@ const refreshMissions = async (req, res) => {
 
     await user.save();
     
-    res.status(200).json(user);
+    res.status(200).json({ missions: user.missions });
 
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
+// 產生 LLM 任務並分配給指定 user
+const createLLMMission = async (req, res) => {
+  const { userId } = req.params;
+  const { userLocation } = req.body;
+
+  try {
+    // 取得 user
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: '找不到用戶' });
+
+    // 取得所有 spots
+    const spots = await Spot.find();
+
+    // 打包成 js_to_py.json 格式
+    const candidateLandmarks = spots.map(spot => ({
+      spotId: spot._id.toString(),
+      spotName: spot.spotName,
+      longitude: spot.longitude,
+      latitude: spot.latitude
+    }));
+
+    const payload = {
+      userLocation,
+      candidateLandmarks
+    };
+
+    // 呼叫 Flask /route
+    const flaskUrl = process.env.LLM_FLASK_URL || 'http://llm:5050/route'; // docker 內部網域
+    const flaskRes = await axios.post(flaskUrl, payload, { timeout: 10000 });
+
+    const result = flaskRes.data;
+
+    // 依照 taskModel 組成任務
+    const newTask = {
+      taskName: result.taskName || 'LLM任務',
+      taskDescription: result.taskDescription || '',
+      taskDifficulty: result.taskDifficulty === 'medium' ? 'normal' : (result.taskDifficulty || 'easy'),
+      taskTarget: result.taskTarget || '',
+      checkPlace: result.route ? result.route.map(r => r.id) : [],
+      taskDuration: result.taskDuration || null,
+      rewardItems: [],
+      rewardScore: 0,
+      isLLM: true
+    };
+
+    // 存入 tasks collection
+    const createdTask = await Task.create(newTask);
+
+    // 加入 user.missions，狀態設為 in_progress，checkPlaces 同步 task.checkPlace
+    user.missions.push({
+      taskId: createdTask._id.toString(),
+      state: 'in_progress',
+      acceptedAt: new Date(),
+      expiresAt: newTask.taskDuration ? new Date(Date.now() + newTask.taskDuration) : null,
+      refreshedAt: null,
+      checkPlaces: Array.isArray(createdTask.checkPlace)
+        ? createdTask.checkPlace.map(spotId => ({
+            spotId: spotId.toString(),
+            isCheck: false
+          }))
+        : [],
+      isLLM: true
+    });
+
+    await user.save();
+
+    res.status(200).json({ missions: user.missions });
+  } catch (error) {
+    console.error('createLLMMission error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
 
 module.exports = {
   acceptTask,
@@ -227,4 +312,5 @@ module.exports = {
   completeTask,
   claimReward,
   refreshMissions,
+  createLLMMission,
 };

@@ -46,7 +46,11 @@ const userSchema = new Schema({
         type: Boolean,
         default: false
       }
-    }]
+    }],
+    isLLM: {
+      type: String,
+      required: false
+    }
   }],
   // 可加入其他用戶屬性，如用戶名稱、等級等
   username: {
