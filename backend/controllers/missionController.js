@@ -217,7 +217,8 @@ const refreshMissions = async (req, res) => {
                     spotId: spotId.toString(),
                     isCheck: false
                   }))
-                : []
+                : [],
+              isLLM: newTask.isLLM || false
             });
           }
         }
@@ -246,7 +247,6 @@ const createLLMMission = async (req, res) => {
     // 取得所有 spots
     const spots = await Spot.find();
 
-    // 打包成 js_to_py.json 格式
     const candidateLandmarks = spots.map(spot => ({
       spotId: spot._id.toString(),
       spotName: spot.spotName,
@@ -269,9 +269,11 @@ const createLLMMission = async (req, res) => {
     const newTask = {
       taskName: result.taskName || 'LLM任務',
       taskDescription: result.taskDescription || '',
-      taskDifficulty: result.taskDifficulty === 'medium' ? 'normal' : (result.taskDifficulty || 'easy'),
+      taskDifficulty: result.taskDifficulty || 'normal',
       taskTarget: result.taskTarget || '',
-      checkPlaces: result.route ? result.route.map(r => r.id) : [],
+      checkPlaces: result.route
+        ? result.route.map(r => ({ spotId: r.id }))
+        : [],
       taskDuration: result.taskDuration || null,
       rewardItems: [],
       rewardScore: 0,
@@ -289,8 +291,8 @@ const createLLMMission = async (req, res) => {
       expiresAt: newTask.taskDuration ? new Date(Date.now() + newTask.taskDuration) : null,
       refreshedAt: null,
       checkPlaces: Array.isArray(createdTask.checkPlaces)
-        ? createdTask.checkPlaces.map(spotId => ({
-            spotId: spotId.toString(),
+        ? createdTask.checkPlaces.map(place => ({
+            spotId: place.spotId.toString(),
             isCheck: false
           }))
         : [],
