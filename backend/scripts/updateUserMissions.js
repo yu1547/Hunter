@@ -7,7 +7,7 @@ const { getMongoClient } = require('../config/db');
 
 // --- 請在此處設定 ---
 // 要更新的用戶 ID
-const userIdToUpdate = '6880f31469ff254ed2fb0cc1'; 
+const userIdToUpdate = '68846d797609912e5e6ba9af'; 
 
 // 新的任務列表
 // 根據 userModel.js 的 missions schema 結構來建立
