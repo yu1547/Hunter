@@ -37,9 +37,10 @@ const userSchema = new Schema({
       type: Date,
       default: null
     },
-    checkPlaces: [{
+    haveCheckPlaces: [{
       spotId: {
-        type: String,
+        type: Schema.Types.ObjectId,
+        ref: 'Spot',
         required: true
       },
       isCheck: {
@@ -48,7 +49,7 @@ const userSchema = new Schema({
       }
     }],
     isLLM: {
-      type: String,
+      type: Boolean,
       required: false
     }
   }],

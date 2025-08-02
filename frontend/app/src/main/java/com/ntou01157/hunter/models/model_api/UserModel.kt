@@ -25,11 +25,11 @@ data class Mission(
     @SerializedName("acceptedAt") val acceptedAt: Date?,
     @SerializedName("expiresAt") val expiresAt: Date?,
     @SerializedName("refreshedAt") val refreshedAt: Date?,
-    @SerializedName("checkPlaces") val checkPlaces: List<CheckPlace> = emptyList()
+    @SerializedName("haveCheckPlaces") val haveCheckPlaces: List<HaveCheckPlaces> = emptyList()
 )
 
 // 任務打卡點狀態(這邊的名字沒有加 "s")
-data class CheckPlace(
+data class HaveCheckPlaces(
     @SerializedName("spotId") val spotId: String,
     @SerializedName("isCheck") val isCheck: Boolean
 )

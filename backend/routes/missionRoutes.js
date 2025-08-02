@@ -5,12 +5,12 @@ const {
   declineTask,
   completeTask,
   claimReward,
-  refreshMissions,
+  refreshAllMissions,
   createLLMMission,
 } = require('../controllers/missionController');
 
 // 刷新用戶任務列表 (例如：用戶打開任務面板時調用)
-router.post('/users/:userId/missions/refresh', refreshMissions);
+router.post('/users/:userId/missions/refresh', refreshAllMissions);
 
 // 接受任務
 router.post('/users/:userId/missions/:taskId/accept', acceptTask);
