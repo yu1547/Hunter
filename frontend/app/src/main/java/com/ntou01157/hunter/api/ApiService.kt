@@ -5,6 +5,8 @@ import com.ntou01157.hunter.models.model_api.Item
 import com.ntou01157.hunter.models.model_api.RankResponse
 import com.ntou01157.hunter.models.model_api.User
 import com.ntou01157.hunter.models.model_api.Task
+import com.ntou01157.hunter.model.model_api.Settings
+
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Response
@@ -14,6 +16,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.PUT
 
 // API 接口定義
 interface ApiService {
@@ -32,7 +35,7 @@ interface ApiService {
 
     @GET("api/rank/{userId}") // Changed "api/ranks" to "api/rank" for consistency with backend routes
     suspend fun getRank(@Path("userId") userId: String): Response<RankResponse>
-
+  
     // --- Mission endpoints ---
     @POST("api/users/{userId}/missions/refresh")
     suspend fun refreshMissions(@Path("userId") userId: String): User
@@ -48,6 +51,15 @@ interface ApiService {
 
     @POST("api/users/{userId}/missions/{taskId}/claim")
     suspend fun claimReward(@Path("userId") userId: String, @Path("taskId") taskId: String): UserResponse
+
+    // --- Settings endpoints ---
+
+    @GET("api/settings/{id}")
+    suspend fun fetchSettings(@Path("id") id: String): Settings
+
+    @PUT("api/settings/{id}")
+    suspend fun updateSettings(@Path("id") id: String, @Body settings: Settings)
+
 }
 
 // 請求 Body 的資料類別
