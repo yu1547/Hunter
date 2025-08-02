@@ -4,8 +4,9 @@ const { connectDB } = require('./config/db');
 const itemRoutes = require('./routes/itemRoutes');
 const userRoutes = require('./routes/userRoutes');
 const taskRoutes = require('./routes/taskRoutes');
-const missionRoutes = require('./routes/missionRoutes'); // 引入 mission 路由
+const missionRoutes = require('./routes/missionRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
+const rankRoutes = require('./routes/rankRoutes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const mongoose = require('mongoose');
@@ -46,6 +47,8 @@ app.use('/api/settings', settingsRoutes);
 
 // 使用者任務操作 API 路由
 app.use('/api', missionRoutes);
+
+app.use('/api/rank', rankRoutes); // 新增這行
 
 app.listen(PORT, () => {
     console.log(`伺服器運行於 http://localhost:${PORT}`);

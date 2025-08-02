@@ -5,7 +5,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.ntou01157.hunter.api.CraftRequestBody
 import com.ntou01157.hunter.api.RetrofitClient
-import com.ntou01157.hunter.model.model_api.UserItem
+import com.ntou01157.hunter.models.model_api.UserItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

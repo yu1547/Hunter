@@ -1,0 +1,62 @@
+[
+  {
+    "spotName": "anchor",
+    "spotPhoto": "anchor.jpg",
+    "longitude": 121.541,
+    "latitude": 25.021
+  },
+  {
+    "spotName": "ball",
+    "spotPhoto": "ball.jpg",
+    "longitude": 121.542,
+    "latitude": 25.022
+  },
+  {
+    "spotName": "eagle",
+    "spotPhoto": "eagle.jpg",
+    "longitude": 121.543,
+    "latitude": 25.023
+  },
+  {
+    "spotName": "lovechair",
+    "spotPhoto": "lovechair.jpg",
+    "longitude": 121.544,
+    "latitude": 25.024
+  },
+  {
+    "spotName": "moai",
+    "spotPhoto": "moai.jpg",
+    "longitude": 121.545,
+    "latitude": 25.025
+  },
+  {
+    "spotName": "vending",
+    "spotPhoto": "vending.jpg",
+    "longitude": 121.546,
+    "latitude": 25.026
+  },
+  {
+    "spotName": "book",
+    "spotPhoto": "book.jpg",
+    "longitude": 121.547,
+    "latitude": 25.027
+  },
+  {
+    "spotName": "bookcase",
+    "spotPhoto": "bookcase.jpg",
+    "longitude": 121.548,
+    "latitude": 25.028
+  },
+  {
+    "spotName": "freedomship",
+    "spotPhoto": "freedomship.jpg",
+    "longitude": 121.549,
+    "latitude": 25.029
+  },
+  {
+    "spotName": "fountain",
+    "spotPhoto": "fountain.jpg",
+    "longitude": 121.550,
+    "latitude": 25.030
+  }
+]
