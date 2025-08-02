@@ -28,7 +28,9 @@ data class Mission(
     @SerializedName("refreshedAt") val refreshedAt: Date?,
     @SerializedName("checkPlaces") val checkPlaces: List<CheckPlace> = emptyList()
 )
-data class UserSettings(
+
+// 使用者設定模型
+data class Settings(
     @SerializedName("music") val music: Boolean,
     @SerializedName("notification") val notification: Boolean,
     @SerializedName("language") val language: String

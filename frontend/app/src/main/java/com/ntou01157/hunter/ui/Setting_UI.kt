@@ -25,6 +25,7 @@ import com.ntou01157.hunter.models.User as UiUser
 import com.ntou01157.hunter.models.Settings as UiSettings
 import kotlinx.coroutines.launch
 import com.ntou01157.hunter.temp.MusicPlayerManager
+import com.ntou01157.hunter.data.fetchSettings // 新增 import
 
 @Composable
 fun SettingDialog(
@@ -49,12 +50,10 @@ fun SettingDialog(
     LaunchedEffect(Unit) {
         coroutineScope.launch {
             try {
-                val fetchedUser = RetrofitClient.apiService.getUser(userId)
-                fetchedUser.settings?.let {
-                    musicEnabled = it.music
-                    notificationsEnabled = it.notification
-                    selectedLanguage = it.language
-                }
+                val fetchedSettings = fetchSettings(userId) // 呼叫 data 層
+                musicEnabled = fetchedSettings.music
+                notificationsEnabled = fetchedSettings.notification
+                selectedLanguage = fetchedSettings.language
             } catch (e: Exception) {
                 Log.e("SettingDialog", "取得設定失敗：${e.message}")
             }
