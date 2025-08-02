@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.ntou01157.hunter.R
 import com.ntou01157.hunter.formatMillis
-import com.ntou01157.hunter.model.model_api.UserTask
+import com.ntou01157.hunter.models.model_api.UserTask
 import com.ntou01157.hunter.data.TaskRepository
 import kotlinx.coroutines.launch
 
