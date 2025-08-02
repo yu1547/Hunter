@@ -12,7 +12,7 @@ object TaskRepository {
 
     suspend fun refreshAndGetTasks(userId: String): List<UserTask> = withContext(Dispatchers.IO) {
         try {
-            val user = apiService.refreshMissions(userId)
+            val user = apiService.refreshAllMissions(userId)
             val taskDetailsList = user.missions.mapNotNull { mission ->
                 try {
                     // 從後端獲取每個任務的詳細資訊
