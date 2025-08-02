@@ -35,7 +35,7 @@ interface ApiService {
 
     // --- Mission endpoints ---
     @POST("api/users/{userId}/missions/refresh")
-    suspend fun refreshMissions(@Path("userId") userId: String): User
+    suspend fun refreshAllMissions(@Path("userId") userId: String): User
 
     @POST("api/users/{userId}/missions/{taskId}/accept")
     suspend fun acceptTask(@Path("userId") userId: String, @Path("taskId") taskId: String): User

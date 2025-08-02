@@ -11,24 +11,7 @@ const userIdToUpdate = '68846d797609912e5e6ba9af';
 
 // 新的任務列表
 // 根據 userModel.js 的 missions schema 結構來建立
-const newMissions = [
-  // {
-  //   taskId: new ObjectId("6880f402d811af7d01d9ec1f").toString(),
-  //   state: 'available',
-  //   acceptedAt: null,
-  //   expiresAt: null,
-  //   refreshedAt: null,
-  //   checkPlaces: [] // 根據需要添加 checkPlaces
-  // },
-  // {
-  //   taskId: new ObjectId("6880f402d811af7d01d9ec20").toString(),
-  //   state: 'claimed',
-  //   acceptedAt: null,
-  //   expiresAt: null,
-  //   refreshedAt: null,
-  //   checkPlaces: []
-  // },
-];
+const newMissions = [];
 // --------------------
 
 // 資料庫名稱
