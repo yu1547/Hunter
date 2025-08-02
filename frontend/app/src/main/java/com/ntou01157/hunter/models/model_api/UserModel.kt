@@ -28,7 +28,7 @@ data class Mission(
     @SerializedName("checkPlaces") val checkPlaces: List<CheckPlace> = emptyList()
 )
 
-// 任務打卡點狀態
+// 任務打卡點狀態(這邊的名字沒有加 "s")
 data class CheckPlace(
     @SerializedName("spotId") val spotId: String,
     @SerializedName("isCheck") val isCheck: Boolean
