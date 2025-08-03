@@ -37,16 +37,21 @@ const userSchema = new Schema({
       type: Date,
       default: null
     },
-    checkPlaces: [{
+    haveCheckPlaces: [{
       spotId: {
-        type: String,
+        type: Schema.Types.ObjectId,
+        ref: 'Spot',
         required: true
       },
       isCheck: {
         type: Boolean,
         default: false
       }
-    }]
+    }],
+    isLLM: {
+      type: Boolean,
+      required: false
+    }
   }],
   settings: {
     music: {

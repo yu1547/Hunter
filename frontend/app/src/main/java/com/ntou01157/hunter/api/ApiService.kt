@@ -20,6 +20,7 @@ import retrofit2.http.PUT
 
 // API 接口定義
 interface ApiService {
+    // --- Item endpoints ---
     @GET("api/items/{id}")
     suspend fun getItem(@Path("id") id: String): Item
 
@@ -29,6 +30,7 @@ interface ApiService {
     @POST("api/users/{id}/craft")
     suspend fun craftItem(@Path("id") id: String, @Body body: CraftRequestBody): User
 
+  
     // --- Task endpoints ---
     @GET("api/tasks/{id}")
     suspend fun getTask(@Path("id") id: String): Task
@@ -36,9 +38,10 @@ interface ApiService {
     @GET("api/rank/{userId}") // Changed "api/ranks" to "api/rank" for consistency with backend routes
     suspend fun getRank(@Path("userId") userId: String): Response<RankResponse>
   
+  
     // --- Mission endpoints ---
     @POST("api/users/{userId}/missions/refresh")
-    suspend fun refreshMissions(@Path("userId") userId: String): User
+    suspend fun refreshAllMissions(@Path("userId") userId: String): User
 
     @POST("api/users/{userId}/missions/{taskId}/accept")
     suspend fun acceptTask(@Path("userId") userId: String, @Path("taskId") taskId: String): User
@@ -52,18 +55,23 @@ interface ApiService {
     @POST("api/users/{userId}/missions/{taskId}/claim")
     suspend fun claimReward(@Path("userId") userId: String, @Path("taskId") taskId: String): UserResponse
 
-    // --- Settings endpoints ---
+    @POST("api/missions/llm/{userId}")
+    suspend fun createLLMMission(@Path("userId") userId: String, @Body body: CreateLLMMissionRequest): User
 
+  
+    // --- Settings endpoints ---
     @GET("api/settings/{id}")
     suspend fun fetchSettings(@Path("id") id: String): Settings
 
     @PUT("api/settings/{id}")
     suspend fun updateSettings(@Path("id") id: String, @Body settings: Settings)
-
 }
 
 // 請求 Body 的資料類別
 data class CraftRequestBody(val itemId: String)
+
+data class Location(val latitude: Double, val longitude: Double)
+data class CreateLLMMissionRequest(val userLocation: Location)
 
 // 處理後端回傳 { user, message } 格式的資料類別
 data class UserResponse(

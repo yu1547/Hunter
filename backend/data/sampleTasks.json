@@ -4,12 +4,11 @@
     "taskDescription": "熟悉遊戲的基本操作，找到你的第一個寶藏！",
     "taskDifficulty": "easy",
     "taskTarget": "在15分鐘內，前往教學指定地點並打卡。",
-    "checkPlace": [
-      {
-        "spotId": "6879fdbc125a5443a1d4bade"
-      }
+    "checkPlaces": [
+      { "spotId": "688b71c910cdc21464dd1cc8" },
+      { "spotId": "688b71c910cdc21464dd1cc9" }
     ],
-    "taskDuraion": 900,
+    "taskDuration": 900,
     "rewardItems": [
       {
         "itemId": "6879f3220cd4005e634e32b7",
@@ -24,8 +23,11 @@
     "taskDescription": "最近史萊姆有點多，幫忙清理一下吧。",
     "taskDifficulty": "normal",
     "taskTarget": "收集5個「普通的史萊姆黏液」。",
-    "checkPlace": [],
-    "taskDuraion": null,
+    "checkPlaces": [
+      { "spotId": "688b71c910cdc21464dd1cc8" },
+      { "spotId": "688b71c910cdc21464dd1cc9" }
+    ],
+    "taskDuration": null,
     "rewardItems": [
       {
         "itemId": "6879f3220cd4005e634e32c9",
@@ -40,8 +42,11 @@
     "taskDescription": "一位神秘的NPC似乎遺失了他珍貴的地圖，你需要找到所有殘片並將其復原。",
     "taskDifficulty": "hard",
     "taskTarget": "收集3個「散落的地圖殘片」並合成為「寶藏圖」。",
-    "checkPlace": [],
-    "taskDuraion": 3600,
+    "checkPlaces": [
+      { "spotId": "688b71c910cdc21464dd1cc8" },
+      { "spotId": "688b71c910cdc21464dd1cc9" }
+    ],
+    "taskDuration": 3600,
     "rewardItems": [
       {
         "itemId": "6879f3220cd4005e634e32c5",
@@ -56,14 +61,11 @@
     "taskDescription": "校園裡有許多美麗的角落，用你的相機記錄下來吧！",
     "taskDifficulty": "normal",
     "taskTarget": "前往五個指定地點並拍照打卡。",
-    "checkPlace": [
-      { "spotId": "6879fdbc125a5443a1d4badf" },
-      { "spotId": "6879fdbc125a5443a1d4bae0" },
-      { "spotId": "6879fdbc125a5443a1d4bae1" },
-      { "spotId": "6879fdbc125a5443a1d4bae2" },
-      { "spotId": "6879fdbc125a5443a1d4bae3" }
+    "checkPlaces": [
+      { "spotId": "688b71c910cdc21464dd1cc8" },
+      { "spotId": "688b71c910cdc21464dd1cc9" }
     ],
-    "taskDuraion": 7200,
+    "taskDuration": 7200,
     "rewardItems": [
       {
         "itemId": "6879f3220cd4005e634e32d0",
@@ -78,10 +80,11 @@
     "taskDescription": "傳說圖書館深處藏著一本古老的魔法書，找到它！",
     "taskDifficulty": "hard",
     "taskTarget": "在圖書館內找到「失落的魔法書」。",
-    "checkPlace": [
-      { "spotId": "6879fdbc125a5443a1d4bae4" }
+    "checkPlaces": [
+      { "spotId": "688b71c910cdc21464dd1cc8" },
+      { "spotId": "688b71c910cdc21464dd1cc9" }
     ],
-    "taskDuraion": 1800,
+    "taskDuration": 1800,
     "rewardItems": [
       {
         "itemId": "6879f3220cd4005e634e32d1",
@@ -96,10 +99,11 @@
     "taskDescription": "幫忙把一份緊急文件送到指定教授手上。",
     "taskDifficulty": "easy",
     "taskTarget": "在10分鐘內將文件送到指定辦公室。",
-    "checkPlace": [
-      { "spotId": "6879fdbc125a5443a1d4bae5" }
+    "checkPlaces": [
+      { "spotId": "688b71c910cdc21464dd1cc8" },
+      { "spotId": "688b71c910cdc21464dd1cc9" }
     ],
-    "taskDuraion": 600,
+    "taskDuration": 600,
     "rewardItems": [
       {
         "itemId": "6879f3220cd4005e634e32d2",
@@ -114,8 +118,11 @@
     "taskDescription": "校園裡有許多特有的植物，幫忙採集一些樣本進行研究。",
     "taskDifficulty": "normal",
     "taskTarget": "收集3種不同的「校園特有植物樣本」。",
-    "checkPlace": [],
-    "taskDuraion": null,
+    "checkPlaces": [
+      { "spotId": "688b71c910cdc21464dd1cc8" },
+      { "spotId": "688b71c910cdc21464dd1cc9" }
+    ],
+    "taskDuration": null,
     "rewardItems": [
       {
         "itemId": "6879f3220cd4005e634e32d3",
@@ -130,10 +137,11 @@
     "taskDescription": "校園裡有一隻可愛的貓咪走失了，幫忙找找牠吧！",
     "taskDifficulty": "easy",
     "taskTarget": "找到「走失的貓咪」並將牠帶回失物招領處。",
-    "checkPlace": [
-      { "spotId": "6879fdbc125a5443a1d4bae6" }
+    "checkPlaces": [
+      { "spotId": "688b71c910cdc21464dd1cc8" },
+      { "spotId": "688b71c910cdc21464dd1cc9" }
     ],
-    "taskDuraion": 3600,
+    "taskDuration": 3600,
     "rewardItems": [
       {
         "itemId": "6879f3220cd4005e634e32d4",

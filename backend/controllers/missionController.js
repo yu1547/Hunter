@@ -1,5 +1,7 @@
 const User = require('../models/userModel');
 const Task = require('../models/taskModel');
+const Spot = require('../models/spotModel'); // 需有 Spot model
+const axios = require('axios'); // 用於呼叫 Flask
 const mongoose = require('mongoose');
 
 // 接受任務
@@ -130,101 +132,199 @@ const claimReward = async (req, res) => {
   }
 };
 
-// 刷新任務 (當用戶打開任務版時觸發)
-const refreshMissions = async (req, res) => {
+// 刷新非 LLM 任務
+const refreshNormalMissions = async (user) => {
+  const now = new Date();
+  
+  // 處理 declined 和 claimed 的非 LLM 任務
+  user.missions.forEach(mission => {
+    if (!mission.isLLM) {
+      if (mission.state === 'declined' && mission.refreshedAt && now > mission.refreshedAt) {
+        mission.state = 'claimed'; // 標記為可替換
+      }
+    }
+  });
+
+  const normalMissions = user.missions.filter(m => !m.isLLM); // 過濾出非 LLM 任務
+  // 計算需要新增的任務數量
+  const replaceableMissionsCount = normalMissions.filter(m => m.state === 'claimed').length;
+  // 確保至少有兩個非 LLM 任務
+  const missionsToAddNew = 2 - (normalMissions.length - replaceableMissionsCount);
+  // 確保不會新增負數任務
+  const totalNewTasksNeeded = replaceableMissionsCount + Math.max(0, missionsToAddNew);
+
+  if (totalNewTasksNeeded > 0) {
+    const currentUserTaskIds = user.missions.map(m => m.taskId.toString());
+    const newTasks = await Task.aggregate([
+      {
+        $match: {
+          _id: { $nin: currentUserTaskIds }, // 過濾掉已經存在的任務
+          isLLM: { $ne: true } // 確保 isLLM 是 false 或不存在
+        }
+      },
+      { $sample: { size: totalNewTasksNeeded } } // 隨機選取 N 個任務
+    ]);
+
+    if (newTasks.length > 0) {
+      let newTaskIndex = 0;
+      // 遍歷 user.missions，替換已 claimed 的任務
+      const updatedMissions = user.missions.map(mission => {
+        if (!mission.isLLM && mission.state === 'claimed' && newTaskIndex < newTasks.length) {
+          const newTask = newTasks[newTaskIndex++];
+          return {
+            taskId: newTask._id.toString(),
+            state: 'available',
+            acceptedAt: null, expiresAt: null, refreshedAt: null,
+            haveCheckPlaces: Array.isArray(newTask.checkPlaces) ? newTask.checkPlaces.map(place => ({ spotId: place.spotId.toString(), isCheck: false })) : [],
+            isLLM: false
+          };
+        }
+        return mission;
+      });
+
+      // 為了過濾掉已經被 claimed 的任務，但沒有被替換的情況（newTasks不夠）
+      user.missions = updatedMissions.filter(m => m.isLLM || m.state !== 'claimed');
+
+      // 填充新任務直到滿2個
+      while (user.missions.filter(m => !m.isLLM).length < 2 && newTaskIndex < newTasks.length) {
+        const newTask = newTasks[newTaskIndex++];
+        user.missions.push({
+          taskId: newTask._id.toString(),
+          state: 'available',
+          acceptedAt: null, expiresAt: null, refreshedAt: null,
+          haveCheckPlaces: Array.isArray(newTask.checkPlaces) ? newTask.checkPlaces.map(place => ({ spotId: place.spotId.toString(), isCheck: false })) : [],
+          isLLM: false
+        });
+      }
+    }
+  }
+  return user;
+};
+
+// 刷新 LLM 任務
+const refreshLLMMissions = async (user) => {
+  const now = new Date();
+  const tasksToRemove = [];
+
+  user.missions.forEach(mission => {
+    if (mission.isLLM) {
+      const isDeclinedAndExpired = mission.state === 'declined' && mission.refreshedAt && now > mission.refreshedAt;
+      const isClaimed = mission.state === 'claimed';
+      if (isDeclinedAndExpired || isClaimed) {
+        tasksToRemove.push(mission.taskId.toString());
+      }
+    }
+  });
+
+  if (tasksToRemove.length > 0) {
+    // 從 user.missions 中移除
+    user.missions = user.missions.filter(m => !tasksToRemove.includes(m.taskId.toString()));
+    // 從 Task collection 中刪除
+    await Task.deleteMany({ _id: { $in: tasksToRemove } });
+  }
+  return user;
+};
+
+// 刷新所有任務 (新的 API 端點)
+const refreshAllMissions = async (req, res) => {
   const { userId } = req.params;
   try {
     let user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: '找不到用戶' });
 
-    const now = new Date();
-    let needsRefresh = false;
+    // 1. 處理 LLM 任務 (刪除)
+    user = await refreshLLMMissions(user);
 
-    // 檢查 declined 任務是否已到刷新時間
-    user.missions.forEach(mission => {
-      if (mission.state === 'declined' && mission.refreshedAt && now > mission.refreshedAt) {
-        mission.state = 'claimed'; // 標記為可替換
-        needsRefresh = true;
-      }
-      // 如果任務本身就是 claimed 狀態，也需要刷新
-      if (mission.state === 'claimed') {
-        needsRefresh = true;
-      }
-    });
-
-    // 確保用戶始終有5個任務
-    const missionsToFill = 5 - user.missions.length;
-    if (missionsToFill > 0) {
-      needsRefresh = true;
-    }
-
-    if (needsRefresh) {
-      // 找出所有需要被替換的任務索引
-      const replaceableIndices = user.missions
-        .map((mission, index) => (mission.state === 'claimed' ? index : -1))
-        .filter(index => index !== -1);
-      
-      const numToReplace = replaceableIndices.length;
-      const numToAddNew = 5 - user.missions.length;
-      const totalNewTasksNeeded = numToReplace + Math.max(0, numToAddNew);
-
-      if (totalNewTasksNeeded > 0) {
-        // 找出用戶當前所有任務ID，避免分配重複任務
-        const currentUserTaskIds = user.missions.map(m => m.taskId.toString());
-
-        // 從資料庫獲取新的、不重複的任務
-        const newTasks = await Task.find({
-          _id: { $nin: currentUserTaskIds }
-        }).limit(totalNewTasksNeeded);
-
-        if (newTasks.length > 0) {
-          let newTaskIndex = 0;
-
-          // 替換 'claimed' 狀態的任務
-          replaceableIndices.forEach(index => {
-            if (newTaskIndex < newTasks.length) {
-              const newTask = newTasks[newTaskIndex++];
-              user.missions[index] = {
-                taskId: newTask._id.toString(),
-                state: 'available',
-                acceptedAt: null,
-                expiresAt: null,
-                refreshedAt: null,
-                checkPlaces: []
-              };
-            }
-          });
-
-          // 填充任務直到滿5個
-          while (user.missions.length < 5 && newTaskIndex < newTasks.length) {
-            const newTask = newTasks[newTaskIndex++];
-            user.missions.push({
-              taskId: newTask._id.toString(),
-              state: 'available',
-              acceptedAt: null,
-              expiresAt: null,
-              refreshedAt: null,
-              checkPlaces: []
-            });
-          }
-        }
-      }
-    }
+    // 2. 處理一般任務 (替換/新增)
+    user = await refreshNormalMissions(user);
 
     await user.save();
     
-    res.status(200).json(user);
-
+    res.status(200).json({ missions: user.missions });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
+// 產生 LLM 任務並分配給指定 user
+const createLLMMission = async (req, res) => {
+  const { userId } = req.params;
+  const { userLocation } = req.body;
+
+  try {
+    // 取得 user
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: '找不到用戶' });
+
+    // 取得所有 spots
+    const spots = await Spot.find();
+
+    const candidateLandmarks = spots.map(spot => ({
+      spotId: spot._id.toString(),
+      spotName: spot.spotName,
+      longitude: spot.longitude,
+      latitude: spot.latitude
+    }));
+
+    const payload = {
+      userLocation,
+      candidateLandmarks
+    };
+
+    // 呼叫 Flask /route
+    const flaskUrl = process.env.LLM_FLASK_URL || 'http://llm:5050/route'; // docker 內部網域
+    const flaskRes = await axios.post(flaskUrl, payload, { timeout: 10000 });
+
+    const result = flaskRes.data;
+
+    // 依照 taskModel 組成任務
+    const newTask = {
+      taskName: result.taskName || 'LLM任務',
+      taskDescription: result.taskDescription || '',
+      taskDifficulty: result.taskDifficulty || 'normal',
+      taskTarget: result.taskTarget || '',
+      checkPlaces: result.route
+        ? result.route.map(r => ({ spotId: new mongoose.Types.ObjectId(r.id) }))
+        : [],
+      taskDuration: result.taskDuration ? result.taskDuration * 1000 : null, // LLM 回傳秒，轉為毫秒
+      rewardItems: [],
+      rewardScore: 0,
+      isLLM: true
+    };
+
+    // 存入 tasks collection
+    const createdTask = await Task.create(newTask);
+
+    // 加入 user.missions，狀態設為 in_progress，checkPlaces 同步 task.checkPlaces
+    user.missions.push({
+      taskId: createdTask._id.toString(),
+      state: 'in_progress',
+      acceptedAt: new Date(),
+      expiresAt: newTask.taskDuration ? new Date(Date.now() + newTask.taskDuration) : null,
+      refreshedAt: null,
+      haveCheckPlaces: Array.isArray(createdTask.checkPlaces)
+        ? createdTask.checkPlaces.map(place => ({
+            spotId: place.spotId.toString(),
+            isCheck: false
+          }))
+        : [],
+      isLLM: true
+    });
+
+    await user.save();
+
+    res.status(200).json({ missions: user.missions });
+  } catch (error) {
+    console.error('createLLMMission error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
 
 module.exports = {
   acceptTask,
   declineTask,
   completeTask,
   claimReward,
-  refreshMissions,
+  refreshAllMissions,
+  createLLMMission,
 };

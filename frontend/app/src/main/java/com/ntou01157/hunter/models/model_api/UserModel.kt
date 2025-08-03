@@ -26,7 +26,13 @@ data class Mission(
     @SerializedName("acceptedAt") val acceptedAt: Date?,
     @SerializedName("expiresAt") val expiresAt: Date?,
     @SerializedName("refreshedAt") val refreshedAt: Date?,
-    @SerializedName("checkPlaces") val checkPlaces: List<CheckPlace> = emptyList()
+    @SerializedName("haveCheckPlaces") val haveCheckPlaces: List<HaveCheckPlaces> = emptyList()
+)
+
+// 任務打卡點狀態(這邊的名字沒有加 "s")
+data class HaveCheckPlaces(
+    @SerializedName("spotId") val spotId: String,
+    @SerializedName("isCheck") val isCheck: Boolean
 )
 
 // 使用者設定模型
@@ -34,11 +40,4 @@ data class Settings(
     @SerializedName("music") val music: Boolean,
     @SerializedName("notification") val notification: Boolean,
     @SerializedName("language") val language: String
-)
-
-
-// 任務打卡點狀態
-data class CheckPlace(
-    @SerializedName("spotId") val spotId: String,
-    @SerializedName("isCheck") val isCheck: Boolean
 )
