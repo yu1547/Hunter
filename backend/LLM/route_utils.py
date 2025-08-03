@@ -42,8 +42,8 @@ def detect_route_intent(user_input: str, threshold: float = 0.75) -> bool:
     return max_score >= threshold
 
 def classify_difficulty():
-    """隨機決定難度：簡單(60%)、中等(30%)、困難(10%)"""
-    return random.choices(["easy", "medium", "hard"], weights=[60, 30, 10], k=1)[0]
+    """隨機決定難度：簡單(60%)、普通(30%)、困難(10%)"""
+    return random.choices(["easy", "normal", "hard"], weights=[60, 30, 10], k=1)[0]
 
 def generate_route_from_start(start_lat, start_lon, candidate_landmarks, api_key):
     """從指定起點生成一條路線到兩個隨機景點，並回傳 JSON 格式的任務"""

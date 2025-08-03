@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun TaskListScreen(navController: NavController) {
-    val userId = "68846d797609912e5e6ba9b0"
+    val userId = "68846d797609912e5e6ba9af" // 假定使用者ID
     val userTaskList = remember { mutableStateListOf<UserTask>() }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -89,15 +89,64 @@ fun TaskListScreen(navController: NavController) {
             } else if (errorMessage != null) {
                 Text(errorMessage!!, color = Color.Red, modifier = Modifier.align(Alignment.Center))
             } else {
+                val normalTasks = userTaskList.filter { !it.task.isLLM }
+                val llmTasks = userTaskList.filter { it.task.isLLM }
+
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(userTaskList) { userTask ->
-                        TaskItem(userTask) {
-                            selectedUserTask = it
+                    if (normalTasks.isNotEmpty()) {
+                        item {
+                            Text("一般任務", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+                        }
+                        items(normalTasks) { userTask ->
+                            TaskItem(userTask) {
+                                selectedUserTask = it
+                            }
+                        }
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("探索任務", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+                    }
+
+                    if (llmTasks.isNotEmpty()) {
+                        items(llmTasks) { userTask ->
+                            TaskItem(userTask) {
+                                selectedUserTask = it
+                            }
+                        }
+                    }
+
+                    if (llmTasks.count { it.state != "claimed" && it.state != "declined" } < 3) {
+                        item {
+                            Button(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        isLoading = true
+                                        try {
+                                            // 傳入指定的經緯度，日後要改成動態獲取使用者位置
+                                            val newTasks = TaskRepository.createLLMMission(userId, 25.017, 121.542)
+                                            userTaskList.clear()
+                                            userTaskList.addAll(newTasks)
+                                            showMessageDialog = "已生成新的探索任務！"
+                                        } catch (e: Exception) {
+                                            errorMessage = "生成任務失敗: ${e.message}"
+                                        } finally {
+                                            isLoading = false
+                                        }
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp)
+                            ) {
+                                Text("生成探索任務")
+                            }
                         }
                     }
                 }
