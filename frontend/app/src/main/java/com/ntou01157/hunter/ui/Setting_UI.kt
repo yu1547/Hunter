@@ -16,11 +16,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ntou01157.hunter.api.RetrofitClient
-import com.ntou01157.hunter.model.model_api.User as ApiUser
-import com.ntou01157.hunter.model.model_api.BackpackItem
-import com.ntou01157.hunter.model.model_api.Mission
+import com.ntou01157.hunter.models.model_api.User as ApiUser
+import com.ntou01157.hunter.models.model_api.BackpackItem
+import com.ntou01157.hunter.models.model_api.Mission
 import androidx.compose.ui.platform.LocalContext
-import com.ntou01157.hunter.model.model_api.Settings as ApiSettings
+import com.ntou01157.hunter.models.model_api.Settings as ApiSettings
 import com.ntou01157.hunter.models.User as UiUser
 import com.ntou01157.hunter.models.Settings as UiSettings
 import kotlinx.coroutines.launch

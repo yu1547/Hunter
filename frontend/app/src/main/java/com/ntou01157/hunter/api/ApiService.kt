@@ -5,7 +5,7 @@ import com.ntou01157.hunter.models.model_api.Item
 import com.ntou01157.hunter.models.model_api.RankResponse
 import com.ntou01157.hunter.models.model_api.User
 import com.ntou01157.hunter.models.model_api.Task
-import com.ntou01157.hunter.model.model_api.Settings
+import com.ntou01157.hunter.models.model_api.Settings
 
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
