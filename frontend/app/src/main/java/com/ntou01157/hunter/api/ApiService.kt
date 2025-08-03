@@ -48,10 +48,16 @@ interface ApiService {
 
     @POST("api/users/{userId}/missions/{taskId}/claim")
     suspend fun claimReward(@Path("userId") userId: String, @Path("taskId") taskId: String): UserResponse
+    
+    @POST("api/missions/llm/{userId}")
+    suspend fun createLLMMission(@Path("userId") userId: String, @Body body: CreateLLMMissionRequest): User
 }
 
 // 請求 Body 的資料類別
 data class CraftRequestBody(val itemId: String)
+
+data class Location(val latitude: Double, val longitude: Double)
+data class CreateLLMMissionRequest(val userLocation: Location)
 
 // 處理後端回傳 { user, message } 格式的資料類別
 data class UserResponse(
