@@ -6,7 +6,7 @@ import java.util.Date
 // 用戶模型
 data class User(
     @SerializedName("_id") val id: String,
-    @SerializedName("username") val username: String,
+    @SerializedName("displayName") val displayName: String,
     @SerializedName("backpackItems") val backpackItems: List<BackpackItem>,
     @SerializedName("missions") val missions: List<Mission> = emptyList(),
     @SerializedName("settings") val settings: Settings
