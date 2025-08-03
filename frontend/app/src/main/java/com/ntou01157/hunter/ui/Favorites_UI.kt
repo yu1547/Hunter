@@ -81,6 +81,7 @@ fun FavoritesScreen(
                             if (index < items.size) {
                                 val landmark = items[index]
 
+                                //紀錄該地標是否已打卡
                                 val isUnlocked = user.spotsScanLogs[landmark.spotId] == true
 
                                 Box(
