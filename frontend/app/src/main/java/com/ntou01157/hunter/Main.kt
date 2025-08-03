@@ -66,8 +66,34 @@ class Main : ComponentActivity() {
                     BagScreen(navController = navController)
                 }
                 composable("favorites") {
-                    FavoritesScreen(navController)
+                    var pageIndex by remember { mutableStateOf(0) }
+                    var selectedSpot by remember { mutableStateOf<Spot?>(null) }
+                    var showLockedDialog by remember { mutableStateOf(false) }
+
+                    val user = FakeUser
+                    val pages = MockSpotData.pages
+
+                    FavoritesScreen(
+                        navController = navController,
+                        user = user,
+                        pages = pages,
+                        pageIndex = pageIndex,
+                        onPageChange = { pageIndex = it },
+                        onSpotClicked = { spot ->
+                            val isUnlocked = user.spotsScanLogs[spot.spotId] == true
+                            if (isUnlocked) {
+                                selectedSpot = spot
+                            } else {
+                                showLockedDialog = true
+                            }
+                        },
+                        selectedSpot = selectedSpot,
+                        onDismissSpotDialog = { selectedSpot = null },
+                        showLockedDialog = showLockedDialog,
+                        onDismissLockedDialog = { showLockedDialog = false }
+                    )
                 }
+
                 composable("ranking") {
                     RankingScreen(navController = navController)
                 }
@@ -87,20 +113,14 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
         containerColor = Color(0xFFbc8f8f),
         contentColor = Color.White
     )
-    //打卡點 假資料
-    val missionLandmark = Spot(
-        spotId = "打卡點1",
-        spotName = "(地標)",
-        spotPhoto = "",
-        latitude = 25.149853,
-        longitude = 121.778352
-    )
+
+    // 打卡點資料，從 MockSpotData 取得
+    val missionLandmark = remember { mutableStateOf(MockSpotData.allSpots) }
+
     //補給站
     val supplyStations = remember { SupplyRepository.supplyStations }
-    var selectedSupply by remember { mutableStateOf<Supply?>(null) }
-    var showSupplyDialog by remember { mutableStateOf(false) }
     val user: User = FakeUser
-    val supplyLog = selectedSupply?.supplyId?.let { user.supplyScanLogs[it] }
+    val (spotsScanLogs, setSpotsScanLogs) = remember { mutableStateOf(user.spotsScanLogs) }
 
     val context = LocalContext.current
     val locationPermissionState = rememberPermissionState(android.Manifest.permission.ACCESS_FINE_LOCATION)
@@ -130,7 +150,7 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             cameraPositionState = cameraPositionState,
             uiSettings = MapUiSettings(myLocationButtonEnabled = true),
             properties = MapProperties(isMyLocationEnabled = true),
-            onMapClick = { selectedSupply = null }
+            onMapClick = {  }
         ) {
             userLocation?.let {
                 Marker(
@@ -138,25 +158,25 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                     title = "所在位置"
                 )
             }
-            //顯示打卡點 Sopt_UI.kt
-            spotMarker(spot = missionLandmark)
 
-            //顯示補給站
-            supplyStations.forEach { supply ->
-                SupplyMarker(supply = supply, onClick = {
-                    selectedSupply = it
-                    showSupplyDialog = true
-                })
-            }
-        }
+            // 顯示打卡點
+            SpotMapSection(
+                missionLandmark = missionLandmark.value,
+                spotsScanLogs = spotsScanLogs,
+                setSpotsScanLogs = setSpotsScanLogs,
+                userLocation = userLocation,
+                cameraPositionState = cameraPositionState
+            )
 
-        if (showSupplyDialog && selectedSupply != null) {
-            SupplyHandlerDialog(
-                supply = selectedSupply!!,
+            // 顯示補給站
+            SupplyMapSection(
+                supplyStations = supplyStations,
                 user = user,
-                onDismiss = { showSupplyDialog = false }
+                userLocation = userLocation,
+                cameraPositionState = cameraPositionState
             )
         }
+
         IconButton(
             onClick = { showDialog = true },
             modifier = Modifier.align(Alignment.TopStart).padding(start = 16.dp, top = 50.dp)

@@ -16,24 +16,28 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
-import androidx.navigation.NavHostController
+import com.google.maps.android.compose.CameraPositionState
 import coil.compose.rememberAsyncImagePainter
-import coil.compose.rememberImagePainter
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.ntou01157.hunter.DailyEvent
 import com.ntou01157.hunter.DailyEventDialog
-import com.ntou01157.hunter.dailyEvents
 import com.ntou01157.hunter.models.Spot
+
+// 將 Boolean 轉為 SpotScanLogs
+fun getSpotScanLog(isChecked: Boolean?): SpotScanLogs {
+    return SpotScanLogs(isCheck = isChecked == true)
+}
 
 @SuppressLint("UnrememberedMutableState")
 @Composable
 fun spotMarker(
-    spot: Spot
+    spot: Spot,
+    scanLog: SpotScanLogs,
+    onCheckIn: (() -> Unit)? = null
 ) {
     var showDialog by remember { mutableStateOf(false) }
     val markerState = remember { MarkerState(position = LatLng(spot.latitude, spot.longitude)) }
@@ -46,7 +50,9 @@ fun spotMarker(
     Marker(
         state = markerState,
         title = spot.spotName,
-        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE),
+        icon = BitmapDescriptorFactory.defaultMarker(
+            if (scanLog.isCheck) BitmapDescriptorFactory.HUE_VIOLET else BitmapDescriptorFactory.HUE_AZURE
+        ),
         onClick = {
             showDialog = true
             true //回傳true，表示以處理點擊事件
@@ -58,12 +64,13 @@ fun spotMarker(
         AlertDialog(
             onDismissRequest = { showDialog = false },
             confirmButton = {
-                TextButton(onClick = {
-                    showDialog = false
-                    selectedEvent = dailyEvents.random() //隨機選取事件
-                    showEventDialog = true
-                }) {
-                    Text("領取隨機事件")
+                if (!scanLog.isCheck) {
+                    TextButton(onClick = {
+                        showDialog = false
+                        onCheckIn?.invoke() // 執行打卡
+                    }) {
+                        Text("我要打卡！")
+                    }
                 }
             },
             dismissButton = {
@@ -103,4 +110,24 @@ fun spotMarker(
         }
     }
 
+}
+
+@Composable
+fun SpotMapSection(
+    missionLandmark: List<Spot>,
+    spotsScanLogs: Map<String, Boolean>,
+    setSpotsScanLogs: (Map<String, Boolean>) -> Unit,
+    userLocation: LatLng?,
+    cameraPositionState: CameraPositionState
+) {
+    missionLandmark.forEach { spot ->
+        val scanLog = getSpotScanLog(spotsScanLogs[spot.spotId])
+        spotMarker(
+            spot = spot,
+            scanLog = scanLog,
+            onCheckIn = {
+                setSpotsScanLogs(spotsScanLogs + (spot.spotId to true))
+            }
+        )
+    }
 }
