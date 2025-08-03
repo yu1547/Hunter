@@ -15,6 +15,11 @@
         "quantity": 1
       }
     ],
+    "settings": {
+      "music": true,
+      "notification": true,
+      "language": "zh-TW"
+    },
     "missions": []
   },
   {
@@ -29,11 +34,21 @@
         "quantity": 7
       }
     ],
+    "settings": {
+      "music": true,
+      "notification": true,
+      "language": "zh-TW"
+    },
     "missions": []
   },
   {
     "username": "玩家3",
     "backpackItems": [],
+    "settings": {
+      "music": true,
+      "notification": false,
+      "language": "zh-TW"
+    },
     "missions": []
   }
 ]
