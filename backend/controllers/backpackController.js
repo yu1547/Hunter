@@ -65,7 +65,7 @@ const craftItem = async (req, res) => {
     }
 
     await user.save();
-    res.status(200).json(user);
+    res.status(200).json( user.backpackItems );
 
   } catch (error) {
     res.status(500).json({ message: error.message });

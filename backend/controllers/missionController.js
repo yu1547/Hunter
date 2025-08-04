@@ -15,7 +15,7 @@ const acceptTask = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: '找不到用戶' });
 
-    const mission = user.missions.find(m => m.taskId === taskId);
+    const mission = user.missions.find(m => m.taskId.toString() === taskId);
     if (!mission) return res.status(404).json({ message: '用戶沒有此任務' });
 
     if (mission.state !== 'available') {
@@ -46,7 +46,7 @@ const declineTask = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: '找不到用戶' });
 
-    const mission = user.missions.find(m => m.taskId === taskId);
+    const mission = user.missions.find(m => m.taskId.toString() === taskId);
     if (!mission) return res.status(404).json({ message: '用戶沒有此任務' });
 
     if (!['available', 'in_progress'].includes(mission.state)) {
@@ -71,7 +71,7 @@ const completeTask = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: '找不到用戶' });
 
-    const mission = user.missions.find(m => m.taskId === taskId);
+    const mission = user.missions.find(m => m.taskId.toString() === taskId);
     if (!mission) return res.status(404).json({ message: '用戶沒有此任務' });
 
     if (mission.state !== 'in_progress') {
@@ -94,7 +94,7 @@ const claimReward = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: '找不到用戶' });
 
-    const mission = user.missions.find(m => m.taskId === taskId);
+    const mission = user.missions.find(m => m.taskId.toString() === taskId);
     if (!mission) return res.status(404).json({ message: '用戶沒有此任務' });
 
     if (mission.state !== 'completed') {
@@ -156,7 +156,7 @@ const refreshNormalMissions = async (user) => {
   const totalNewTasksNeeded = replaceableMissionsCount + Math.max(0, missionsToAddNew);
 
   if (totalNewTasksNeeded > 0) {
-    const currentUserTaskIds = user.missions.map(m => m.taskId.toString());
+    const currentUserTaskIds = user.missions.map(m => m.taskId);
     const newTasks = await Task.aggregate([
       {
         $match: {
@@ -174,10 +174,10 @@ const refreshNormalMissions = async (user) => {
         if (!mission.isLLM && mission.state === 'claimed' && newTaskIndex < newTasks.length) {
           const newTask = newTasks[newTaskIndex++];
           return {
-            taskId: newTask._id.toString(),
+            taskId: newTask._id,
             state: 'available',
             acceptedAt: null, expiresAt: null, refreshedAt: null,
-            haveCheckPlaces: Array.isArray(newTask.checkPlaces) ? newTask.checkPlaces.map(place => ({ spotId: place.spotId.toString(), isCheck: false })) : [],
+            haveCheckPlaces: Array.isArray(newTask.checkPlaces) ? newTask.checkPlaces.map(place => ({ spotId: place.spotId, isCheck: false })) : [],
             isLLM: false
           };
         }
@@ -191,10 +191,10 @@ const refreshNormalMissions = async (user) => {
       while (user.missions.filter(m => !m.isLLM).length < 2 && newTaskIndex < newTasks.length) {
         const newTask = newTasks[newTaskIndex++];
         user.missions.push({
-          taskId: newTask._id.toString(),
+          taskId: newTask._id,
           state: 'available',
           acceptedAt: null, expiresAt: null, refreshedAt: null,
-          haveCheckPlaces: Array.isArray(newTask.checkPlaces) ? newTask.checkPlaces.map(place => ({ spotId: place.spotId.toString(), isCheck: false })) : [],
+          haveCheckPlaces: Array.isArray(newTask.checkPlaces) ? newTask.checkPlaces.map(place => ({ spotId: place.spotId, isCheck: false })) : [],
           isLLM: false
         });
       }
@@ -301,7 +301,7 @@ const createLLMMission = async (req, res) => {
         : [],
       taskDuration: result.taskDuration ? result.taskDuration * 1000 : null, // LLM 回傳秒，轉為毫秒
       rewardItems: rewardItems,
-      rewardScore: 0,
+      rewardScore: 50, // LLM 任務固定 50 分
       isLLM: true
     };
 
@@ -310,14 +310,14 @@ const createLLMMission = async (req, res) => {
 
     // 加入 user.missions，狀態設為 in_progress，checkPlaces 同步 task.checkPlaces
     user.missions.push({
-      taskId: createdTask._id.toString(),
+      taskId: createdTask._id,
       state: 'in_progress',
       acceptedAt: new Date(),
       expiresAt: newTask.taskDuration ? new Date(Date.now() + newTask.taskDuration) : null,
       refreshedAt: null,
       haveCheckPlaces: Array.isArray(createdTask.checkPlaces)
         ? createdTask.checkPlaces.map(place => ({
-            spotId: place.spotId.toString(),
+            spotId: place.spotId,
             isCheck: false
           }))
         : [],
