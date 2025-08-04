@@ -34,10 +34,10 @@ data class Mission(
     val acceptedAt: Timestamp?,
     val expiresAt: Timestamp?,
     val refreshedAt: Timestamp?,
-    val checkPlaces: List<CheckPlace> = emptyList()
+    val haveCheckPlaces: List<HaveCheckPlaces> = emptyList()
 )
 
-data class CheckPlace(
+data class HaveCheckPlaces(
     val spotId: String,
     val isCheck: Boolean
 )

@@ -23,7 +23,7 @@ fun getTestUser(): User {
                 acceptedAt = Timestamp.now(),
                 expiresAt = Timestamp.now(),
                 refreshedAt = Timestamp.now(),
-                checkPlaces = emptyList()
+                haveCheckPlaces = emptyList()
             )
         ),
         spotsScanLogs = emptyMap(),
