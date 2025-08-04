@@ -36,6 +36,7 @@ const taskSchema = new Schema({
   },
   checkPlaces: [
     {
+      _id: false,
       spotId: { type: Schema.Types.ObjectId, ref: 'Spot' }
     }
   ],

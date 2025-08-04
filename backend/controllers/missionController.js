@@ -1,6 +1,9 @@
 const User = require('../models/userModel');
 const Task = require('../models/taskModel');
 const Spot = require('../models/spotModel'); // 需有 Spot model
+const Rank = require('../models/rankModel'); // 引入 Rank model
+const { generateDropItems } = require('../services/dropService'); // 引入 generateDropItems
+const { addItemsToBackpack } = require('../services/backpackService'); // 引入 backpackService
 const axios = require('axios'); // 用於呼叫 Flask
 const mongoose = require('mongoose');
 
@@ -106,21 +109,20 @@ const claimReward = async (req, res) => {
 
     // 發放獎勵道具
     if (taskDetails.rewardItems && taskDetails.rewardItems.length > 0) {
-      taskDetails.rewardItems.forEach(reward => {
-        const itemIndex = user.backpackItems.findIndex(item => item.itemId.toString() === reward.itemId.toString());
-        if (itemIndex > -1) {
-          user.backpackItems[itemIndex].quantity += reward.quantity;
-        } else {
-          user.backpackItems.push({ itemId: reward.itemId.toString(), quantity: reward.quantity });
-        }
-      });
+      await addItemsToBackpack(user._id, taskDetails.rewardItems);
     }
 
     // 如果沒有超時，發放積分
-    // 這邊等排行榜寫好再移除註解
-    // if (!isOvertime && taskDetails.rewardScore > 0) {
-    //   user.score = (user.score || 0) + taskDetails.rewardScore;
-    // }
+    if (!isOvertime && taskDetails.rewardScore > 0) {
+      const scoreToAdd = taskDetails.rewardScore;
+
+      // 更新 Rank 集合中的分數
+      await Rank.findOneAndUpdate(
+        { userId: user._id },
+        { $inc: { score: scoreToAdd } },
+        { upsert: true, new: true } // 如果找不到用戶，就創建一個新的
+      );
+    }
 
     mission.state = 'claimed';
     
@@ -277,6 +279,17 @@ const createLLMMission = async (req, res) => {
 
     const result = flaskRes.data;
 
+    // 根據 LLM 回傳的難度產生獎勵道具
+    const difficultyMap = { easy: 2, normal: 3, hard: 4 };
+    const difficulty = difficultyMap[result.taskDifficulty] || 3; // 預設為 normal
+    const generatedDrops = await generateDropItems(difficulty); // returns [{itemId, quantity}]
+
+    // 將掉落物轉換為 taskModel 需要的格式
+    const rewardItems = generatedDrops.map(drop => ({
+      itemId: new mongoose.Types.ObjectId(drop.itemId),
+      quantity: drop.quantity
+    }));
+
     // 依照 taskModel 組成任務
     const newTask = {
       taskName: result.taskName || 'LLM任務',
@@ -287,7 +300,7 @@ const createLLMMission = async (req, res) => {
         ? result.route.map(r => ({ spotId: new mongoose.Types.ObjectId(r.id) }))
         : [],
       taskDuration: result.taskDuration ? result.taskDuration * 1000 : null, // LLM 回傳秒，轉為毫秒
-      rewardItems: [],
+      rewardItems: rewardItems,
       rewardScore: 0,
       isLLM: true
     };
