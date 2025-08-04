@@ -1,48 +1,45 @@
+// models/eventModel.js
 const mongoose = require('mongoose');
 
-const eventSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-  },
-  description: {
-    type: String,
-    required: true,
-  },
-  type: {
-    type: String,
-    enum: ['daily', 'permanent'], // 區分每日事件和永久事件
-    required: true,
-  },
-  mechanics: {
-    // 儲存事件特有的邏輯和參數
-    rewards: [
-      {
-        itemId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: 'Item',
-        },
-        quantity: Number,
-        points: Number,
-        title: String,
-      },
-    ],
-    // 額外的事件參數，例如：
-    // - 史萊姆事件： 'attackMultiplier'
-    // - 寶箱事件：'requiredItem'
-    // - 神秘商人：'exchangeOptions'
-    additionalInfo: {
-      type: Object,
-      default: {},
-    },
-  },
-  // 每日事件專用
-  lastTriggered: {
-    type: Date,
-  },
-  location: {
-    type: Object, // 儲存每日事件的位置座標 { lat, lng }
-  },
-});
+const rewardSchema = new mongoose.Schema({
+    points: { type: Number, default: 0 },
+    items: [{
+        itemId: { type: mongoose.Schema.Types.ObjectId, ref: 'Item' },
+        quantity: { type: Number, default: 1 }
+    }],
+    title: { type: String }
+}, { _id: false });
 
-module.exports = mongoose.model('Event', eventSchema);
+const optionSchema = new mongoose.Schema({
+    text: { type: String, required: true },
+    rewards: { type: rewardSchema, required: true },
+    consume: { type: rewardSchema }
+}, { _id: false });
+
+const eventSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true,
+        trim: true,
+    },
+    description: {
+        type: String,
+        required: true,
+    },
+    type: {
+        type: String,
+        enum: ['daily', 'puzzle', 'game', 'chest', 'bless'],
+        required: true,
+    },
+    spotId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Spot',
+        required: false,
+    },
+    options: [optionSchema],
+    rewards: rewardSchema,
+    consume: rewardSchema
+}, { timestamps: true });
+
+const Event = mongoose.model('Event', eventSchema);
+module.exports = Event;

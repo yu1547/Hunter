@@ -1,5 +1,4 @@
 // frontend/app/src/main/java/com/ntou01157/hunter/models/model_api/EventModel.kt
-
 package com.ntou01157.hunter.models.model_api
 
 import com.google.gson.annotations.SerializedName
@@ -11,20 +10,14 @@ data class EventModel(
     val description: String,
     val type: String,
     val mechanics: EventMechanics,
-    val location: EventLocation? = null, // 每日事件可能會有位置資訊
-    val lastTriggered: String? = null // 每日事件可能會有上次觸發時間
+    val location: EventLocation? = null,
+    val lastTriggered: String? = null,
 )
 
 data class EventMechanics(
-    val rewards: List<Reward>,
-    val additionalInfo: AdditionalInfo? // 額外的事件參數
-)
-
-data class Reward(
-    val itemId: String?,
-    val quantity: Int?,
-    val points: Int?,
-    val title: String?
+    // 直接使用 RewardsModel
+    val rewards: RewardsModel,
+    val additionalInfo: AdditionalInfo?
 )
 
 data class EventLocation(
@@ -33,10 +26,9 @@ data class EventLocation(
 )
 
 data class AdditionalInfo(
-    // 這裡可以根據事件類型定義不同的欄位
     val lastLocationUpdate: String? = null,
-    val attackMultiplier: Int? = null, // 史萊姆事件
-    val exchangeOptions: List<ExchangeOption>? = null // 神秘商人事件
+    val attackMultiplier: Int? = null,
+    val exchangeOptions: List<ExchangeOption>? = null
 )
 
 data class ExchangeOption(
@@ -46,11 +38,6 @@ data class ExchangeOption(
 )
 
 data class RequiredItem(
-    val itemId: String,
-    val quantity: Int
-)
-
-data class RewardItem(
     val itemId: String,
     val quantity: Int
 )
