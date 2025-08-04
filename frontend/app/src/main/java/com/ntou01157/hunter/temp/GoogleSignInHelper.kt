@@ -2,11 +2,20 @@ package com.ntou01157.hunter.temp
 
 import android.app.Activity
 import android.content.Intent
+import android.util.Log
 import com.google.android.gms.auth.api.signin.*
 import com.google.firebase.auth.*
 import com.google.android.gms.common.api.ApiException
+import okhttp3.*
+import org.json.JSONObject
+import java.io.IOException
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
+
 
 object GoogleSignInHelper {
+
+    private val client = OkHttpClient()
 
     fun getClient(activity: Activity): GoogleSignInClient {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -28,7 +37,13 @@ object GoogleSignInHelper {
             FirebaseAuth.getInstance().signInWithCredential(credential)
                 .addOnCompleteListener { authResult ->
                     if (authResult.isSuccessful) {
-                        onSuccess(FirebaseAuth.getInstance().currentUser!!)
+                        val user = FirebaseAuth.getInstance().currentUser!!
+                        // ✅ 呼叫後端 API 建立 MongoDB 使用者
+                        createUserInBackend(user.email ?: "", {
+                            onSuccess(user)
+                        }, { error ->
+                            onFailure("後端錯誤：$error")
+                        })
                     } else {
                         onFailure("Firebase 驗證失敗")
                     }
@@ -36,5 +51,39 @@ object GoogleSignInHelper {
         } catch (e: Exception) {
             onFailure("Google 登入失敗: ${e.message}")
         }
+    }
+
+    private fun createUserInBackend(
+        email: String,
+        onSuccess: () -> Unit,
+        onFailure: (String) -> Unit
+    ) {
+        val json = JSONObject()
+        json.put("email", email)
+
+        val requestBody = json.toString()
+            .toRequestBody("application/json".toMediaType())
+
+        val request = Request.Builder()
+            .url("http://10.0.2.2:3000/api/auth/google")
+            .post(requestBody)
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e("GoogleSignInHelper", "後端請求失敗: ${e.message}")
+                onFailure(e.message ?: "未知錯誤")
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                if (response.isSuccessful) {
+                    Log.d("GoogleSignInHelper", "MongoDB 使用者已建立/已存在")
+                    onSuccess()
+                } else {
+                    Log.e("GoogleSignInHelper", "後端回傳錯誤: ${response.code}")
+                    onFailure("後端錯誤代碼: ${response.code}")
+                }
+            }
+        })
     }
 }
