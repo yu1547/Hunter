@@ -1,5 +1,5 @@
 // package com.ntou01157.hunter.Backpack.model
-package com.ntou01157.hunter.model.model_api
+package com.ntou01157.hunter.models.model_api
 
 import com.google.gson.annotations.SerializedName
 
