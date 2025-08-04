@@ -18,7 +18,7 @@ const userSchema = new Schema({
   }],
   missions: [{
     taskId: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
       required: true
     },
     state: {
