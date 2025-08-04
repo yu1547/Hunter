@@ -15,6 +15,7 @@ const connectDB = async () => {
         }
     });
     console.log('MongoDB 連接成功！');
+    console.log('目前連線的資料庫名稱：', mongoose.connection.name); 
     } catch (error) {
     console.error('MongoDB 連接失敗:', error.message);
     process.exit(1);
