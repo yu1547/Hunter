@@ -1,29 +1,18 @@
+// routes/eventRoutes.js
 const express = require('express');
 const router = express.Router();
 const eventController = require('../controllers/eventController');
 
-// 獲取每日事件
-router.get('/daily', eventController.getDailyEvents);
+// 每日自動刷新事件位置的 API，通常由排程任務 (cron job) 調用
+router.post('/daily-refresh', eventController.refreshDailyEvents);
 
-// 處理神秘商人交易
-router.post('/merchant/exchange', eventController.handleMerchantExchange);
+// 獲取所有事件的詳細資訊
+router.get('/all', eventController.getAllEvents);
 
-// 處理石堆下的碎片事件
-router.post('/stonepile', eventController.handleStonePileEvent);
+// 觸發特定事件，並返回事件資料
+router.post('/trigger/:eventId', eventController.triggerEvent);
 
-// 獲取永久事件 (例如任務板上的事件)
-router.get('/permanent', eventController.getPermanentEvents);
-
-// 處理所有永久事件的通用觸發
-router.post('/:eventId/trigger', eventController.triggerEvent);
-
-// 處理寶箱事件
-router.post('/treasurebox/open', eventController.handleTreasureBox);
-
-// 處理史萊姆事件
-router.post('/slime/attack', eventController.handleSlimeAttack);
-
-// 處理古樹祝福事件
-router.post('/ancienttree/bless', eventController.handleAncientTreeBlessing);
+// 完成事件，並發放獎勵
+router.post('/complete/:eventId', eventController.completeEvent);
 
 module.exports = router;

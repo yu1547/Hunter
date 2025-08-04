@@ -1,117 +1,60 @@
 package com.ntou01157.hunter.data
 
+// data/EventRepository.kt
+
 import com.ntou01157.hunter.api.ApiService
-import com.ntou01157.hunter.api.ExchangeRequest
-import com.ntou01157.hunter.api.AttackRequest
-import com.ntou01157.hunter.api.OpenTreasureBoxRequest
-import com.ntou01157.hunter.api.BlessRequest
+import com.ntou01157.hunter.api.CompleteEventRequest
+import com.ntou01157.hunter.api.TriggerEventRequest
 import com.ntou01157.hunter.models.model_api.EventModel
-import com.ntou01157.hunter.models.model_api.EventRewardResponse
-import com.ntou01157.hunter.models.model_api.GeneralResponse
-import com.ntou01157.hunter.models.model_api.SlimeAttackResponse
 import com.ntou01157.hunter.utils.NetworkResult
+import com.ntou01157.hunter.models.model_api.*
 
 class EventRepository(private val apiService: ApiService) {
 
-    // 獲取每日事件
-    suspend fun getDailyEvents(): NetworkResult<List<EventModel>> {
+    suspend fun getEvents(): NetworkResult<List<com.ntou01157.hunter.models.model_api.EventModel>> {
         return try {
-            val response = apiService.getDailyEvents()
-            if (response.isSuccessful) {
-                val events = response.body()
-                events?.let {
-                    NetworkResult.Success(it)
-                } ?: NetworkResult.Error("API 回應為空")
-            } else {
-                NetworkResult.Error("API 請求失敗: ${response.code()}")
-            }
+            val response = apiService.getEvents()
+            NetworkResult.Success(response)
         } catch (e: Exception) {
-            NetworkResult.Error("網路錯誤: ${e.message}")
+            NetworkResult.Error(e.message ?: "未知錯誤")
         }
     }
 
-    // 獲取永久事件
-    suspend fun getPermanentEvents(): NetworkResult<List<EventModel>> {
+    suspend fun triggerEvent(
+        eventId: String,
+        userId: String,
+        latitude: Double,
+        longitude: Double
+    ): NetworkResult<EventModel> {
         return try {
-            val response = apiService.getPermanentEvents()
-            if (response.isSuccessful) {
-                val events = response.body()
-                events?.let {
-                    NetworkResult.Success(it)
-                } ?: NetworkResult.Error("API 回應為空")
-            } else {
-                NetworkResult.Error("API 請求失敗: ${response.code()}")
+            val request = TriggerEventRequest(userId, latitude, longitude)
+            val response: EventResponse = apiService.triggerEvent(eventId, request)
+
+            // 使用 let 語法安全地處理 eventData
+            response.eventData?.let { eventData ->
+                // 如果 eventData 不為 null，回傳 Success
+                NetworkResult.Success(eventData)
+            } ?: run {
+                // 如果 eventData 為 null，回傳 Error
+                NetworkResult.Error(response.message)
             }
         } catch (e: Exception) {
-            NetworkResult.Error("網路錯誤: ${e.message}")
+            NetworkResult.Error(e.message ?: "觸發事件失敗")
         }
     }
 
-    // 神秘商人交易
-    suspend fun exchangeItems(userId: String, exchangeOption: String): NetworkResult<com.ntou01157.hunter.api.GeneralResponse> {
+    suspend fun completeEvent(
+        eventId: String,
+        userId: String,
+        selectedOption: String? = null,
+        gameResult: Int? = null
+    ): NetworkResult<EventResponse> {
         return try {
-            val response = apiService.postMerchantExchange(ExchangeRequest(userId, exchangeOption))
-            if (response.isSuccessful) {
-                val result = response.body()
-                result?.let {
-                    NetworkResult.Success(it)
-                } ?: NetworkResult.Error("API 回應為空")
-            } else {
-                NetworkResult.Error("交易失敗: ${response.errorBody()?.string()}")
-            }
+            val request = CompleteEventRequest(userId, selectedOption, gameResult)
+            val response = apiService.completeEvent(eventId, request)
+            NetworkResult.Success(response)
         } catch (e: Exception) {
-            NetworkResult.Error("網路錯誤: ${e.message}")
-        }
-    }
-
-    // 史萊姆攻擊
-    suspend fun attackSlime(userId: String, totalDamage: Int, usedTorch: Boolean): NetworkResult<com.ntou01157.hunter.api.SlimeAttackResponse> {
-        return try {
-            val response = apiService.postSlimeAttack(AttackRequest(userId, totalDamage, usedTorch))
-            if (response.isSuccessful) {
-                val result = response.body()
-                result?.let {
-                    NetworkResult.Success(it)
-                } ?: NetworkResult.Error("API 回應為空")
-            } else {
-                NetworkResult.Error("史萊姆攻擊處理失敗: ${response.errorBody()?.string()}")
-            }
-        } catch (e: Exception) {
-            NetworkResult.Error("網路錯誤: ${e.message}")
-        }
-    }
-
-    // 開啟寶箱
-    suspend fun openTreasureBox(userId: String, keyId: String): NetworkResult<com.ntou01157.hunter.api.EventRewardResponse> {
-        return try {
-            val response = apiService.postOpenTreasureBox(OpenTreasureBoxRequest(userId, keyId))
-            if (response.isSuccessful) {
-                val result = response.body()
-                result?.let {
-                    NetworkResult.Success(it)
-                } ?: NetworkResult.Error("API 回應為空")
-            } else {
-                NetworkResult.Error("開啟寶箱失敗: ${response.errorBody()?.string()}")
-            }
-        } catch (e: Exception) {
-            NetworkResult.Error("網路錯誤: ${e.message}")
-        }
-    }
-
-    // 古樹的祝福
-    suspend fun blessFromAncientTree(userId: String, option: String): NetworkResult<com.ntou01157.hunter.api.GeneralResponse> {
-        return try {
-            val response = apiService.postAncientTreeBlessing(BlessRequest(userId, option))
-            if (response.isSuccessful) {
-                val result = response.body()
-                result?.let {
-                    NetworkResult.Success(it)
-                } ?: NetworkResult.Error("API 回應為空")
-            } else {
-                NetworkResult.Error("古樹祝福失敗: ${response.errorBody()?.string()}")
-            }
-        } catch (e: Exception) {
-            NetworkResult.Error("網路錯誤: ${e.message}")
+            NetworkResult.Error(e.message ?: "完成事件失敗")
         }
     }
 }
