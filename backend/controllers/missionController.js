@@ -1,6 +1,7 @@
 const User = require('../models/userModel');
 const Task = require('../models/taskModel');
 const Spot = require('../models/spotModel'); // 需有 Spot model
+const Rank = require('../models/rankModel'); // 引入 Rank model
 const axios = require('axios'); // 用於呼叫 Flask
 const mongoose = require('mongoose');
 
@@ -117,10 +118,16 @@ const claimReward = async (req, res) => {
     }
 
     // 如果沒有超時，發放積分
-    // 這邊等排行榜寫好再移除註解
-    // if (!isOvertime && taskDetails.rewardScore > 0) {
-    //   user.score = (user.score || 0) + taskDetails.rewardScore;
-    // }
+    if (!isOvertime && taskDetails.rewardScore > 0) {
+      const scoreToAdd = taskDetails.rewardScore;
+
+      // 更新 Rank 集合中的分數
+      await Rank.findOneAndUpdate(
+        { userId: user._id },
+        { $inc: { score: scoreToAdd } },
+        { upsert: true, new: true } // 如果找不到用戶，就創建一個新的
+      );
+    }
 
     mission.state = 'claimed';
     
