@@ -1,25 +1,25 @@
 const mongoose = require("mongoose");
 const Users = require("../models/userModel");
 
-async function addItemsToBackpack(userId, itemIdsArray) {
+async function addItemsToBackpack(userId, itemsToAdd) {
     const user = await Users.findById(userId);
     if (!user) throw new Error("找不到使用者");
 
     // 初始化背包欄位（如果尚未存在）
     if (!user.backpackItems) user.backpackItems = [];
 
-    // 將 itemIdsArray 統一轉為 ObjectId
-    const objectIds = itemIdsArray.map(id => new mongoose.Types.ObjectId(id));
+    for (const item of itemsToAdd) {
+        const itemId = new mongoose.Types.ObjectId(item.itemId);
+        const quantity = item.quantity;
 
-    for (const itemId of objectIds) {
         const existing = user.backpackItems.find(entry => entry.itemId.equals(itemId));
 
         if (existing) {
-            existing.quantity += 1;
+            existing.quantity += quantity;
         } else {
             user.backpackItems.push({
                 itemId: itemId,
-                quantity: 1
+                quantity: quantity
             });
         }
     }
