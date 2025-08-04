@@ -7,7 +7,7 @@ import com.google.firebase.Timestamp
 
 fun getTestUser(): User {
     return User(
-        uid = "12345",
+        uid = "68886402bc049f83948150e8",
         displayName = "測試用戶",
         email = "test@example.com",
         age = "25",
