@@ -3,6 +3,7 @@ const Task = require('../models/taskModel');
 const Spot = require('../models/spotModel'); // 需有 Spot model
 const Rank = require('../models/rankModel'); // 引入 Rank model
 const { generateDropItems } = require('../services/dropService'); // 引入 generateDropItems
+const { addItemsToBackpack } = require('../services/backpackService'); // 引入 backpackService
 const axios = require('axios'); // 用於呼叫 Flask
 const mongoose = require('mongoose');
 
@@ -108,14 +109,7 @@ const claimReward = async (req, res) => {
 
     // 發放獎勵道具
     if (taskDetails.rewardItems && taskDetails.rewardItems.length > 0) {
-      taskDetails.rewardItems.forEach(reward => {
-        const itemIndex = user.backpackItems.findIndex(item => item.itemId.toString() === reward.itemId.toString());
-        if (itemIndex > -1) {
-          user.backpackItems[itemIndex].quantity += reward.quantity;
-        } else {
-          user.backpackItems.push({ itemId: reward.itemId.toString(), quantity: reward.quantity });
-        }
-      });
+      await addItemsToBackpack(user._id, taskDetails.rewardItems);
     }
 
     // 如果沒有超時，發放積分
