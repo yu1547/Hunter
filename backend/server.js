@@ -4,9 +4,13 @@ const { connectDB } = require('./config/db');
 const itemRoutes = require('./routes/itemRoutes');
 const userRoutes = require('./routes/userRoutes');
 const taskRoutes = require('./routes/taskRoutes');
-const missionRoutes = require('./routes/missionRoutes'); // 引入 mission 路由
-const dropRoutes = require('./routes/dropRoutes');//掉落機制
-const spotRoutes = require("./routes/spotRoutes");//收藏冊
+
+const dropRoutes = require('./routes/dropRoutes'); // 掉落機制
+const spotRoutes = require("./routes/spotRoutes"); // 收藏冊
+
+const missionRoutes = require('./routes/missionRoutes');
+const settingsRoutes = require('./routes/settingsRoutes');
+const rankRoutes = require('./routes/rankRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -49,17 +53,20 @@ app.use('/api/users', userRoutes);
 // 任務 API 路由
 app.use('/api/tasks', taskRoutes);
 
-// 掉落機制
-app.use('/api/drop', dropRoutes);
-
-//收藏冊
-app.use("/api/spots", spotRoutes);
-
 // 使用者任務操作 API 路由
 app.use('/api', missionRoutes);
 
+// 掉落機制
+app.use('/api/drop', dropRoutes);
 
+// 收藏冊
+app.use("/api/spots", spotRoutes);
 
+// 使用者設定 API 路由
+app.use('/api/settings', settingsRoutes);
+
+// 使用者排行榜 API 路由
+app.use('/api/rank', rankRoutes);
 
 app.listen(PORT, () => {
     console.log(`伺服器運行於 http://localhost:${PORT}`);

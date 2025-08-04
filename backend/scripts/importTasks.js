@@ -37,8 +37,8 @@ async function importTasks() {
           return item;
         });
       }
-      if (task.checkPlace) {
-        task.checkPlace = task.checkPlace.map(place => {
+      if (task.checkPlaces) {
+        task.checkPlaces = task.checkPlaces.map(place => {
           if (place.spotId && typeof place.spotId === 'string') {
             place.spotId = new ObjectId(place.spotId);
           }

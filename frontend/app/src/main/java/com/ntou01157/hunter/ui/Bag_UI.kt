@@ -25,7 +25,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.ntou01157.hunter.model.model_api.UserItem
+import com.ntou01157.hunter.models.model_api.UserItem
 import com.ntou01157.hunter.Backpack.data.fetchUserItems
 import com.ntou01157.hunter.Backpack.data.craftItem
 import kotlinx.coroutines.launch
