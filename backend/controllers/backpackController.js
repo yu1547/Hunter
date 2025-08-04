@@ -1,40 +1,6 @@
 const User = require('../models/userModel');
 const Item = require('../models/itemModel');
 
-// 添加物品到背包
-const addItemToBackpack = async (req, res) => {
-  try {
-    const { itemId, quantity } = req.body;
-    
-    if (!itemId || !quantity) {
-      return res.status(400).json({ message: '物品ID和數量不能為空' });
-    }
-    
-    const user = await User.findById(req.params.id);
-    if (!user) {
-      return res.status(404).json({ message: '找不到該用戶' });
-    }
-    
-    // 檢查物品是否已在背包中
-    const existingItemIndex = user.backpackItems.findIndex(
-      item => item.itemId === itemId
-    );
-    
-    if (existingItemIndex > -1) {
-      // 如果物品已存在，增加數量
-      user.backpackItems[existingItemIndex].quantity += quantity;
-    } else {
-      // 如果物品不存在，添加新物品
-      user.backpackItems.push({ itemId, quantity });
-    }
-    
-    await user.save();
-    res.status(200).json(user);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
 // 合成道具
 const craftItem = async (req, res) => {
   try {
@@ -107,6 +73,5 @@ const craftItem = async (req, res) => {
 };
 
 module.exports = {
-  addItemToBackpack,
   craftItem,
 };
