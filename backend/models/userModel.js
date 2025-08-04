@@ -17,6 +17,7 @@ const userSchema = new Schema({
     }
   }],
   missions: [{
+    _id: false,
     taskId: {
       type: mongoose.Schema.Types.ObjectId,
       required: true
@@ -39,6 +40,7 @@ const userSchema = new Schema({
       default: null
     },
     haveCheckPlaces: [{
+      _id: false,
       spotId: {
         type: Schema.Types.ObjectId,
         ref: 'Spot',
