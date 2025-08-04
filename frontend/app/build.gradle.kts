@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+
+    id("com.google.gms.google-services")
 }
 
 val localProperties = Properties()
@@ -50,8 +52,17 @@ android {
 }
 
 dependencies {
+    // ✅ Google Sign-In
+    implementation("com.google.android.gms:play-services-auth:21.0.0")
+
+    // ✅ Firebase Auth
+    implementation("com.google.firebase:firebase-auth-ktx")
+    
+    implementation(platform("com.google.firebase:firebase-bom:34.0.0"))
+    implementation("com.google.firebase:firebase-analytics")
+
     implementation("com.google.firebase:firebase-firestore-ktx")
-    implementation(platform("com.google.firebase:firebase-bom:32.7.2"))
+    //implementation(platform("com.google.firebase:firebase-bom:32.7.2"))
 
     implementation("androidx.navigation:navigation-compose:2.9.0")
     implementation("androidx.compose.material3:material3:1.2.1")
