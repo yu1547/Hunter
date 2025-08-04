@@ -5,6 +5,7 @@ import com.ntou01157.hunter.models.model_api.Item
 import com.ntou01157.hunter.models.model_api.RankResponse
 import com.ntou01157.hunter.models.model_api.User
 import com.ntou01157.hunter.models.model_api.Task
+import com.ntou01157.hunter.models.model_api.EventModel
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Response
@@ -48,6 +49,24 @@ interface ApiService {
 
     @POST("api/users/{userId}/missions/{taskId}/claim")
     suspend fun claimReward(@Path("userId") userId: String, @Path("taskId") taskId: String): UserResponse
+
+    @GET("api/events/daily")
+    suspend fun getDailyEvents(): Response<List<EventModel>>
+
+    @GET("api/events/permanent")
+    suspend fun getPermanentEvents(): Response<List<EventModel>>
+
+    @POST("api/events/merchant/exchange")
+    suspend fun postMerchantExchange(@Body exchangeRequest: ExchangeRequest): Response<GeneralResponse>
+
+    @POST("api/events/slime/attack")
+    suspend fun postSlimeAttack(@Body attackRequest: AttackRequest): Response<SlimeAttackResponse>
+
+    @POST("api/events/treasurebox/open")
+    suspend fun postOpenTreasureBox(@Body openRequest: OpenTreasureBoxRequest): Response<EventRewardResponse>
+
+    @POST("api/events/ancienttree/bless")
+    suspend fun postAncientTreeBlessing(@Body blessRequest: BlessRequest): Response<GeneralResponse>
 }
 
 // 請求 Body 的資料類別
@@ -58,6 +77,46 @@ data class UserResponse(
     @SerializedName("user") val user: User,
     @SerializedName("message") val message: String?
 )
+
+// --- 新增事件相關的請求與回應資料類別 ---
+data class ExchangeRequest(val userId: String, val option: String)
+data class AttackRequest(val userId: String, val totalDamage: Int, val usedTorch: Boolean)
+data class OpenTreasureBoxRequest(val userId: String, val keyId: String)
+data class BlessRequest(val userId: String, val option: String)
+
+// 處理後端回傳 { success, message, user } 的通用回應
+data class GeneralResponse(
+    val success: Boolean,
+    val message: String,
+    @SerializedName("user") val user: User
+)
+
+// 處理後端回傳 { success, message, user, rewards } 的史萊姆回應
+data class SlimeAttackResponse(
+    val success: Boolean,
+    val message: String,
+    @SerializedName("user") val user: User,
+    val rewards: List<EventReward>
+)
+
+// 處理後端回傳寶箱開啟的回應
+data class EventRewardResponse(
+    val success: Boolean,
+    val message: String,
+    @SerializedName("user") val user: User,
+    val rewards: EventRewards
+)
+
+data class EventRewards(
+    val points: Int,
+    val items: List<EventReward>
+)
+
+data class EventReward(
+    val itemId: String,
+    val quantity: Int
+)
+
 
 // 創建 Retrofit 實例
 object RetrofitClient {
