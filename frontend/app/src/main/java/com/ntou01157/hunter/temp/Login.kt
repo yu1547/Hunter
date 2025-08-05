@@ -87,10 +87,17 @@ fun LoginScreen(navController: NavHostController, loginViewModel: LoginViewModel
             modifier = Modifier
                 .size(64.dp)
                 .clickable {
-                    val signInIntent = loginViewModel.getSignInClient(activity).signInIntent
-                    launcher.launch(signInIntent)
+                    val signInClient = loginViewModel.getSignInClient(activity)
+                    val signInIntent = signInClient.signInIntent
+
+                    // 🔁 先 signOut 以清除登入快取
+                    signInClient.signOut().addOnCompleteListener {
+                        launcher.launch(signInIntent)
+                    }
                 }
         )
+
+
 
         showError?.let {
             Spacer(modifier = Modifier.height(8.dp))

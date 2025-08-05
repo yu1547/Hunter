@@ -61,6 +61,7 @@ object GoogleSignInHelper {
         onSuccess: () -> Unit,
         onFailure: (String) -> Unit
     ) {
+        Log.d("GoogleSignInHelper", "準備傳送到後端 email: $email") // <-- 新增這行
         val json = JSONObject()
         json.put("email", email)
 
