@@ -3,6 +3,7 @@ const Items = require("../models/itemModel");
 const DropRules = require("../models/dropRulesModel");
 const DropPools = require("../models/dropPoolsModel");
 const { addItemsToBackpack } = require("../services/backpackService");//添加到背包
+const Users = require("../models/userModel");
 console.log("✅ DropRules model name:", DropRules.modelName);
 console.log("✅ DropRules collection name:", DropRules.collection.name);
 
@@ -101,12 +102,19 @@ async function getItemNameById(itemId) {
 async function generateDropForUser(userId, difficulty) {
     console.log(`\nuserID ${userId} `);
     
+    const user = await Users.findById(userId);
+    if (!user) {
+        console.error(`User with ID ${userId} not found.`);
+        return []; // 返回空陣列或拋出錯誤
+    }
+
     // 生成掉落物
     const drops = await generateDropItems(difficulty);
 
     // 將掉落物添加到背包
     if (drops.length > 0) {
-        await addItemsToBackpack(userId, drops); // drops 是 [{itemId, quantity}] 的陣列
+        await addItemsToBackpack(user, drops); // drops 是 [{itemId, quantity}] 的陣列
+        await user.save(); // 儲存使用者物件的變更
     }
 
     // 獲取掉落物的名稱以供顯示
