@@ -109,7 +109,7 @@ const claimReward = async (req, res) => {
 
     // 發放獎勵道具
     if (taskDetails.rewardItems && taskDetails.rewardItems.length > 0) {
-      await addItemsToBackpack(user._id, taskDetails.rewardItems);
+      await addItemsToBackpack(user, taskDetails.rewardItems);
     }
 
     // 如果沒有超時，發放積分
