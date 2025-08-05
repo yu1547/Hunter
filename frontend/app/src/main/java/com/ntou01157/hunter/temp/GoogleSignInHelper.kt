@@ -11,6 +11,9 @@ import org.json.JSONObject
 import java.io.IOException
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
+import android.os.Handler
+import android.os.Looper
+
 
 
 object GoogleSignInHelper {
@@ -77,13 +80,16 @@ object GoogleSignInHelper {
 
             override fun onResponse(call: Call, response: Response) {
                 if (response.isSuccessful) {
-                    Log.d("GoogleSignInHelper", "MongoDB 使用者已建立/已存在")
-                    onSuccess()
+                    Handler(Looper.getMainLooper()).post {
+                        onSuccess() // ⬅️ 這個 callback 裡面才呼叫 navController.navigate()
+                    }
                 } else {
-                    Log.e("GoogleSignInHelper", "後端回傳錯誤: ${response.code}")
-                    onFailure("後端錯誤代碼: ${response.code}")
+                    Handler(Looper.getMainLooper()).post {
+                        onFailure("後端錯誤代碼: ${response.code}")
+                    }
                 }
             }
+
         })
     }
 }

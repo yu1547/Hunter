@@ -1,17 +1,22 @@
 const express = require("express");
 const router = express.Router();
-const User = require("../models/User"); // 你的 User schema
+const User = require("../models/userModel"); // ✅ 確保這個檔案存在
 
 router.post("/google", async (req, res) => {
     const { email } = req.body;
 
-    if (!email) return res.status(400).json({ message: "缺少 email" });
+    console.log("📨 收到 Google 登入請求:", req.body);
+
+    if (!email) {
+        console.warn("⚠️ 缺少 email");
+        return res.status(400).json({ message: "缺少 email" });
+    }
 
     try {
         let user = await User.findOne({ email });
 
         if (!user) {
-            // 如果找不到就創建新使用者
+            console.log("🆕 建立新使用者:", email);
             user = new User({
                 email,
                 displayName: "",
@@ -31,15 +36,17 @@ router.post("/google", async (req, res) => {
             });
 
             await user.save();
+            console.log("✅ 使用者已儲存:", user._id);
         } else {
-            // 如果已存在則更新登入時間
+            console.log("🔁 使用者已存在:", user.email);
             user.lastLogin = new Date();
             await user.save();
+            console.log("🕒 更新 lastLogin");
         }
 
         res.json({ message: "登入成功", user });
     } catch (err) {
-        console.error(err);
+        console.error("❌ MongoDB 操作錯誤:", err);
         res.status(500).json({ message: "伺服器錯誤" });
     }
 });
