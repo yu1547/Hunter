@@ -30,6 +30,8 @@ fun ChatScreen(onClose: () -> Unit) {
     var input by remember { mutableStateOf(TextFieldValue("")) }
     var messages by remember { mutableStateOf<List<History>>(emptyList()) }
     val context = LocalContext.current
+    val scrollState = rememberScrollState()
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         try {
@@ -53,6 +55,12 @@ fun ChatScreen(onClose: () -> Unit) {
         }
     }
 
+    LaunchedEffect(messages) {
+        coroutineScope.launch {
+            scrollState.animateScrollTo(scrollState.maxValue)
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -72,7 +80,7 @@ fun ChatScreen(onClose: () -> Unit) {
         Column(
             modifier = Modifier
                 .weight(1f)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .fillMaxWidth()
                 .background(Color.White)
                 .padding(8.dp)
