@@ -20,7 +20,6 @@ data class User (
     val supplyScanLogs: MutableMap<String, Timestamp> = mutableMapOf(),
     val settings: Settings = Settings(language = "zh-TW"),
     val buff: Map<String, Int> = emptyMap(),
-    val csrHistory: List<CSRChatHistory> = emptyList()
 )
 
 data class BackpackItem(
@@ -59,16 +58,4 @@ data class Settings(
 
 data class Buff(
     val isBuff: Int = 0
-)
-
-// 客服對話紀錄（符合 CSR_input.json 格式）
-data class CSRChatHistory(
-    val message: String,
-    val history: List<CSRChatHistoryItem>
-)
-
-data class CSRChatHistoryItem(
-    val role: String,
-    val content: String,
-    val timestamp: String
 )

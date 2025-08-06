@@ -10,7 +10,6 @@ data class User(
     @SerializedName("backpackItems") val backpackItems: List<BackpackItem>,
     @SerializedName("missions") val missions: List<Mission> = emptyList(),
     @SerializedName("settings") val settings: Settings,
-    @SerializedName("csrHistory") val csrHistory: List<CSRChatHistory>? = null
     // 其他用戶屬性...
 )
 
@@ -41,16 +40,4 @@ data class Settings(
     @SerializedName("music") val music: Boolean,
     @SerializedName("notification") val notification: Boolean,
     @SerializedName("language") val language: String
-)
-
-// 客服對話紀錄（符合 CSR_input.json 格式）
-data class CSRChatHistory(
-    @SerializedName("message") val message: String,
-    @SerializedName("history") val history: List<CSRChatHistoryItem>
-)
-
-data class CSRChatHistoryItem(
-    @SerializedName("role") val role: String,
-    @SerializedName("content") val content: String,
-    @SerializedName("timestamp") val timestamp: String
 )
