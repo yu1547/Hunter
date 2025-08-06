@@ -1,6 +1,7 @@
 package com.ntou01157.hunter.models
 
 data class CSRChat(
+    val userId: String,
     val message: String,
     val history: List<History>
 )
