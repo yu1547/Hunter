@@ -15,6 +15,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ntou01157.hunter.api.RetrofitClient
+import com.ntou01157.hunter.api.ChatRequest
+import com.ntou01157.hunter.api.ChatHistoryItem
+import com.ntou01157.hunter.api.ChatResponse
 import com.ntou01157.hunter.models.History
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -26,7 +30,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import org.json.JSONObject
 
 @Composable
-fun ChatScreen(onClose: () -> Unit) {
+fun ChatScreen(
+    userId: String = "68846d797609912e5e6ba9af",
+    onClose: () -> Unit
+) {
     var input by remember { mutableStateOf(TextFieldValue("")) }
     var messages by remember { mutableStateOf<List<History>>(emptyList()) }
     val context = LocalContext.current
@@ -130,9 +137,37 @@ fun ChatScreen(onClose: () -> Unit) {
                     val now = java.time.Instant.now().toString()
                     if (input.text.isNotBlank()) {
                         val userMessage = History("user", input.text, now)
-                        val llmReply = History("LLM", "我收到了您的訊息，但目前無法處理請求。", java.time.Instant.now().toString())
-                        messages = messages + userMessage + llmReply
+                        val currentHistory = messages + userMessage
+                        messages = currentHistory // 先顯示使用者訊息
                         input = TextFieldValue("")
+                        coroutineScope.launch {
+                            try {
+                                val apiHistory = currentHistory.map {
+                                    ChatHistoryItem(it.role, it.content, it.timestamp)
+                                }
+                                val request = ChatRequest(
+                                    message = userMessage.content,
+                                    history = apiHistory
+                                )
+                                val response: ChatResponse = RetrofitClient.apiService
+                                    .chatWithLLM(userId, request)
+                                val llmReply = History(
+                                    "LLM",
+                                    response.reply,
+                                    java.time.Instant.now().toString()
+                                )
+                                messages = currentHistory + llmReply
+                            } catch (e: Exception) {
+                                val errorMsg = "伺服器錯誤，請稍後再試"
+                                val llmReply = History(
+                                    "LLM",
+                                    errorMsg,
+                                    java.time.Instant.now().toString()
+                                )
+                                messages = currentHistory + llmReply
+                                Log.e("ChatScreen", "API error", e)
+                            }
+                        }
                     }
                 }
             ) {
