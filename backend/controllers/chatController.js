@@ -20,11 +20,13 @@ const chatWithLLM = async (req, res) => {
   console.log("message:", message);
 
   try {
-    // 查詢時要用 csrHistory.userId
-    let chat = await Chat.findOne({ 'csrHistory.userId': new mongoose.Types.ObjectId(userId) });
+    // 查詢時直接用 userId
+    let chat = await Chat.findOne({ userId: new mongoose.Types.ObjectId(userId) });
     let history = [];
-    if (chat && chat.csrHistory && Array.isArray(chat.csrHistory.history)) {
-      history = chat.csrHistory.history;
+    if (chat && Array.isArray(chat.history)) {
+      history = chat.history;
+    } else {
+      history = [];
     }
 
     // 呼叫 Flask /chat，傳入 message 與 history
@@ -61,26 +63,24 @@ const chatWithLLM = async (req, res) => {
     // 更新資料庫
     if (!chat) {
       chat = new Chat({
-        csrHistory: {
-          userId: new mongoose.Types.ObjectId(userId),
-          message: message,
-          history: newHistoryItems
-        }
+        userId: new mongoose.Types.ObjectId(userId),
+        message: message,
+        history: newHistoryItems
       });
     } else {
-      chat.csrHistory.history = [...chat.csrHistory.history, ...newHistoryItems];
-      if (chat.csrHistory.history.length > 6) {
-        chat.csrHistory.history = chat.csrHistory.history.slice(chat.csrHistory.history.length - 6);
+      chat.history = [...chat.history, ...newHistoryItems];
+      if (chat.history.length > 6) {
+        chat.history = chat.history.slice(chat.history.length - 6);
       }
-      chat.csrHistory.message = message;
-      chat.csrHistory.userId = new mongoose.Types.ObjectId(userId);
+      chat.message = message;
+      chat.userId = new mongoose.Types.ObjectId(userId);
     }
     try {
       await chat.save();
-      console.log("✅ 對話已累積存入 chat.csrHistory (object，history累積)");
+      console.log("✅ 對話已累積存入 chat (object，history累積)");
     } catch (saveErr) {
-      console.error("❌ 存入 chat.csrHistory 失敗：", saveErr);
-      return res.status(500).json({ error: '存入 chat.csrHistory 失敗', detail: saveErr.message });
+      console.error("❌ 存入 chat 失敗：", saveErr);
+      return res.status(500).json({ error: '存入 chat 失敗', detail: saveErr.message });
     }
 
     res.json({ reply });
