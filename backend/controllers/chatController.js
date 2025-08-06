@@ -1,5 +1,6 @@
 const axios = require('axios');
-const User = require('../models/userModel');
+const Chat = require('../models/chatModel');
+const mongoose = require('mongoose');
 
 const chatWithLLM = async (req, res) => {
   const userId = req.params.id;
@@ -9,27 +10,30 @@ const chatWithLLM = async (req, res) => {
     return res.status(400).json({ error: '格式錯誤，需包含 message' });
   }
 
+  // 檢查 userId 是否為合法 ObjectId
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({ error: 'userId 不是合法 ObjectId' });
+  }
+
   console.log("========== 聊天 API 收到請求 ==========");
   console.log("userId:", userId);
   console.log("message:", message);
 
   try {
-    const user = await User.findById(userId);
+    // 查詢時要用 csrHistory.userId
+    let chat = await Chat.findOne({ 'csrHistory.userId': new mongoose.Types.ObjectId(userId) });
     let history = [];
-    if (user && user.csrHistory && user.csrHistory.length > 0) {
-      // 只取唯一一個 CSRChatHistory 的 history
-      history = user.csrHistory[0].history || [];
+    if (chat && chat.csrHistory && Array.isArray(chat.csrHistory.history)) {
+      history = chat.csrHistory.history;
     }
 
     // 呼叫 Flask /chat，傳入 message 與 history
     const flaskUrl = process.env.LLM_FLASK_URL || 'http://llm:5050/chat';
-    //console.log("送到 Flask 的 payload:", JSON.stringify({ message, history }, null, 2));
     let flaskRes;
     try {
       flaskRes = await axios.post(flaskUrl, { message, history }, { timeout: 300000 });
     } catch (flaskErr) {
       console.error("❌ Flask 連線或回傳錯誤：", flaskErr);
-      // 若有回傳錯誤內容，印出
       if (flaskErr.response && flaskErr.response.data && flaskErr.response.data.error) {
         console.error("❌ Flask 回傳錯誤內容：", flaskErr.response.data.error);
         return res.status(500).json({ error: flaskErr.response.data.error });
@@ -55,32 +59,28 @@ const chatWithLLM = async (req, res) => {
     ];
 
     // 更新資料庫
-    if (user) {
-      // 如果沒有csrHistory，初始化唯一一筆
-      if (!user.csrHistory || user.csrHistory.length === 0) {
-        user.csrHistory = [{
+    if (!chat) {
+      chat = new Chat({
+        csrHistory: {
+          userId: new mongoose.Types.ObjectId(userId),
           message: message,
           history: newHistoryItems
-        }];
-      } else {
-        // 只更新唯一一個 CSRChatHistory
-        const chatObj = user.csrHistory[0];
-        chatObj.history = [...chatObj.history, ...newHistoryItems];
-        // 限制最多6個物件，超過則刪除最舊的兩個
-        if (chatObj.history.length > 6) {
-          chatObj.history = chatObj.history.slice(chatObj.history.length - 6);
         }
-        chatObj.message = message;
-        user.csrHistory[0] = chatObj;
-      }
-      try {
-        await user.save();
-        console.log("✅ 對話已累積存入 user.csrHistory (僅一個物件，history累積)");
-      } catch (saveErr) {
-        console.error("❌ 存入 csrHistory 失敗：", saveErr);
-      }
+      });
     } else {
-      console.warn("⚠️ 找不到 user，無法存入對話紀錄");
+      chat.csrHistory.history = [...chat.csrHistory.history, ...newHistoryItems];
+      if (chat.csrHistory.history.length > 6) {
+        chat.csrHistory.history = chat.csrHistory.history.slice(chat.csrHistory.history.length - 6);
+      }
+      chat.csrHistory.message = message;
+      chat.csrHistory.userId = new mongoose.Types.ObjectId(userId);
+    }
+    try {
+      await chat.save();
+      console.log("✅ 對話已累積存入 chat.csrHistory (object，history累積)");
+    } catch (saveErr) {
+      console.error("❌ 存入 chat.csrHistory 失敗：", saveErr);
+      return res.status(500).json({ error: '存入 chat.csrHistory 失敗', detail: saveErr.message });
     }
 
     res.json({ reply });

@@ -1,18 +1,6 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
-// 客服對話紀錄（符合 CSR_input.json 格式）
-const CSRChatHistoryItemSchema = new Schema({
-  role: { type: String, required: true },      // "user" 或 "LLM"
-  content: { type: String, required: true },
-  timestamp: { type: String, required: true }
-}, { _id: false });
-
-const CSRChatHistorySchema = new Schema({
-  message: { type: String, required: true },
-  history: { type: [CSRChatHistoryItemSchema], required: true }
-}, { _id: false });
-
 // 定義使用者模型結構
 const userSchema = new Schema({
   // uid 由 MongoDB 自動生成的 _id 提供
@@ -87,8 +75,7 @@ const userSchema = new Schema({
   createdAt: {
     type: Date,
     default: Date.now
-  },
-  csrHistory: [CSRChatHistorySchema]
+  }
 }, { collection: 'users' });
 
 // 明確指定集合名稱為 'users'
