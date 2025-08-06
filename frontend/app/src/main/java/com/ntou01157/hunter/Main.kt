@@ -33,6 +33,9 @@ import com.ntou01157.hunter.models.User
 import com.ntou01157.hunter.ui.*
 import com.ntou01157.hunter.api.RetrofitClient // Correct import for RetrofitClient
 import com.ntou01157.hunter.data.RankRepository // Correct import for your RankRepository
+import com.ntou01157.hunter.temp.*
+import androidx.lifecycle.viewmodel.compose.viewModel
+
 
 
 class MainApplication : android.app.Application() {
@@ -74,8 +77,10 @@ class Main : ComponentActivity() {
                 composable("tasklist") {
                     TaskListScreen(navController)
                 }
+
                 composable("profile") {
-                    ProfileScreen()
+                    val profileViewModel = viewModel<ProfileViewModel>()
+                    ProfileScreen(profileViewModel = profileViewModel)
                 }
 
             }

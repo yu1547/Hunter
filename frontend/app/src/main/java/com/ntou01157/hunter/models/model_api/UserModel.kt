@@ -11,6 +11,8 @@ data class User(
     @SerializedName("missions") val missions: List<Mission> = emptyList(),
     @SerializedName("gender") val gender: String?,
     @SerializedName("age") val age: String?,
+    @SerializedName("photoURL") val photoURL: String? = null,
+
     // 其他用戶屬性...
 )
 

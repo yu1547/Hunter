@@ -6,6 +6,7 @@ const {
   createUser,
   updateUser,
   deleteUser,
+  getUserByEmail,
 } = require('../controllers/userController');
 const {
   addItemToBackpack,
@@ -14,6 +15,7 @@ const {
 
 // 用戶 API
 router.get('/', getAllUsers);     // GET 所有用戶
+router.get('/email/:email', getUserByEmail);
 router.get('/:id', getUserById);  // GET 單個用戶
 router.post('/', createUser);     // POST 新用戶
 router.put('/:id', updateUser);   // PUT 更新用戶信息

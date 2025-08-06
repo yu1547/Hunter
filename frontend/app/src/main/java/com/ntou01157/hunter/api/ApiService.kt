@@ -14,6 +14,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.PUT
 
 // API 接口定義
 interface ApiService {
@@ -25,6 +26,17 @@ interface ApiService {
 
     @POST("api/users/{id}/craft")
     suspend fun craftItem(@Path("id") id: String, @Body body: CraftRequestBody): User
+
+    @GET("api/users/email/{email}")
+    suspend fun getUserByEmail(@Path("email") email: String): User
+
+    @PUT("api/users/{id}")
+    suspend fun updateUser(@Path("id") id: String, @Body updatedUser: User): User
+
+    @PUT("api/users/{id}")
+    suspend fun updateUser(@Path("id") id: String, @Body updatedData: Map<String, String>): User
+
+
 
     // --- Task endpoints ---
     @GET("api/tasks/{id}")

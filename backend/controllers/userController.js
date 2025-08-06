@@ -1,8 +1,3 @@
-/*
-  這個程式碼是有關用戶管理的操作，
-  包括獲取所有用戶、獲取單個用戶、創建新用戶、更新用戶信息和刪除用戶。
-*/
-
 const User = require('../models/userModel');
 
 // GET 所有用戶
@@ -14,6 +9,19 @@ const getAllUsers = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+const getUserByEmail = async (req, res) => {
+  try {
+    const user = await User.findOne({ email: req.params.email });
+    if (!user) {
+      return res.status(404).json({ message: '找不到該用戶' });
+    }
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 
 // GET 單個用戶
 const getUserById = async (req, res) => {
@@ -76,6 +84,7 @@ const deleteUser = async (req, res) => {
 module.exports = {
   getAllUsers,
   getUserById,
+  getUserByEmail, 
   createUser,
   updateUser,
   deleteUser,

@@ -58,6 +58,8 @@ dependencies {
     // Add the dependency for the Firebase Authentication library
     // When using the BoM, you don't specify versions in Firebase library dependencies
     implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-storage-ktx:20.3.0")
+
 
 
     // Also add the dependencies for the Credential Manager libraries and specify their versions

@@ -2,45 +2,84 @@ package com.ntou01157.hunter.temp
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ntou01157.hunter.api.RetrofitClient
+import com.ntou01157.hunter.models.model_api.User
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import org.json.JSONObject
 
 class ProfileViewModel : ViewModel() {
-    private val _username = MutableStateFlow("")
-    val username: StateFlow<String> = _username
+    private val _user = MutableStateFlow<User?>(null)
+    val user: StateFlow<User?> = _user
 
-    private val _gender = MutableStateFlow("")
-    val gender: StateFlow<String> = _gender
-
-    private val _age = MutableStateFlow("")
-    val age: StateFlow<String> = _age
-
-    private val client = OkHttpClient()
+    val editedUsername = MutableStateFlow("")
+    val editedGender = MutableStateFlow("")
+    val editedAge = MutableStateFlow("")
 
     fun fetchUserProfile(email: String) {
         viewModelScope.launch {
             try {
-                val request = Request.Builder()
-                    .url("http://10.0.2.2:3000/api/users/$email")
-                    .build()
+                val userData = RetrofitClient.apiService.getUserByEmail(email)
+                _user.value = userData
+                editedUsername.value = userData.username ?: ""
+                editedGender.value = userData.gender ?: ""
+                editedAge.value = userData.age ?: ""
+            } catch (e: Exception) {
+                println("載入使用者資料失敗: ${e.message}")
+            }
+        }
+    }
 
-                val response = client.newCall(request).execute()
+    fun updateUserProfile(userId: String, username: String, gender: String, age: String) {
+        viewModelScope.launch {
+            try {
+                val updated = mapOf(
+                    "username" to username,
+                    "gender" to gender,
+                    "age" to age
+                )
+                val response = RetrofitClient.apiService.updateUser(userId, updated)
+                _user.value = response
+                println("使用者資料已更新")
+            } catch (e: Exception) {
+                println("更新使用者資料失敗: ${e.message}")
+            }
+        }
+    }
 
-                if (response.isSuccessful) {
-                    val json = JSONObject(response.body?.string() ?: "")
-                    _username.value = json.optString("username", "")
-                    _gender.value = json.optString("gender", "")
-                    _age.value = json.optString("age", "")
-                } else {
-                    println("錯誤代碼: ${response.code}")
+    fun updateUserPhotoUrl(userId: String, photoUrl: String) {
+        viewModelScope.launch {
+            try {
+                val currentUser = _user.value
+                val updatedUser = currentUser?.copy(photoURL = photoUrl)
+                updatedUser?.let {
+                    RetrofitClient.apiService.updateUser(userId, it)
+                    _user.value = it // 更新本地 user 狀態
                 }
             } catch (e: Exception) {
-                println("錯誤: ${e.message}")
+                println("更新 photoURL 失敗: ${e.message}")
+            }
+        }
+    }
+
+
+    fun saveProfileUpdates() {
+        viewModelScope.launch {
+            _user.value?.let { currentUser ->
+                val updatedUser = currentUser.copy(
+                    username = editedUsername.value,
+                    gender = editedGender.value,
+                    age = editedAge.value
+                )
+
+                try {
+                    val updated = RetrofitClient.apiService.updateUser(currentUser.id, updatedUser)
+                    _user.value = updated
+                } catch (e: Exception) {
+                    println("更新使用者資料失敗: ${e.message}")
+                }
             }
         }
     }
 }
+
