@@ -8,18 +8,20 @@ const CSRChatHistoryItemSchema = new Schema({
   timestamp: { type: String, required: true }
 }, { _id: false });
 
-const CSRChatHistorySchema = new Schema({
+const chatSchema = new Schema({
   userId: {
     type: Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
-  message: { type: String, required: true },
-  history: { type: [CSRChatHistoryItemSchema], required: true }
-}, { _id: false });
-
-const chatSchema = new Schema({
-  csrHistory: CSRChatHistorySchema
+  message: {
+    type: String,
+    required: true
+  },
+  history: {
+    type: [CSRChatHistoryItemSchema],
+    required: true
+  }
 }, { collection: 'chats' });
 
 const Chat = mongoose.model('Chat', chatSchema);
