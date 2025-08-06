@@ -28,35 +28,44 @@ const updateUserRewards = async (userId, rewards, consume) => {
         throw new Error('User not found');
     }
 
-    if (rewards.points) {
-        user.points += rewards.points;
+    if (!user.items) {
+        user.items = [];
     }
 
-    if (rewards.title) {
-        user.titles.push(rewards.title);
+    // 檢查 rewards 是否存在
+    if (rewards) {
+        if (rewards.points) {
+            user.points += rewards.points;
+        }
+
+        if (rewards.title) {
+            user.titles.push(rewards.title);
+        }
+
+        // 處理道具獲得
+        if (rewards.items) {
+            for (const rewardItem of rewards.items) {
+                // 將 findById 修正為 .find()
+                const userItem = user.items.find(item => item.itemId.toString() === rewardItem.itemId.toString());
+                if (userItem) {
+                    userItem.quantity += rewardItem.quantity;
+                } else {
+                    user.items.push({ itemId: rewardItem.itemId, quantity: rewardItem.quantity });
+                }
+            }
+        }
     }
 
     // 處理道具消耗
     if (consume && consume.items) {
         for (const consumeItem of consume.items) {
+            // 將 findById 修正為 .find()
             const userItem = user.items.find(item => item.itemId.toString() === consumeItem.itemId.toString());
             if (userItem) {
                 userItem.quantity -= consumeItem.quantity;
                 if (userItem.quantity <= 0) {
                     user.items = user.items.filter(item => item.itemId.toString() !== consumeItem.itemId.toString());
                 }
-            }
-        }
-    }
-
-    // 處理道具獲得
-    if (rewards.items) {
-        for (const rewardItem of rewards.items) {
-            const userItem = user.items.find(item => item.itemId.toString() === rewardItem.itemId.toString());
-            if (userItem) {
-                userItem.quantity += rewardItem.quantity;
-            } else {
-                user.items.push({ itemId: rewardItem.itemId, quantity: rewardItem.quantity });
             }
         }
     }
@@ -124,7 +133,7 @@ exports.triggerEvent = async (req, res) => {
 // 完成事件，並發放獎勵
 exports.completeEvent = async (req, res) => {
     const { eventId } = req.params;
-    const { userId, selectedOption, gameResult } = req.body;
+    const { userId, username, selectedOption, gameResult } = req.body;
 
     try {
         const event = await Event.findById(eventId);
@@ -132,10 +141,21 @@ exports.completeEvent = async (req, res) => {
             return res.status(404).json({ message: '找不到此事件' });
         }
 
-        const user = await User.findById(userId);
+        let user = null;
+        // 優先使用 userId 查詢
+        if (userId) {
+            user = await User.findById(userId);
+        }
+
+        // 如果沒有 userId 或找不到使用者，則使用 username 查詢
+        if (!user && username) {
+            user = await User.findOne({ username: username })
+        }
+
         if (!user) {
             return res.status(404).json({ message: '找不到使用者' });
         }
+
 
         let finalRewards = event.rewards;
         let consumeItems = event.consume;
@@ -149,7 +169,7 @@ exports.completeEvent = async (req, res) => {
             // 檢查使用者是否有足夠的道具進行交易
             if (option.rewards.consume) {
                 for (const itemToConsume of option.rewards.consume) {
-                    const userItem = user.items.find(item => item.itemId.toString() === itemToConsume.itemId);
+                    const userItem = user.items.find(item => item.itemId.toString() === itemToConsume.itemId.toString());
                     if (!userItem || userItem.quantity < itemToConsume.quantity) {
                         return res.status(400).json({ message: '道具數量不足' });
                     }
@@ -175,11 +195,12 @@ exports.completeEvent = async (req, res) => {
             finalRewards = { points: 5, items: [slimeRewardItem] };
         }
 
-        const updatedUser = await updateUserRewards(userId, finalRewards, consumeItems);
+        const updatedUser = await updateUserRewards(user._id, finalRewards, consumeItems);
 
         res.status(200).json({ message: '事件完成，獎勵已發放', rewards: finalRewards, updatedUser });
 
     } catch (error) {
+        console.error('API 執行錯誤:', error);
         res.status(500).json({ message: error.message });
     }
 };

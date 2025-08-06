@@ -1,4 +1,4 @@
-// data/sampleEvents.json
+
 [
   {
     "_id": "60c84f1b9f7a4c001f3e7b23",
@@ -35,7 +35,7 @@
     "description": "你發現打卡點旁有一堆亂石，當你搬開其中一顆後，發現底下藏著一枚閃閃發亮的東西。",
     "type": "daily",
     "spotId": null,
-    "rewards": { "items": [{ "itemId": "60c84f1b9f7a4c001f3e7b25", "quantity": 2 }] }
+    "rewards": { "items": [{ "itemId": "6892b1db16a96f6bb0af20c9", "quantity": 2 }] }
   },
   {
     "_id": "60c84f1b9f7a4c001f3e7b28",
@@ -59,8 +59,8 @@
     "description": "偶遇一個銅寶箱，你要打開他嗎？",
     "type": "chest",
     "spotId": "60c84f1b9f7a4c001f3e7b33",
-    "rewards": { "points": 15, "items": [{ "itemId": "隨機道具", "quantity": 1 }] },
-    "consume": { "items": [{ "itemId": "60c84f1b9f7a4c001f3e7b34", "quantity": 1 }] }
+    "rewards": { "points": 15, "items": [{ "itemId": "6892b1db16a96f6bb0af20cf", "quantity": 1 }] },
+    "consume": { "items": [{ "itemId": "6892b1db16a96f6bb0af20c6", "quantity": 1 }] }
   },
   {
     "_id": "60c84f1b9f7a4c001f3e7b35",
@@ -72,15 +72,15 @@
       {
         "text": "交出普通的史萊姆黏液 x10",
         "rewards": {
-          "items": [{ "itemId": "60c84f1b9f7a4c001f3e7b25", "quantity": 1 }],
-          "consume": [{ "itemId": "60c84f1b9f7a4c001f3e7b37", "quantity": 10 }]
+          "items": [{ "itemId": "6892b1db16a96f6bb0af20c9", "quantity": 1 }],
+          "consume": [{ "itemId": "6892b1db16a96f6bb0af20c3", "quantity": 10 }]
         }
       },
       {
         "text": "交出黏稠的史萊姆黏液 x10",
         "rewards": {
-          "items": [{ "itemId": "60c84f1b9f7a4c001f3e7b24", "quantity": 1 }],
-          "consume": [{ "itemId": "60c84f1b9f7a4c001f3e7b38", "quantity": 10 }]
+          "items": [{ "itemId": "6892b1db16a96f6bb0af20ca", "quantity": 1 }],
+          "consume": [{ "itemId": "6892b1db16a96f6bb0af20c4", "quantity": 10 }]
         }
       },
       {
