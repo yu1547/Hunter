@@ -22,7 +22,7 @@ const getUserByEmail = async (req, res) => {
   }
 };
 
-exports.updatePhotoURL = async (req, res) => {
+const updatePhotoURL = async (req, res) => {
   try {
     const userId = req.params.id;
     const { photoURL } = req.body;
@@ -109,4 +109,5 @@ module.exports = {
   createUser,
   updateUser,
   deleteUser,
+  updatePhotoURL,
 };
