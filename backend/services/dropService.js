@@ -103,11 +103,14 @@ async function generateDropForUser(userId, difficulty) {
     
     // 生成掉落物
     const drops = await generateDropItems(difficulty);
+    console.log("🎁 drops =", JSON.stringify(drops, null, 2));
+
 
     // 將掉落物添加到背包
     if (drops.length > 0) {
         await addItemsToBackpack(userId, drops); // drops 是 [{itemId, quantity}] 的陣列
     }
+    console.log(`測試分割線`);
 
     // 獲取掉落物的名稱以供顯示
     const dropNames = await Promise.all(drops.map(async (drop) => {

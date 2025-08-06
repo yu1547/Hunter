@@ -29,6 +29,7 @@ import com.ntou01157.hunter.DailyEvent
 import com.ntou01157.hunter.DailyEventDialog
 import com.ntou01157.hunter.dailyEvents
 import com.ntou01157.hunter.models.Spot
+import androidx.compose.ui.platform.LocalContext
 
 @SuppressLint("UnrememberedMutableState")
 @Composable
@@ -78,8 +79,13 @@ fun spotMarker(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     //顯示圖片
+                    val context = LocalContext.current
+                    val imageId = remember(spot.spotName) {
+                        context.resources.getIdentifier(spot.spotName, "drawable", context.packageName)
+                    }
                     Image(
-                        painter = rememberAsyncImagePainter(spot.spotPhoto),
+                        painter = painterResource(id = imageId),
+
                         contentDescription = "地標圖片",
                         modifier = Modifier
                             .fillMaxWidth()
