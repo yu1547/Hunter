@@ -8,7 +8,9 @@ data class User(
     @SerializedName("_id") val id: String,
     @SerializedName("username") val username: String,
     @SerializedName("backpackItems") val backpackItems: List<BackpackItem>,
-    @SerializedName("missions") val missions: List<Mission> = emptyList()
+    @SerializedName("missions") val missions: List<Mission> = emptyList(),
+    @SerializedName("gender") val gender: String?,
+    @SerializedName("age") val age: String?,
     // 其他用戶屬性...
 )
 

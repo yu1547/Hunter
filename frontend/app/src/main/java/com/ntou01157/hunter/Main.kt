@@ -74,6 +74,10 @@ class Main : ComponentActivity() {
                 composable("tasklist") {
                     TaskListScreen(navController)
                 }
+                composable("profile") {
+                    ProfileScreen()
+                }
+
             }
         }
     }
@@ -202,6 +206,9 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             verticalArrangement = Arrangement.spacedBy(30.dp),
             horizontalAlignment = Alignment.End
         ) {
+            Button(onClick = { navController.navigate("profile") }, colors = buttonColors) {
+                Text("個人資料")
+            }
             Button(onClick = { navController.navigate("favorites") }, colors = buttonColors) {
                 Text("收藏冊")
             }
