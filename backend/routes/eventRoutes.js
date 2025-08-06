@@ -13,6 +13,6 @@ router.get('/all', eventController.getAllEvents);
 router.post('/trigger/:eventId', eventController.triggerEvent);
 
 // 完成事件，並發放獎勵
-router.post('/complete/:eventId', eventController.completeEvent);
+    router.post('/complete/:eventId', eventController.completeEvent);
 
 module.exports = router;
