@@ -23,7 +23,7 @@ import com.ntou01157.hunter.models.User
 fun FavoritesScreen(
     navController: NavHostController,
     user: User,
-    pages: List<List<Spot>>,
+//    pages: List<List<Spot>>,
     pageIndex: Int,
     onPageChange: (Int) -> Unit,
     onSpotClicked: (Spot) -> Unit,
@@ -35,16 +35,48 @@ fun FavoritesScreen(
     var scanLog by remember { mutableStateOf<Map<String, Boolean>>(emptyMap()) }
     LaunchedEffect(Unit) {
         val logs = SpotLogHandler.getSpotLogs(user.uid)
+        println("【前端收到的 scanLog】$logs")  // 確認
         scanLog = logs
     }
 
+    var pages by remember { mutableStateOf<List<List<Spot>>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        pages = SpotLogHandler.getSpotPages()
+    }
 
     val buttonColors = ButtonDefaults.buttonColors(
         containerColor = Color(0xFFbc8f8f),
         contentColor = Color.White
     )
 
-    val items = pages[pageIndex]
+    val items = pages.getOrNull(pageIndex).orEmpty()
+
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        if (items.isEmpty()) {
+            // 資料還沒載入
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("正在載入地標資料...", color = Color.Gray)
+            }
+        } else {
+            // 原本的畫面（把你的收藏冊 UI 包進這裡）
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFFF3DCDC))
+                    .padding(horizontal = 16.dp)
+            ) {
+                // ←←← 後面照你原本的 IconButton、Box、Row 等
+            }
+        }
+    }
+
+
 
     Column(
         modifier = Modifier
@@ -89,7 +121,7 @@ fun FavoritesScreen(
                             if (index < items.size) {
                                 val landmark = items[index]
 
-                                val isUnlocked = scanLog[landmark.spotName] == true
+                                val isUnlocked = scanLog[landmark.spotName.lowercase()] == true
 
 
                                 Box(
@@ -111,9 +143,10 @@ fun FavoritesScreen(
                                         }
 
                                         Text(
-                                            text = landmark.spotName,
+                                            text = landmark.ChName,
                                             color = if (isUnlocked) Color.Black else Color.Gray
                                         )
+
                                     }
 
                                 }

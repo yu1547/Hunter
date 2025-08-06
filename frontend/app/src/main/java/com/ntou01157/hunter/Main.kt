@@ -33,6 +33,7 @@ import com.ntou01157.hunter.models.User
 import com.ntou01157.hunter.ui.*
 import com.ntou01157.hunter.api.RetrofitClient // Correct import for RetrofitClient
 import com.ntou01157.hunter.data.RankRepository // Correct import for your RankRepository
+import com.ntou01157.hunter.handlers.SpotLogHandler
 
 
 class MainApplication : android.app.Application() {
@@ -65,9 +66,36 @@ class Main : ComponentActivity() {
                 composable("bag") {
                     BagScreen(navController = navController)
                 }
+                //收藏冊
                 composable("favorites") {
-                    FavoritesScreen(navController)
+                    val user = FakeUser // 先用目前的假使用者
+
+                    var pages by remember { mutableStateOf<List<List<Spot>>>(emptyList()) }
+                    var pageIndex by remember { mutableStateOf(0) }
+                    var selectedSpot by remember { mutableStateOf<Spot?>(null) }
+                    var showLockedDialog by remember { mutableStateOf(false) }
+
+                    // 呼叫 Handler 取得 Spot 資料，轉成頁面格式
+                    LaunchedEffect(Unit) {
+                        pages = SpotLogHandler.getSpotPages() // 你已經實作好了
+                    }
+
+                    FavoritesScreen(
+                        navController = navController,
+                        user = user,
+//                        pages = pages,
+                        pageIndex = pageIndex,
+                        onPageChange = { newIndex ->
+                            pageIndex = newIndex.coerceIn(0, (pages.size - 1).coerceAtLeast(0))
+                        },
+                        onSpotClicked = { spot -> selectedSpot = spot },
+                        selectedSpot = selectedSpot,
+                        onDismissSpotDialog = { selectedSpot = null },
+                        showLockedDialog = showLockedDialog,
+                        onDismissLockedDialog = { showLockedDialog = false }
+                    )
                 }
+
                 composable("ranking") {
                     RankingScreen(navController = navController)
                 }
@@ -91,7 +119,7 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
     val missionLandmark = Spot(
         spotId = "打卡點1",
         spotName = "(地標)",
-        spotPhoto = "",
+        ChName = "測試",
         latitude = 25.149853,
         longitude = 121.778352
     )
