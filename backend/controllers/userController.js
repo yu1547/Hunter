@@ -22,6 +22,27 @@ const getUserByEmail = async (req, res) => {
   }
 };
 
+exports.updatePhotoURL = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { photoURL } = req.body;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { photoURL: photoURL },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    res.json({ message: 'Photo URL updated successfully.', user: updatedUser });
+  } catch (error) {
+    console.error('Error updating photo URL:', error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
 
 // GET 單個用戶
 const getUserById = async (req, res) => {

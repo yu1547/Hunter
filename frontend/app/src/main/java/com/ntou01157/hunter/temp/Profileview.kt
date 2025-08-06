@@ -7,6 +7,7 @@ import com.ntou01157.hunter.models.model_api.User
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import com.ntou01157.hunter.temp.UserRepository
 
 class ProfileViewModel : ViewModel() {
     private val _user = MutableStateFlow<User?>(null)
@@ -49,15 +50,10 @@ class ProfileViewModel : ViewModel() {
 
     fun updateUserPhotoUrl(userId: String, photoUrl: String) {
         viewModelScope.launch {
-            try {
-                val currentUser = _user.value
-                val updatedUser = currentUser?.copy(photoURL = photoUrl)
-                updatedUser?.let {
-                    RetrofitClient.apiService.updateUser(userId, it)
-                    _user.value = it // 更新本地 user 狀態
-                }
-            } catch (e: Exception) {
-                println("更新 photoURL 失敗: ${e.message}")
+            val success = updatePhotoUrl(userId, photoUrl)
+            if (success) {
+                // 更新本地 state（可選）
+                _user.value = _user.value?.copy(photoURL = photoUrl)
             }
         }
     }

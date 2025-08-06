@@ -5,6 +5,7 @@ import com.ntou01157.hunter.models.model_api.Item
 import com.ntou01157.hunter.models.model_api.RankResponse
 import com.ntou01157.hunter.models.model_api.User
 import com.ntou01157.hunter.models.model_api.Task
+import com.ntou01157.hunter.models.PhotoUrlBody
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Response
@@ -15,6 +16,7 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.PUT
+import retrofit2.http.PATCH
 
 // API 接口定義
 interface ApiService {
@@ -35,6 +37,12 @@ interface ApiService {
 
     @PUT("api/users/{id}")
     suspend fun updateUser(@Path("id") id: String, @Body updatedData: Map<String, String>): User
+
+    @PATCH("/api/user/{id}/photo")
+    suspend fun updatePhotoUrl(
+        @Path("id") userId: String,
+        @Body body: PhotoUrlBody
+    ): Response<Unit>
 
 
 

@@ -20,6 +20,7 @@ router.get('/:id', getUserById);  // GET 單個用戶
 router.post('/', createUser);     // POST 新用戶
 router.put('/:id', updateUser);   // PUT 更新用戶信息
 router.delete('/:id', deleteUser);// DELETE 刪除用戶
+router.patch('/user/:id/photo', userController.updatePhotoURL);
 
 // 背包道具 API
 router.post('/:id/backpack', addItemToBackpack);    // POST 添加物品到背包

@@ -37,24 +37,29 @@ fun ProfileScreen(profileViewModel: ProfileViewModel) {
     val coroutineScope = rememberCoroutineScope()
 
     // 上傳圖片並更新 photoURL
-    suspend fun uploadPhotoAndUpdateUrl(uri: Uri, userId: String, viewModel: ProfileViewModel) {
+    suspend fun uploadPhotoAndUpdateUrl(uri: Uri) {
         try {
-            val ref = FirebaseStorage.getInstance().reference.child("profile_pictures/$userId.jpg")
-            val result = ref.putFile(uri).await()
+            val userId = user?.id ?: return
+            val ref = FirebaseStorage.getInstance().reference.child("profile_pictures/${userId}.jpg")
+            ref.putFile(uri).await()
             val downloadUrl = ref.downloadUrl.await().toString()
+
             println("上傳成功：$downloadUrl")
-            viewModel.updateUserPhotoUrl(userId, downloadUrl)
+
+            // ✅ 呼叫 ViewModel 更新 MongoDB 裡的 photoURL
+            profileViewModel.updateUserPhotoUrl(userId, downloadUrl)
+
         } catch (e: Exception) {
             e.printStackTrace()
-            println("上傳失敗：${e.message}")
         }
     }
+
     // 圖片選擇與上傳
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
             selectedImageUri = it
             coroutineScope.launch {
-                uploadPhotoAndUpdateUrl(it, user?.id ?: return@launch, profileViewModel)
+                uploadPhotoAndUpdateUrl(it)
             }
         }
     }
