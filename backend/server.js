@@ -7,8 +7,9 @@ const taskRoutes = require('./routes/taskRoutes');
 const missionRoutes = require('./routes/missionRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const rankRoutes = require('./routes/rankRoutes');
+const chatRoutes = require('./routes/chatRoutes');
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 const mongoose = require('mongoose');
 
 // 連接到資料庫
@@ -49,6 +50,9 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api', missionRoutes);
 
 app.use('/api/rank', rankRoutes); // 新增這行
+
+//LLM客服
+app.use('/api/chat', chatRoutes);
 
 app.listen(PORT, () => {
     console.log(`伺服器運行於 http://localhost:${PORT}`);
