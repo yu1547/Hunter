@@ -246,7 +246,7 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                     shape = RoundedCornerShape(24.dp),
                     color = Color.White,
                     tonalElevation = 4.dp,
-                    modifier = Modifier.width(340.dp).wrapContentHeight()
+                    modifier = Modifier.width(350.dp).height(650.dp)
                 ) {
                     ChatScreen(
                         onClose = { showChatDialog = false }
