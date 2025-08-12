@@ -1,1 +1,0 @@
-小工具函數，如 getRandomInt() 或 drawRarity()

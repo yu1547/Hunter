@@ -3,11 +3,39 @@ const { Schema } = mongoose;
 
 // 定義使用者模型結構
 const userSchema = new Schema({
-  // uid 由 MongoDB 自動生成的 _id 提供
+  email: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  displayName: {
+    type: String,
+    default: ""
+  },
+  age: {
+    type: String,
+    default: ""
+  },
+  gender: {
+    type: String,
+    default: ""
+  },
+  photoURL: {
+    type: String,
+    default: ""
+  },
+  role: {
+    type: String,
+    default: "player"
+  },
+  lastLogin: {
+    type: Date,
+    default: Date.now
+  },
+
   backpackItems: [{
-    _id: false, //不會自動生成 _id
     itemId: {
-      type:mongoose.Schema.Types.ObjectId,//改成mongoDB的ObjectId
+      type: String,
       required: true
     },
     quantity: {
@@ -17,9 +45,8 @@ const userSchema = new Schema({
     }
   }],
   missions: [{
-    _id: false,
     taskId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       required: true
     },
     state: {
@@ -35,42 +62,21 @@ const userSchema = new Schema({
       type: Date,
       default: null
     },
-    refreshedAt: { // 拒絕任務後，可刷新的時間
+    refreshedAt: {
       type: Date,
       default: null
     },
-    haveCheckPlaces: [{
-      _id: false,
+    checkPlaces: [{
       spotId: {
-        type: Schema.Types.ObjectId,
-        ref: 'Spot',
+        type: String,
         required: true
       },
       isCheck: {
         type: Boolean,
         default: false
       }
-    }],
-    isLLM: {
-      type: Boolean,
-      required: false
-    }
+    }]
   }],
-  settings: {
-    music: {
-      type: Boolean,
-      default: true  // 預設開啟音效
-    },
-    notification: {
-      type: Boolean,
-      default: true  // 預設開啟推播通知
-    },
-    language: {
-      type: String,
-      default: 'zh-TW'  // 預設語言
-    }
-  },
-  // 可加入其他用戶屬性，如用戶名稱、等級等
   username: {
     type: String,
     default: "Hunter"
@@ -80,11 +86,23 @@ const userSchema = new Schema({
     default: Date.now
   },
   spotsScanLogs: {
-    type: Map,
-    of: Boolean,
+    type: Object,
     default: {}
+  },
+  supplyScanLogs: {
+    type: Object,
+    default: {}
+  },
+  settings: {
+    type: Array,
+    default: []
+  },
+  buff: {
+    type: Object,
+    default: null
   }
 }, { collection: 'users' });
+
 
 // 明確指定集合名稱為 'users'
 const User = mongoose.model('User', userSchema);

@@ -15,7 +15,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.ntou01157.hunter.R
-import com.ntou01157.hunter.handlers.SpotLogHandler
 import com.ntou01157.hunter.models.*
 import com.ntou01157.hunter.models.User
 
@@ -32,13 +31,6 @@ fun FavoritesScreen(
     showLockedDialog: Boolean,
     onDismissLockedDialog: () -> Unit
 ) {
-    var scanLog by remember { mutableStateOf<Map<String, Boolean>>(emptyMap()) }
-    LaunchedEffect(Unit) {
-        val logs = SpotLogHandler.getSpotLogs(user.uid)
-        scanLog = logs
-    }
-
-
     val buttonColors = ButtonDefaults.buttonColors(
         containerColor = Color(0xFFbc8f8f),
         contentColor = Color.White
@@ -89,8 +81,7 @@ fun FavoritesScreen(
                             if (index < items.size) {
                                 val landmark = items[index]
 
-                                val isUnlocked = scanLog[landmark.spotName] == true
-
+                                val isUnlocked = user.spotsScanLogs[landmark.spotId] == true
 
                                 Box(
                                     modifier = Modifier
@@ -100,22 +91,10 @@ fun FavoritesScreen(
                                         .clickable { onSpotClicked(landmark) },
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        if (isUnlocked) {
-                                            Image(
-                                                painter = painterResource(id = getSpotImageResId(landmark.spotName)),
-                                                contentDescription = landmark.spotName,
-                                                modifier = Modifier.size(48.dp)
-                                            )
-                                            Spacer(modifier = Modifier.height(6.dp))
-                                        }
-
-                                        Text(
-                                            text = landmark.spotName,
-                                            color = if (isUnlocked) Color.Black else Color.Gray
-                                        )
-                                    }
-
+                                    Text(
+                                        text = landmark.spotName,
+                                        color = if (isUnlocked) Color.Black else Color.Gray
+                                    )
                                 }
                             } else {
                                 Spacer(modifier = Modifier.weight(1f))
@@ -174,23 +153,5 @@ fun FavoritesScreen(
             },
             text = { Text("此地標尚未解鎖，請先前往現場打卡！") }
         )
-    }
-}
-
-
-@Composable
-fun getSpotImageResId(spotName: String): Int {
-    return when (spotName.lowercase()) {
-        "moai" -> R.drawable.moai
-        "vending" -> R.drawable.vending
-        "anchor" -> R.drawable.anchor
-        "ball" -> R.drawable.ball
-        "eagle" -> R.drawable.eagle
-        "lovechair" -> R.drawable.lovechair
-        "book" -> R.drawable.book
-        "bookcase" -> R.drawable.bookcase
-        "freedomship" -> R.drawable.freedomship
-        "fountain" -> R.drawable.fountain
-        else -> R.drawable.placeholder // 建議準備一張 default 圖片
     }
 }

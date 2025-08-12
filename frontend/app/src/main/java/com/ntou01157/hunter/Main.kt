@@ -33,6 +33,9 @@ import com.ntou01157.hunter.models.User
 import com.ntou01157.hunter.ui.*
 import com.ntou01157.hunter.api.RetrofitClient // Correct import for RetrofitClient
 import com.ntou01157.hunter.data.RankRepository // Correct import for your RankRepository
+import com.ntou01157.hunter.temp.*
+import androidx.lifecycle.viewmodel.compose.viewModel
+
 
 
 class MainApplication : android.app.Application() {
@@ -74,6 +77,12 @@ class Main : ComponentActivity() {
                 composable("tasklist") {
                     TaskListScreen(navController)
                 }
+
+                composable("profile") {
+                    val profileViewModel = viewModel<ProfileViewModel>()
+                    ProfileScreen(profileViewModel = profileViewModel)
+                }
+
             }
         }
     }
@@ -197,32 +206,14 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             }
         }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            Button(
-                onClick = {
-                    // 模擬點擊其中一個補給站
-                    selectedSupply = supplyStations.firstOrNull()
-                    showSupplyDialog = true
-                },
-                colors = buttonColors
-            ) {
-                Text("補給站")
-            }
-
-
-        }
-
-
         Column(
             modifier = Modifier.align(Alignment.CenterEnd).padding(end = 10.dp, bottom = 320.dp),
             verticalArrangement = Arrangement.spacedBy(30.dp),
             horizontalAlignment = Alignment.End
         ) {
+            Button(onClick = { navController.navigate("profile") }, colors = buttonColors) {
+                Text("個人資料")
+            }
             Button(onClick = { navController.navigate("favorites") }, colors = buttonColors) {
                 Text("收藏冊")
             }

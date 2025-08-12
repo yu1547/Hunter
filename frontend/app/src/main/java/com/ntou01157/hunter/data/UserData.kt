@@ -7,7 +7,7 @@ import com.google.firebase.Timestamp
 
 fun getTestUser(): User {
     return User(
-        uid = "68886402bc049f83948150e8",
+        uid = "12345",
         displayName = "測試用戶",
         email = "test@example.com",
         age = "25",
@@ -23,7 +23,7 @@ fun getTestUser(): User {
                 acceptedAt = Timestamp.now(),
                 expiresAt = Timestamp.now(),
                 refreshedAt = Timestamp.now(),
-                haveCheckPlaces = emptyList()
+                checkPlaces = emptyList()
             )
         ),
         spotsScanLogs = emptyMap(),

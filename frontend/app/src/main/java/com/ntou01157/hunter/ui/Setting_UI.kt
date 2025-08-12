@@ -1,90 +1,37 @@
 package com.ntou01157.hunter.ui
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ntou01157.hunter.api.RetrofitClient
-import com.ntou01157.hunter.models.model_api.User as ApiUser
-import com.ntou01157.hunter.models.model_api.BackpackItem
-import com.ntou01157.hunter.models.model_api.Mission
-import androidx.compose.ui.platform.LocalContext
-import com.ntou01157.hunter.models.model_api.Settings as ApiSettings
-import com.ntou01157.hunter.models.User as UiUser
-import com.ntou01157.hunter.models.Settings as UiSettings
-import kotlinx.coroutines.launch
-import com.ntou01157.hunter.temp.MusicPlayerManager
-import com.ntou01157.hunter.data.fetchSettings // 新增 import
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.input.TextFieldValue
+import com.ntou01157.hunter.models.User
+import com.ntou01157.hunter.mock.FakeUser
+import androidx.compose.material.icons.filled.Edit
 
 @Composable
 fun SettingDialog(
-    user: UiUser,
+    user: User,
     onDismiss: () -> Unit,
     onNameChange: (String) -> Unit,
     onLogout: () -> Unit
 ) {
-    val coroutineScope = rememberCoroutineScope()
-    val context = LocalContext.current
-
-    var musicEnabled by remember { mutableStateOf(false) }
-    var notificationsEnabled by remember { mutableStateOf(false) }
-    var selectedLanguage by remember { mutableStateOf("zh-TW") }
+    var musicEnabled by remember { mutableStateOf(user.settings.music) }
+    var notificationsEnabled by remember { mutableStateOf(user.settings.notification) }
+    var selectedLanguage by remember { mutableStateOf(user.settings.language) }
 
     var isEditingName by remember { mutableStateOf(false) }
     var nameText by remember { mutableStateOf(user.displayName) }
-
-    val userId = "68846d797609912e5e6ba9b0"
-
-    // ⏬ 初始化設定資料
-    LaunchedEffect(Unit) {
-        coroutineScope.launch {
-            try {
-                val fetchedSettings = fetchSettings(userId) // 呼叫 data 層
-                musicEnabled = fetchedSettings.music
-                notificationsEnabled = fetchedSettings.notification
-                selectedLanguage = fetchedSettings.language
-            } catch (e: Exception) {
-                Log.e("SettingDialog", "取得設定失敗：${e.message}")
-            }
-        }
-    }
-
-    fun updateSettings() {
-        coroutineScope.launch {
-            try {
-                val updatedSettings = ApiSettings(
-                    music = musicEnabled,
-                    notification = notificationsEnabled,
-                    language = selectedLanguage
-                )
-                RetrofitClient.apiService.updateSettings(userId, updatedSettings)
-                Log.d("SettingDialog", "設定已送出")
-
-                // 音樂控制
-                if (musicEnabled) {
-                    MusicPlayerManager.playMusic(context)
-                } else {
-                    MusicPlayerManager.pauseMusic()
-                }
-
-            } catch (e: Exception) {
-                Log.e("SettingDialog", "更新設定失敗：${e.message}")
-            }
-        }
-    }
-
-
 
     Surface(
         modifier = Modifier
@@ -136,10 +83,7 @@ fun SettingDialog(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("聲音", style = MaterialTheme.typography.titleMedium)
-                CustomSwitch(isOn = musicEnabled, onToggle = {
-                    musicEnabled = it
-                    updateSettings()
-                })
+                CustomSwitch(isOn = musicEnabled, onToggle = { musicEnabled = it })
             }
 
             Row(
@@ -148,17 +92,11 @@ fun SettingDialog(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("通知", style = MaterialTheme.typography.titleMedium)
-                CustomSwitch(isOn = notificationsEnabled, onToggle = {
-                    notificationsEnabled = it
-                    updateSettings()
-                })
+                CustomSwitch(isOn = notificationsEnabled, onToggle = { notificationsEnabled = it })
             }
 
             Text("語言", style = MaterialTheme.typography.titleMedium)
-            LanguageDropdown(selected = selectedLanguage, onSelect = {
-                selectedLanguage = it
-                updateSettings()
-            })
+            LanguageDropdown(selected = selectedLanguage, onSelect = { selectedLanguage = it })
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -175,6 +113,7 @@ fun SettingDialog(
 
 @Composable
 fun CustomSwitch(isOn: Boolean, onToggle: (Boolean) -> Unit) {
+    val label = if (isOn) "ON" else "OFF"
     val backgroundColor = if (isOn) Color(0xFFEFE6E6) else Color(0xFFD9CCCC)
 
     Box(
@@ -225,3 +164,5 @@ fun LanguageDropdown(selected: String, onSelect: (String) -> Unit) {
         }
     }
 }
+
+

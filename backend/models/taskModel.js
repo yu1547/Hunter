@@ -34,12 +34,11 @@ const taskSchema = new Schema({
     type: String,
     required: true
   },
-  checkPlaces: [
-    {
-      _id: false,
-      spotId: { type: Schema.Types.ObjectId, ref: 'Spot' }
-    }
-  ],
+  checkPlace: {
+    type: [Schema.Types.ObjectId], // 直接儲存 ObjectId 陣列
+    ref: 'Spot',
+    default: []
+  },
   taskDuration: { // 任務時長 (秒)
     type: Number,
     default: null
