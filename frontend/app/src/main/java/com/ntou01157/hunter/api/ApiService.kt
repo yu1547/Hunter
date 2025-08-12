@@ -38,7 +38,7 @@ interface ApiService {
     @PUT("api/users/{id}")
     suspend fun updateUser(@Path("id") id: String, @Body updatedData: Map<String, String>): User
 
-    @PATCH("/api/user/{id}/photo")
+    @PATCH("/api/users/{id}/photo")
     suspend fun updatePhotoUrl(
         @Path("id") userId: String,
         @Body body: PhotoUrlBody

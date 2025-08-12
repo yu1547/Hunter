@@ -15,22 +15,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.google.firebase.auth.FirebaseAuth
-import com.ntou01157.hunter.api.CloudinaryService
 import com.ntou01157.hunter.temp.ProfileViewModel
 import kotlinx.coroutines.launch
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
-import okhttp3.RequestBody.Companion.asRequestBody
-import okhttp3.RequestBody
-import java.io.File
-import java.io.FileOutputStream
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(profileViewModel: ProfileViewModel) {
     val context = LocalContext.current
@@ -42,23 +35,36 @@ fun ProfileScreen(profileViewModel: ProfileViewModel) {
     var editedGender by remember { mutableStateOf("") }
     var editedAge by remember { mutableStateOf("") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var lastUploadUrl by remember { mutableStateOf<String?>(null) }
 
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
         uri?.let {
             selectedImageUri = it
             coroutineScope.launch {
-                profileViewModel.uploadPhotoToCloudinary(uri, context)
+                val r = profileViewModel.uploadPhotoToCloudinary(it, context)
+                r.fold(
+                    onSuccess = {
+                        snackbarHostState.showSnackbar("頭像已更新")
+                        // _user.photoURL 已在 ViewModel 內更新，這裡不用再做事
+                    },
+                    onFailure = { e ->
+                        snackbarHostState.showSnackbar(e.message ?: "上傳失敗")
+                    }
+                )
             }
-
         }
     }
 
 
+    // 初次載入使用者
     LaunchedEffect(Unit) {
-        val email = FirebaseAuth.getInstance().currentUser?.email
-        email?.let { profileViewModel.fetchUserProfile(it) }
+        FirebaseAuth.getInstance().currentUser?.email?.let { profileViewModel.fetchUserProfile(it) }
     }
-
+    // 把資料帶入編輯欄位
     LaunchedEffect(user) {
         user?.let {
             editedUsername = it.username ?: ""
@@ -67,44 +73,41 @@ fun ProfileScreen(profileViewModel: ProfileViewModel) {
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End
-        ) {
-            TextButton(onClick = { isEditing = !isEditing }) {
-                Text(if (isEditing) "取消" else "編輯")
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Box(
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+    ) { innerPadding ->
+        Column(
             modifier = Modifier
-                .size(120.dp)
-                .clip(CircleShape)
-                .background(Color.LightGray)
-                .clickable { launcher.launch("image/*") },
-            contentAlignment = Alignment.Center
+                .fillMaxSize()
+                .padding(16.dp)
+                .padding(innerPadding),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            val photoUrl = user?.photoURL ?: ""
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = { isEditing = !isEditing }) {
+                    Text(if (isEditing) "取消" else "編輯")
+                }
+            }
 
-            when {
-                selectedImageUri != null -> {
-                    Image(
+            Spacer(Modifier.height(16.dp))
+
+            Box(
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(CircleShape)
+                    .background(Color.LightGray)
+                    .clickable { launcher.launch("image/*") },
+                contentAlignment = Alignment.Center
+            ) {
+                val photoUrl = user?.photoURL.orEmpty()
+                when {
+                    selectedImageUri != null -> Image(
                         painter = rememberAsyncImagePainter(selectedImageUri),
                         contentDescription = "選擇的頭像",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
-                }
-                photoUrl.isNotBlank() -> {
-                    Image(
+                    photoUrl.isNotBlank() -> Image(
                         painter = rememberAsyncImagePainter(photoUrl),
                         contentDescription = "已設定的頭像",
                         modifier = Modifier.fillMaxSize(),
@@ -112,59 +115,111 @@ fun ProfileScreen(profileViewModel: ProfileViewModel) {
                     )
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(24.dp))
+            // 上傳成功的圖片連結（可長按選取複製）
+            lastUploadUrl?.let { url ->
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = "圖片連結：$url",
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
 
-        if (user == null) {
-            Text("載入中...", style = MaterialTheme.typography.bodyLarge)
-        } else {
-            if (isEditing) {
-                OutlinedTextField(
-                    value = editedUsername,
-                    onValueChange = { editedUsername = it },
-                    label = { Text("暱稱") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                )
-                OutlinedTextField(
-                    value = editedGender,
-                    onValueChange = { editedGender = it },
-                    label = { Text("性別") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                )
-                OutlinedTextField(
-                    value = editedAge,
-                    onValueChange = { editedAge = it },
-                    label = { Text("年齡") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                )
+            Spacer(Modifier.height(24.dp))
 
-                Button(
-                    onClick = {
-                        user?.let {
-                            profileViewModel.updateUserProfile(
-                                userId = it.id ?: return@let,
-                                username = editedUsername,
-                                gender = editedGender,
-                                age = editedAge
-                            )
-                        }
-                        isEditing = false
-                    },
-                    modifier = Modifier.padding(top = 16.dp)
-                ) {
-                    Text("儲存變更")
-                }
+            if (user == null) {
+                Text("載入中...", style = MaterialTheme.typography.bodyLarge)
             } else {
-                Text("暱稱：${user?.username}", style = MaterialTheme.typography.bodyLarge)
-                Text("性別：${user?.gender}", style = MaterialTheme.typography.bodyLarge)
-                Text("年齡：${user?.age}", style = MaterialTheme.typography.bodyLarge)
+                if (isEditing) {
+                    // 暱稱
+                    OutlinedTextField(
+                        value = editedUsername,
+                        onValueChange = { editedUsername = it },
+                        label = { Text("暱稱") },
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                    )
+
+                    // 性別：下拉
+                    DropdownField(
+                        label = "性別",
+                        options = listOf("男", "女", "不透露"),
+                        value = editedGender.ifBlank { "不透露" },
+                        onValueChange = { editedGender = it },
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                    )
+
+                    // 年齡：1~50 下拉
+                    DropdownField(
+                        label = "年齡",
+                        options = (1..50).map { it.toString() },
+                        value = editedAge.ifBlank { "1" },
+                        onValueChange = { editedAge = it },
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                    )
+
+                    Button(
+                        onClick = {
+                            user?.let {
+                                profileViewModel.updateUserProfile(
+                                    userId = it.id ?: return@let,
+                                    username = editedUsername,
+                                    gender = editedGender,
+                                    age = editedAge
+                                )
+                            }
+                            isEditing = false
+                        },
+                        modifier = Modifier.padding(top = 16.dp)
+                    ) { Text("儲存變更") }
+                } else {
+                    Text("暱稱：${user?.username}", style = MaterialTheme.typography.bodyLarge)
+                    Text("性別：${user?.gender}", style = MaterialTheme.typography.bodyLarge)
+                    Text("年齡：${user?.age}", style = MaterialTheme.typography.bodyLarge)
+                }
+            }
+        }
+    }
+}
+
+/** 通用下拉欄位（Material 3 ExposedDropdown） */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DropdownField(
+    label: String,
+    options: List<String>,
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = modifier
+    ) {
+        OutlinedTextField(
+            readOnly = true,
+            value = value,
+            onValueChange = {},
+            label = { Text(label) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+            modifier = Modifier.menuAnchor().fillMaxWidth()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            options.forEach { opt ->
+                DropdownMenuItem(
+                    text = { Text(opt) },
+                    onClick = {
+                        onValueChange(opt)
+                        expanded = false
+                    }
+                )
             }
         }
     }
