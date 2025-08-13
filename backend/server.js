@@ -11,6 +11,8 @@ const spotRoutes = require("./routes/spotRoutes"); // 收藏冊
 const missionRoutes = require('./routes/missionRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const rankRoutes = require('./routes/rankRoutes');
+const recognitionRoutes = require('./routes/recognitionRoutes');
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -67,6 +69,9 @@ app.use('/api/settings', settingsRoutes);
 
 // 使用者排行榜 API 路由
 app.use('/api/rank', rankRoutes);
+
+//打卡點辨識
+app.use('/api/recognize', recognitionRoutes);
 
 app.listen(PORT, () => {
     console.log(`伺服器運行於 http://localhost:${PORT}`);

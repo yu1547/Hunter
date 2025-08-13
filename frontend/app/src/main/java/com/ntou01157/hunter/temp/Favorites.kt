@@ -40,7 +40,7 @@ fun FavoritesScreen(navController: NavHostController) {
     val pageData = listOf(
         listOf(
             Spots("1", "地標A", "", LatLng(0.0, 0.0), false),
-            Spots("2", "寰宇之書", "", LatLng(0.0, 0.0), true),
+            Spots("2", "寰宇之書2", "", LatLng(0.0, 0.0), true),
             Spots("3", "地標C", "", LatLng(0.0, 0.0), false),
             Spots("4", "地標D", "", LatLng(0.0, 0.0), false)
         ),
