@@ -123,7 +123,6 @@ class ProfileViewModel : ViewModel() {
                 _user.value = _user.value?.let { u ->
                     u.copy(
                         photoURL = https,
-                        // ↓↓↓ 這三行是關鍵，避免 NPE
                         missions = u.missions ?: emptyList(),
                         backpackItems = u.backpackItems ?: emptyList(),
                         //settings = u.settings ?: emptyList(),

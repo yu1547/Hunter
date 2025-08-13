@@ -16,10 +16,13 @@ const getUserByEmail = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: '找不到該用戶' });
     }
+    console.log('回傳的 user:', user);
     res.status(200).json(user);
+
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+  
 };
 
 exports.updatePhotoURL = async (req, res) => {

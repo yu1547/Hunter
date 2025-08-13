@@ -5,6 +5,7 @@ import com.ntou01157.hunter.models.model_api.Item
 import com.ntou01157.hunter.models.model_api.RankResponse
 import com.ntou01157.hunter.models.model_api.User
 import com.ntou01157.hunter.models.model_api.Task
+import com.ntou01157.hunter.models.model_api.Settings
 import com.ntou01157.hunter.models.PhotoUrlBody
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -68,7 +69,19 @@ interface ApiService {
 
     @POST("api/users/{userId}/missions/{taskId}/claim")
     suspend fun claimReward(@Path("userId") userId: String, @Path("taskId") taskId: String): UserResponse
+
+    // --- Settings endpoints ---
+    @GET("api/settings/{id}")
+    suspend fun fetchSettings(@Path("id") id: String): Settings
+
+    @PUT("api/settings/{id}")
+    suspend fun updateSettings(@Path("id") id: String, @Body settings: Settings)
+
+
+
 }
+
+
 
 // 請求 Body 的資料類別
 data class CraftRequestBody(val itemId: String)

@@ -5,6 +5,7 @@ const itemRoutes = require('./routes/itemRoutes');
 const userRoutes = require('./routes/userRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const missionRoutes = require('./routes/missionRoutes'); // 引入 mission 路由
+const settingsRoutes = require('./routes/settingsRoutes');
 const googleAuthRoutes = require('./routes/authRoutes'); 
 const rankRoutes = require('./routes/rankRoutes'); // 新增這行
 const app = express();
@@ -49,6 +50,8 @@ app.use('/api', missionRoutes);
 app.use('/api/rank', rankRoutes); // 新增這行
 
 app.use('/api/auth', googleAuthRoutes); 
+
+app.use('/api/settings', settingsRoutes);
 
 app.listen(PORT, () => {
     console.log(`伺服器運行於 http://localhost:${PORT}`);
