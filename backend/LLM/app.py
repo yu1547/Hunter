@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, session
 import os
 from dotenv import load_dotenv
+from compare_api import compare_vector
 import rag_v1
 import json
 
@@ -54,6 +55,21 @@ def route():
     except Exception as e:
         print("Error in /route:", e)  # 印出詳細錯誤訊息
         return jsonify({"error": str(e)}), 500
+
+
+# 特徵比對
+@app.route("/compare", methods=["POST"])
+def compare():
+    data = request.get_json(force=True)
+    spotName = data.get("spotName")
+    vector = data.get("vector")
+    if not isinstance(spotName, str) or not isinstance(vector, list):
+        return jsonify({"error": "invalid body"}), 400
+    try:
+        result = compare_vector(spotName, vector)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": "compare_failed", "detail": str(e)}), 500
 
 if __name__ == '__main__':
     # try:
