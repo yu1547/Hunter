@@ -33,6 +33,7 @@ import com.ntou01157.hunter.models.User
 import com.ntou01157.hunter.ui.*
 import com.ntou01157.hunter.api.RetrofitClient // Correct import for RetrofitClient
 import com.ntou01157.hunter.data.RankRepository // Correct import for your RankRepository
+import com.ntou01157.hunter.ui.event_ui.WordleGameUI
 
 
 class MainApplication : android.app.Application() {
@@ -55,6 +56,7 @@ class Main : ComponentActivity() {
             val navController = rememberNavController()
             val context = LocalContext.current
 
+            // NavHost(navController = navController, startDestination = "login") {
             NavHost(navController = navController, startDestination = "login") {
                 composable("login") {
                     LoginScreen(navController)
@@ -73,6 +75,9 @@ class Main : ComponentActivity() {
                 }
                 composable("tasklist") {
                     TaskListScreen(navController)
+                }
+                composable("bugHunt") {
+                    WordleGameUI()
                 }
             }
         }
@@ -210,6 +215,10 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             }
             Button(onClick = { navController.navigate("tasklist") }, colors = buttonColors) {
                 Text("任務版")
+            }
+            Button(
+                onClick = { navController.navigate("bugHunt") }, colors = buttonColors){
+                Text("啟動 BugHunt 任務")
             }
         }
     }

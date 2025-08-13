@@ -6,6 +6,13 @@ const {
   completeTask,
   claimReward,
   refreshMissions,
+  completeBugHunt,
+  openTreasureBox,
+  trade,
+  blessTree,
+  completeSlimeAttack,
+  getStonePileStatus,
+  triggerStonePile,
 } = require('../controllers/missionController');
 
 // 刷新用戶任務列表 (例如：用戶打開任務面板時調用)
@@ -22,5 +29,14 @@ router.post('/users/:userId/missions/:taskId/complete', completeTask);
 
 // 領取任務獎勵
 router.post('/users/:userId/missions/:taskId/claim', claimReward);
+
+router.post('/events/start', startGame);
+router.post('/events/guess', submitGuess);
+router.post('/events/open-treasure-box', openTreasureBox);
+router.post('/events/trade', trade);
+router.post('/events/bless-tree', blessTree);
+router.post('/events/complete-slime-attack', completeSlimeAttack);
+router.get('/events/stone-pile-status/:userId', getStonePileStatus);
+router.post('/events/trigger-stone-pile', triggerStonePile);
 
 module.exports = router;

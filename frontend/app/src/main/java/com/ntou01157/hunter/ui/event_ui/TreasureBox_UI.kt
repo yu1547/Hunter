@@ -11,35 +11,49 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ntou01157.hunter.R
+// 修正 1: 引入正確的 UserItem 模型，而不是 UserItemModel
 import com.ntou01157.hunter.models.model_api.UserItem
-import com.ntou01157.hunter.Backpack.data.fetchUserItems
+import com.ntou01157.hunter.api.ApiService
+import com.ntou01157.hunter.api.RetrofitClient
+// 修正 2: 引入正確的 API 請求和回應模型
+import com.ntou01157.hunter.api.OpenTreasureBoxRequest
+import com.ntou01157.hunter.api.OpenTreasureBoxResponse
 import kotlinx.coroutines.launch
 import android.util.Log
 
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TreasureBoxUI() {
+fun TreasureBoxUI(onEventCompleted: (message: String) -> Unit) {
+    val eventApiService = RetrofitClient.apiService
     val userId = "6880f31469ff254ed2fb0cc1"
     val coroutineScope = rememberCoroutineScope()
+    // 修正 1: 將 allItems 的類型從 UserItemModel 改為 UserItem，與 API 回傳類型一致
     val allItems = remember { mutableStateListOf<UserItem>() }
     val isLoading = remember { mutableStateOf(true) }
-    val hasError = remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // 啟動時加載玩家背包物品
-    LaunchedEffect(key1 = userId) {
-        isLoading.value = true
-        hasError.value = false
-        try {
-            val items = fetchUserItems(userId)
-            allItems.clear()
-            allItems.addAll(items)
-        } catch (e: Exception) {
-            hasError.value = true
-            Log.e("TreasureBoxUI", "獲取物品失敗", e)
-        } finally {
-            isLoading.value = false
+    fun fetchItems() {
+        coroutineScope.launch {
+            isLoading.value = true
+            try {
+                // 這裡的 fetchedItems 已經是正確的 List<UserItem> 類型
+                val fetchedItems: List<UserItem> = eventApiService.fetchUserItems(userId)
+                allItems.clear()
+                // 修正 1: allItems 現在是 List<UserItem>，可以直接添加
+                allItems.addAll(fetchedItems)
+            } catch (e: Exception) {
+                Log.e("TreasureBoxUI", "獲取物品失敗", e)
+                snackbarHostState.showSnackbar("無法連接伺服器，請稍後再試。")
+            } finally {
+                isLoading.value = false
+            }
         }
+    }
+
+    LaunchedEffect(key1 = userId) {
+        fetchItems()
     }
 
     Scaffold(
@@ -74,21 +88,34 @@ fun TreasureBoxUI() {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 顯示目前擁有的鑰匙數量
-            KeyInventoryDisplay(allItems)
+            if (isLoading.value) {
+                CircularProgressIndicator()
+            } else {
+                // 修正 1: 傳遞正確的 allItems 類型
+                KeyInventoryDisplay(allItems)
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             TreasureBoxOption(
                 keyName = "銅鑰匙",
                 onOpenClick = {
                     coroutineScope.launch {
-                        val bronzeKey = allItems.find { it.item.itemName == "銅鑰匙" }
-                        if (bronzeKey != null && bronzeKey.count.value > 0) {
-                            // 模擬使用鑰匙，本地扣除數量
-                            bronzeKey.count.value -= 1
-                            snackbarHostState.showSnackbar("你用銅鑰匙打開了寶箱，獲得積分+15和隨機道具！")
-                        } else {
-                            snackbarHostState.showSnackbar("你沒有銅鑰匙，無法開啟寶箱。")
+                        try {
+                            val response = eventApiService.openTreasureBox(
+                                // 修正 2: 使用從 api 套件引入的 OpenTreasureBoxRequest
+                                OpenTreasureBoxRequest(userId, "bronze")
+                            )
+                            if (response.success) {
+                                fetchItems()
+                                snackbarHostState.showSnackbar("你用銅鑰匙打開了寶箱，獲得道具: ${response.drops.joinToString()}")
+                                onEventCompleted("寶箱事件已完成")
+                            } else {
+                                snackbarHostState.showSnackbar(response.message)
+                            }
+                        } catch (e: Exception) {
+                            Log.e("TreasureBoxUI", "開啟寶箱失敗", e)
+                            snackbarHostState.showSnackbar("網路錯誤，無法開啟寶箱。")
                         }
                     }
                 }
@@ -98,13 +125,21 @@ fun TreasureBoxUI() {
                 keyName = "銀鑰匙",
                 onOpenClick = {
                     coroutineScope.launch {
-                        val silverKey = allItems.find { it.item.itemName == "銀鑰匙" }
-                        if (silverKey != null && silverKey.count.value > 0) {
-                            // 模擬使用鑰匙，本地扣除數量
-                            silverKey.count.value -= 1
-                            snackbarHostState.showSnackbar("你用銀鑰匙打開了寶箱，獲得積分+25和隨機道具！")
-                        } else {
-                            snackbarHostState.showSnackbar("你沒有銀鑰匙，無法開啟寶箱。")
+                        try {
+                            val response = eventApiService.openTreasureBox(
+                                // 修正 2: 使用從 api 套件引入的 OpenTreasureBoxRequest
+                                OpenTreasureBoxRequest(userId, "silver")
+                            )
+                            if (response.success) {
+                                fetchItems()
+                                snackbarHostState.showSnackbar("你用銀鑰匙打開了寶箱，獲得道具: ${response.drops.joinToString()}")
+                                onEventCompleted("寶箱事件已完成")
+                            } else {
+                                snackbarHostState.showSnackbar(response.message)
+                            }
+                        } catch (e: Exception) {
+                            Log.e("TreasureBoxUI", "開啟寶箱失敗", e)
+                            snackbarHostState.showSnackbar("網路錯誤，無法開啟寶箱。")
                         }
                     }
                 }
@@ -114,13 +149,21 @@ fun TreasureBoxUI() {
                 keyName = "金鑰匙",
                 onOpenClick = {
                     coroutineScope.launch {
-                        val goldKey = allItems.find { it.item.itemName == "金鑰匙" }
-                        if (goldKey != null && goldKey.count.value > 0) {
-                            // 模擬使用鑰匙，本地扣除數量
-                            goldKey.count.value -= 1
-                            snackbarHostState.showSnackbar("你用金鑰匙打開了寶箱，獲得積分+40和隨機道具！")
-                        } else {
-                            snackbarHostState.showSnackbar("你沒有金鑰匙，無法開啟寶箱。")
+                        try {
+                            val response = eventApiService.openTreasureBox(
+                                // 修正 2: 使用從 api 套件引入的 OpenTreasureBoxRequest
+                                OpenTreasureBoxRequest(userId, "gold")
+                            )
+                            if (response.success) {
+                                fetchItems()
+                                snackbarHostState.showSnackbar("你用金鑰匙打開了寶箱，獲得道具: ${response.drops.joinToString()}")
+                                onEventCompleted("寶箱事件已完成")
+                            } else {
+                                snackbarHostState.showSnackbar(response.message)
+                            }
+                        } catch (e: Exception) {
+                            Log.e("TreasureBoxUI", "開啟寶箱失敗", e)
+                            snackbarHostState.showSnackbar("網路錯誤，無法開啟寶箱。")
                         }
                     }
                 }
@@ -131,6 +174,7 @@ fun TreasureBoxUI() {
                     coroutineScope.launch {
                         snackbarHostState.showSnackbar("你選擇了離開，寶箱依然靜靜地躺在那裡。")
                     }
+                    onEventCompleted("寶箱事件已結束")
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -139,6 +183,10 @@ fun TreasureBoxUI() {
         }
     }
 }
+
+// 修正 2: 已將這兩個 data class 從此檔案移除，並在頂部進行了 import
+// data class OpenTreasureBoxRequest(val userId: String, val keyType: String)
+// data class OpenTreasureBoxResponse(val success: Boolean, val message: String, val drops: List<String>)
 
 @Composable
 fun TreasureBoxOption(keyName: String, onOpenClick: () -> Unit) {
@@ -165,6 +213,7 @@ fun TreasureBoxOption(keyName: String, onOpenClick: () -> Unit) {
 }
 
 @Composable
+// 修正 1: 將參數類型從 List<UserItemModel> 改為 List<UserItem>
 fun KeyInventoryDisplay(allItems: List<UserItem>) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -176,12 +225,14 @@ fun KeyInventoryDisplay(allItems: List<UserItem>) {
         ) {
             Text(text = "你的鑰匙", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
+            // 修正 3: UserItem 類別中直接有 item 屬性，其內有 itemName 屬性
             val bronzeKey = allItems.find { it.item.itemName == "銅鑰匙" }
             val silverKey = allItems.find { it.item.itemName == "銀鑰匙" }
             val goldKey = allItems.find { it.item.itemName == "金鑰匙" }
-            Text(text = "銅鑰匙: ${bronzeKey?.count?.value ?: 0}")
-            Text(text = "銀鑰匙: ${silverKey?.count?.value ?: 0}")
-            Text(text = "金鑰匙: ${goldKey?.count?.value ?: 0}")
+            // 修正 3: count 屬性直接就是 Int，不需要 .value
+            Text(text = "銅鑰匙: ${bronzeKey?.count ?: 0}")
+            Text(text = "銀鑰匙: ${silverKey?.count ?: 0}")
+            Text(text = "金鑰匙: ${goldKey?.count ?: 0}")
         }
     }
 }
@@ -189,5 +240,5 @@ fun KeyInventoryDisplay(allItems: List<UserItem>) {
 @Preview(showBackground = true)
 @Composable
 fun PreviewTreasureBoxUI() {
-    TreasureBoxUI()
+    TreasureBoxUI(onEventCompleted = {})
 }
