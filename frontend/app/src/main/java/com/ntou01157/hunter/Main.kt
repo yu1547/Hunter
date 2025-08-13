@@ -33,6 +33,12 @@ import com.ntou01157.hunter.models.User
 import com.ntou01157.hunter.ui.*
 import com.ntou01157.hunter.api.RetrofitClient // Correct import for RetrofitClient
 import com.ntou01157.hunter.data.RankRepository // Correct import for your RankRepository
+
+import com.ntou01157.hunter.ui.event_ui.AncientTreeUI
+import com.ntou01157.hunter.ui.event_ui.MerchantUI
+import com.ntou01157.hunter.ui.event_ui.SlimeAttackUI
+import com.ntou01157.hunter.ui.event_ui.StonePileUI
+import com.ntou01157.hunter.ui.event_ui.TreasureBoxUI
 import com.ntou01157.hunter.ui.event_ui.WordleGameUI
 
 
@@ -76,9 +82,40 @@ class Main : ComponentActivity() {
                 composable("tasklist") {
                     TaskListScreen(navController)
                 }
+
                 composable("bugHunt") {
                     WordleGameUI()
                 }
+//                // 新增：事件 UI 的路由
+//                composable("ancientTree") {
+//                    // 修正：使用正確的 UI 函式名稱
+//                    AncientTreeUI(onEventCompleted = {
+//                        navController.popBackStack()
+//                    })
+//                }
+//                composable("merchant") {
+//                    // 修正：使用正確的 UI 函式名稱
+//                    MerchantUI(onEventCompleted = {
+//                        navController.popBackStack()
+//                    })
+//                }
+//                composable("slimeAttack") {
+//                    // 修正：使用正確的 UI 函式名稱
+//                    SlimeAttackUI(onEventCompleted = {
+//                        navController.popBackStack()
+//                    })
+//                }
+//                composable("stonePile") {
+//                    StonePileUI(onEventCompleted = {
+//                        navController.popBackStack()
+//                    })
+//                }
+//                composable("treasureBox") { //
+//                    // 修正：使用正確的 UI 函式名稱
+//                    TreasureBoxUI(onEventCompleted = {
+//                        navController.popBackStack()
+//                    })
+//                }
             }
         }
     }
@@ -216,10 +253,25 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             Button(onClick = { navController.navigate("tasklist") }, colors = buttonColors) {
                 Text("任務版")
             }
-            Button(
-                onClick = { navController.navigate("bugHunt") }, colors = buttonColors){
-                Text("啟動 BugHunt 任務")
-            }
+//            Button(
+//                onClick = { navController.navigate("bugHunt") }, colors = buttonColors){
+//                Text("啟動 BugHunt 任務")
+//            }
+//            Button(onClick = { navController.navigate("ancientTree") }, colors = buttonColors) {
+//                Text("古樹")
+//            }
+//            Button(onClick = { navController.navigate("merchant") }, colors = buttonColors) {
+//                Text("神秘商人")
+//            }
+//            Button(onClick = { navController.navigate("slimeAttack") }, colors = buttonColors) {
+//                Text("史萊姆戰鬥")
+//            }
+//            Button(onClick = { navController.navigate("stonePile") }, colors = buttonColors) {
+//                Text("石堆")
+//            }
+//            Button(onClick = { navController.navigate("treasureBox") }, colors = buttonColors) {
+//                Text("寶箱")
+//            }
         }
     }
 }
