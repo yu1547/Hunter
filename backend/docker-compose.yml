@@ -27,8 +27,10 @@ services:
       - .env
     volumes:
       - ./LLM:/app
+      - ./data:/app/data 
     environment:
       - OLLAMA_HOST=http://host.docker.internal:11434
+      - FEATURE_DB_PATH=/app/data/train_features.db
     networks:
       - hunter-net
 

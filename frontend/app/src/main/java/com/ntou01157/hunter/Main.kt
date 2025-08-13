@@ -115,13 +115,14 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
         containerColor = Color(0xFFbc8f8f),
         contentColor = Color.White
     )
-    //打卡點 假資料
+
+    // 打卡點 測試資料（真實）
     val missionLandmark = Spot(
-        spotId = "打卡點1",
-        spotName = "(地標)",
-        ChName = "測試",
-        latitude = 25.149853,
-        longitude = 121.778352
+        spotId = "689214b1d4f0c98115826a38",
+        spotName = "book",
+        ChName = "寰宇之書",
+        latitude = 25.1508583,
+        longitude = 121.771431
     )
     //補給站
     val supplyStations = remember { SupplyRepository.supplyStations }
@@ -167,7 +168,7 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                 )
             }
             //顯示打卡點 Sopt_UI.kt
-            spotMarker(spot = missionLandmark)
+            spotMarker(spot = missionLandmark, userId = user.uid)
 
             //顯示補給站
             supplyStations.forEach { supply ->
