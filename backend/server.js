@@ -6,7 +6,6 @@ const userRoutes = require('./routes/userRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const missionRoutes = require('./routes/missionRoutes');
 const rankRoutes = require('./routes/rankRoutes');
-const eventRoutes = require('./routes/eventRoutes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const mongoose = require('mongoose');
@@ -47,8 +46,6 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api', missionRoutes);
 
 app.use('/api/rank', rankRoutes);
-
-app.use('/api/events', eventRoutes);
 
 app.listen(PORT, () => {
     console.log(`伺服器運行於 http://localhost:${PORT}`);

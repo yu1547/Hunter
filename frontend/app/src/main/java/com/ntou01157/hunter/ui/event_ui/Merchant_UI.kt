@@ -9,36 +9,46 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ntou01157.hunter.models.model_api.UserItem
-import com.ntou01157.hunter.Backpack.data.fetchUserItems
+import com.ntou01157.hunter.api.ApiService
+import com.ntou01157.hunter.api.RetrofitClient
+import com.ntou01157.hunter.api.TradeRequest
+import com.ntou01157.hunter.models.model_api.ItemModel
 import kotlinx.coroutines.launch
 import android.util.Log
-import com.ntou01157.hunter.models.model_api.Item // 假設有 Item 模型來新增物品
-import androidx.compose.runtime.mutableStateListOf
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MerchantUI() {
+fun MerchantUI(onEventCompleted: (message: String) -> Unit) {
+    // 將 API 服務和 userId 的定義移至 Composable 外部，以保持一致性
+    val eventApiService = RetrofitClient.apiService
     val userId = "6880f31469ff254ed2fb0cc1"
     val coroutineScope = rememberCoroutineScope()
+    // 修正 1: 將 allItems 的類型從 UserItemModel 改為 UserItem，與 API 回傳類型一致
     val allItems = remember { mutableStateListOf<UserItem>() }
     val isLoading = remember { mutableStateOf(true) }
-    val hasError = remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // 啟動時加載玩家背包物品
-    LaunchedEffect(key1 = userId) {
-        isLoading.value = true
-        hasError.value = false
-        try {
-            val items = fetchUserItems(userId)
-            allItems.clear()
-            allItems.addAll(items)
-        } catch (e: Exception) {
-            hasError.value = true
-            Log.e("MerchantUI", "獲取物品失敗", e)
-        } finally {
-            isLoading.value = false
+    fun fetchItems() {
+        coroutineScope.launch {
+            isLoading.value = true
+            try {
+                // 這裡的 items 已經是正確的 List<UserItem> 類型
+                val items: List<UserItem> = eventApiService.fetchUserItems(userId)
+                allItems.clear()
+                // 修正 1: allItems 現在是 List<UserItem>，可以直接添加
+                allItems.addAll(items)
+            } catch (e: Exception) {
+                Log.e("MerchantUI", "獲取物品失敗", e)
+                snackbarHostState.showSnackbar("無法連接伺服器，請稍後再試。")
+            } finally {
+                isLoading.value = false
+            }
         }
+    }
+
+    LaunchedEffect(key1 = userId) {
+        fetchItems()
     }
 
     Scaffold(
@@ -53,112 +63,118 @@ fun MerchantUI() {
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "神秘商人的試煉",
+                text = "神秘商人",
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
             Text(
-                text = "一位背著大袋子的神秘商人出現在你面前。他看起來像是走遍世界的收藏家。「你願意用你手上的鑰匙碎片與我交易嗎？我有更值得的東西給你。」他咧嘴一笑。",
+                text = "用你的物品來交換他珍藏的寶物吧。",
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(bottom = 24.dp)
             )
 
-            // 顯示目前擁有的鑰匙碎片數量
-            KeyFragmentInventoryDisplay(allItems)
+            if (isLoading.value) {
+                CircularProgressIndicator()
+            } else {
+                // 修正 1: 傳遞正確的 allItems 類型
+                KeyFragmentInventoryDisplay(allItems)
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
-            TradeOption(
-                title = "交換銀鑰匙碎片",
-                description = "交出 銅鑰匙碎片 x3 → 獲得 銀鑰匙碎片 x1",
+            MerchantOption(
+                title = "銅鑰匙碎片 x5 -> 銅鑰匙 x1",
+                description = "使用五個銅鑰匙碎片兌換一個銅鑰匙。",
                 onTradeClick = {
                     coroutineScope.launch {
-                        val bronzeFragment = allItems.find { it.item.itemName == "銅鑰匙碎片" }
-                        val silverFragment = allItems.find { it.item.itemName == "銀鑰匙碎片" }
-                        if (bronzeFragment != null && bronzeFragment.count.value >= 3) {
-                            // 扣除材料，並給予獎勵
-                            bronzeFragment.count.value -= 3
-                            if (silverFragment != null) {
-                                silverFragment.count.value += 1
+                        try {
+                            // 修正 2: 這裡不再使用本地的 TradeRequest，而是從 com.ntou01157.hunter.api 引入
+                            val response = eventApiService.trade(TradeRequest(userId, "bronzeKey"))
+                            if (response.success) {
+                                snackbarHostState.showSnackbar(response.message)
+                                fetchItems()
                             } else {
-                                // 如果物品不存在，需要模擬新增一個 UserItem
-                                // TODO: 實際應用中需從後端取得物品完整資訊
-                                snackbarHostState.showSnackbar("銀鑰匙碎片不存在，無法新增。")
+                                snackbarHostState.showSnackbar(response.message)
                             }
-                            snackbarHostState.showSnackbar("交易成功！你獲得了銀鑰匙碎片 x1！")
-                        } else {
-                            snackbarHostState.showSnackbar("銅鑰匙碎片不足，無法交易。")
+                        } catch (e: Exception) {
+                            Log.e("MerchantUI", "交易失敗", e)
+                            snackbarHostState.showSnackbar("網路錯誤，無法交易。")
+                        }
+                    }
+                }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            MerchantOption(
+                title = "銀鑰匙碎片 x5 -> 銀鑰匙 x1",
+                description = "使用五個銀鑰匙碎片兌換一個銀鑰匙。",
+                onTradeClick = {
+                    coroutineScope.launch {
+                        try {
+                            // 修正 2: 這裡不再使用本地的 TradeRequest，而是從 com.ntou01157.hunter.api 引入
+                            val response = eventApiService.trade(TradeRequest(userId, "silverKey"))
+                            if (response.success) {
+                                snackbarHostState.showSnackbar(response.message)
+                                fetchItems()
+                            } else {
+                                snackbarHostState.showSnackbar(response.message)
+                            }
+                        } catch (e: Exception) {
+                            Log.e("MerchantUI", "交易失敗", e)
+                            snackbarHostState.showSnackbar("網路錯誤，無法交易。")
                         }
                     }
                 }
             )
             Spacer(modifier = Modifier.height(16.dp))
-            TradeOption(
-                title = "交換金鑰匙碎片",
-                description = "交出 銀鑰匙碎片 x3 → 獲得 金鑰匙碎片 x1",
-                onTradeClick = {
-                    coroutineScope.launch {
-                        val silverFragment = allItems.find { it.item.itemName == "銀鑰匙碎片" }
-                        val goldFragment = allItems.find { it.item.itemName == "金鑰匙碎片" }
-                        if (silverFragment != null && silverFragment.count.value >= 3) {
-                            // 扣除材料，並給予獎勵
-                            silverFragment.count.value -= 3
-                            if (goldFragment != null) {
-                                goldFragment.count.value += 1
-                            } else {
-                                // 如果物品不存在，需要模擬新增一個 UserItem
-                                // TODO: 實際應用中需從後端取得物品完整資訊
-                                snackbarHostState.showSnackbar("金鑰匙碎片不存在，無法新增。")
-                            }
-                            snackbarHostState.showSnackbar("交易成功！你獲得了金鑰匙碎片 x1！")
-                        } else {
-                            snackbarHostState.showSnackbar("銀鑰匙碎片不足，無法交易。")
-                        }
-                    }
-                }
-            )
-            Spacer(modifier = Modifier.height(16.dp))
+
             Button(
-                onClick = {
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar("你選擇什麼都不做，神秘商人咧嘴一笑，轉身離去。")
-                    }
-                },
+                onClick = { onEventCompleted("你選擇了離開") },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = "什麼都不做")
+                Text(text = "離開")
             }
         }
     }
 }
 
+// 修正 2: 刪除此處的資料類別定義，它們應該被放在 com.ntou01157.hunter.api.ApiService.kt 檔案中
+
 @Composable
-fun TradeOption(title: String, description: String, onTradeClick: () -> Unit) {
+fun MerchantOption(title: String, description: String, onTradeClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .padding(16.dp)
-                .fillMaxWidth()
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = title, style = MaterialTheme.typography.titleMedium)
-            Text(text = description, style = MaterialTheme.typography.bodyMedium)
-            Button(
-                onClick = onTradeClick,
-                modifier = Modifier
-                    .align(Alignment.End)
-                    .padding(top = 8.dp)
-            ) {
-                Text(text = "交易")
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+            Button(onClick = onTradeClick) {
+                Text(text = "交換")
             }
         }
     }
 }
 
 @Composable
+// 修正 1: 將參數類型從 List<UserItemModel> 改為 List<UserItem>
 fun KeyFragmentInventoryDisplay(allItems: List<UserItem>) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -170,12 +186,12 @@ fun KeyFragmentInventoryDisplay(allItems: List<UserItem>) {
         ) {
             Text(text = "你的鑰匙碎片", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
+            // 修正 3: UserItem 類別中直接有 item 屬性，其內有 itemName 屬性
             val bronzeFragment = allItems.find { it.item.itemName == "銅鑰匙碎片" }
             val silverFragment = allItems.find { it.item.itemName == "銀鑰匙碎片" }
-            val goldFragment = allItems.find { it.item.itemName == "金鑰匙碎片" }
-            Text(text = "銅鑰匙碎片: ${bronzeFragment?.count?.value ?: 0}")
-            Text(text = "銀鑰匙碎片: ${silverFragment?.count?.value ?: 0}")
-            Text(text = "金鑰匙碎片: ${goldFragment?.count?.value ?: 0}")
+            // 修正 3: count 屬性直接就是 Int，不需要 .value
+            Text(text = "銅鑰匙碎片: ${bronzeFragment?.count ?: 0}")
+            Text(text = "銀鑰匙碎片: ${silverFragment?.count ?: 0}")
         }
     }
 }
@@ -183,5 +199,5 @@ fun KeyFragmentInventoryDisplay(allItems: List<UserItem>) {
 @Preview(showBackground = true)
 @Composable
 fun PreviewMerchantUI() {
-    MerchantUI()
+    MerchantUI(onEventCompleted = {})
 }

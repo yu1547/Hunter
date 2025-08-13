@@ -21,3 +21,5 @@ data class UserItem(
     // 用於 Compose UI 的可變狀態
     var count: MutableState<Int> = mutableStateOf(quantity)
 }
+
+annotation class UserItemModel

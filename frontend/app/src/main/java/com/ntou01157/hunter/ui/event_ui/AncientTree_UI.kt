@@ -9,37 +9,48 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ntou01157.hunter.models.model_api.UserItem
+import com.ntou01157.hunter.api.ApiService
+import com.ntou01157.hunter.api.RetrofitClient
+import com.ntou01157.hunter.api.BlessTreeRequest
+import com.ntou01157.hunter.models.model_api.ItemModel
 import kotlinx.coroutines.launch
-import com.ntou01157.hunter.Backpack.data.fetchUserItems
 import android.util.Log
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AncientTreeUI() {
+fun AncientTreeUI(onEventCompleted: (message: String) -> Unit) {
+    // 將 API 服務和 userId 的定義移至 Composable 外部，保持一致性
+    val eventApiService = RetrofitClient.apiService
     val userId = "6880f31469ff254ed2fb0cc1"
+
     val coroutineScope = rememberCoroutineScope()
+    // 修正1: 宣告 allItems 時，使用正確的資料模型 UserItem
     val allItems = remember { mutableStateListOf<UserItem>() }
     val isLoading = remember { mutableStateOf(true) }
-    val hasError = remember { mutableStateOf(false) }
-    val errorMessage = remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // 啟動時加載玩家背包物品
-    LaunchedEffect(key1 = userId) {
-        isLoading.value = true
-        hasError.value = false
-        try {
-            val items = fetchUserItems(userId)
-            allItems.clear()
-            allItems.addAll(items)
-            Log.d("AncientTreeUI", "成功獲取物品，物品數量: ${items.size}")
-        } catch (e: Exception) {
-            Log.e("AncientTreeUI", "獲取物品失敗", e)
-            hasError.value = true
-            errorMessage.value = "無法取得背包資料: ${e.message}"
-        } finally {
-            isLoading.value = false
+    fun fetchItems() {
+        coroutineScope.launch {
+            isLoading.value = true
+            try {
+                // 這裡的 items 已經是正確的 List<UserItem> 類型
+                val items: List<UserItem> = eventApiService.fetchUserItems(userId)
+                allItems.clear()
+                // 修正1: allItems 現在是 List<UserItem>，可以直接添加
+                allItems.addAll(items)
+            } catch (e: Exception) {
+                Log.e("AncientTreeUI", "獲取物品失敗", e)
+                snackbarHostState.showSnackbar("無法連接伺服器，請稍後再試。")
+            } finally {
+                isLoading.value = false
+            }
         }
+    }
+
+    LaunchedEffect(key1 = userId) {
+        fetchItems()
     }
 
     Scaffold(
@@ -60,133 +71,111 @@ fun AncientTreeUI() {
             )
 
             Text(
-                text = "獵人站在一棵高大的古樹前，樹的表面閃爍著微光。「我可以祝福你的道具，但需要一些特殊材料。」樹精的聲音響起。",
+                text = "古樹散發著神秘的氣息，用史萊姆黏液來獻祭它，也許能獲得意想不到的祝福。",
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(bottom = 24.dp)
             )
 
-            InventoryDisplay(allItems)
+            if (isLoading.value) {
+                CircularProgressIndicator()
+            } else {
+                // 修正2: 傳遞正確的 allItems 類型
+                InventoryDisplay(allItems)
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
-            BlessingOption(
-                title = "兌換銅鑰匙碎片",
-                description = "交出普通的史萊姆黏液 x10 → 獲得銅鑰匙碎片 x1",
+            AncientTreeOption(
+                title = "普通的史萊姆黏液",
+                description = "獻祭一瓶普通的史萊姆黏液，獲得銅鑰匙碎片 x2",
                 onBlessClick = {
                     coroutineScope.launch {
-                        // 在本地列表中尋找所需物品
-                        val ordinarySlimeMucus = allItems.find { it.item.itemName == "普通的史萊姆黏液" }
-                        val bronzeKeyFragment = allItems.find { it.item.itemName == "銅鑰匙碎片" }
-                        val ancientTreeBranch = allItems.find { it.item.itemName == "古樹的枝幹" }
-
-                        if (ordinarySlimeMucus != null && ordinarySlimeMucus.count.value >= 10) {
-                            // 直接在本地狀態中修改數量
-                            ordinarySlimeMucus.count.value -= 10
-
-                            // 獲得銅鑰匙碎片
-                            if (bronzeKeyFragment != null) {
-                                bronzeKeyFragment.count.value += 1
+                        try {
+                            // 修正3: 這裡不再使用本地的 BlessTreeRequest，而是從 com.ntou01157.hunter.api 引入
+                            val response = eventApiService.blessTree(BlessTreeRequest(userId, "普通的史萊姆黏液"))
+                            if (response.success) {
+                                snackbarHostState.showSnackbar(response.message)
+                                fetchItems()
                             } else {
-                                // 如果物品不存在，需要模擬新增一個新的 UserItem
-                                // TODO: 這裡需要有物品的完整資訊來新增，此處僅為邏輯示意
-                                // allItems.add(UserItem(item = ... , count = mutableStateOf(1)))
-                                snackbarHostState.showSnackbar("銅鑰匙碎片不存在，無法新增。")
+                                snackbarHostState.showSnackbar(response.message)
                             }
-
-                            // 獲得古樹的枝幹
-                            if (ancientTreeBranch != null) {
-                                ancientTreeBranch.count.value += 1
-                            } else {
-                                // 如果物品不存在，需要模擬新增一個新的 UserItem
-                                snackbarHostState.showSnackbar("古樹的枝幹不存在，無法新增。")
-                            }
-
-                            snackbarHostState.showSnackbar("成功兌換銅鑰匙碎片並獲得古樹的枝幹！")
-                        } else {
-                            snackbarHostState.showSnackbar("普通的史萊姆黏液不足！")
+                        } catch (e: Exception) {
+                            Log.e("AncientTreeUI", "獻祭失敗", e)
+                            snackbarHostState.showSnackbar("網路錯誤，無法獻祭。")
                         }
                     }
                 }
             )
+
             Spacer(modifier = Modifier.height(16.dp))
-            BlessingOption(
-                title = "兌換銀鑰匙碎片",
-                description = "交出黏稠的史萊姆黏液 x10 → 獲得銀鑰匙碎片 x1",
+
+            AncientTreeOption(
+                title = "黏稠的史萊姆黏液",
+                description = "獻祭一瓶黏稠的史萊姆黏液，獲得銀鑰匙碎片 x2",
                 onBlessClick = {
                     coroutineScope.launch {
-                        // 在本地列表中尋找所需物品
-                        val stickySlimeMucus = allItems.find { it.item.itemName == "黏稠的史萊姆黏液" }
-                        val silverKeyFragment = allItems.find { it.item.itemName == "銀鑰匙碎片" }
-                        val ancientTreeBranch = allItems.find { it.item.itemName == "古樹的枝幹" }
-
-                        if (stickySlimeMucus != null && stickySlimeMucus.count.value >= 10) {
-                            // 直接在本地狀態中修改數量
-                            stickySlimeMucus.count.value -= 10
-
-                            // 獲得銀鑰匙碎片
-                            if (silverKeyFragment != null) {
-                                silverKeyFragment.count.value += 1
+                        try {
+                            val response = eventApiService.blessTree(BlessTreeRequest(userId, "黏稠的史萊姆黏液"))
+                            if (response.success) {
+                                snackbarHostState.showSnackbar(response.message)
+                                fetchItems()
                             } else {
-                                // 如果物品不存在，需要模擬新增一個新的 UserItem
-                                snackbarHostState.showSnackbar("銀鑰匙碎片不存在，無法新增。")
+                                snackbarHostState.showSnackbar(response.message)
                             }
-
-                            // 獲得古樹的枝幹
-                            if (ancientTreeBranch != null) {
-                                ancientTreeBranch.count.value += 1
-                            } else {
-                                // 如果物品不存在，需要模擬新增一個新的 UserItem
-                                snackbarHostState.showSnackbar("古樹的枝幹不存在，無法新增。")
-                            }
-
-                            snackbarHostState.showSnackbar("成功兌換銀鑰匙碎片並獲得古樹的枝幹！")
-                        } else {
-                            snackbarHostState.showSnackbar("黏稠的史萊姆黏液不足！")
+                        } catch (e: Exception) {
+                            Log.e("AncientTreeUI", "獻祭失敗", e)
+                            snackbarHostState.showSnackbar("網路錯誤，無法獻祭。")
                         }
                     }
                 }
             )
+
             Spacer(modifier = Modifier.height(16.dp))
+
             Button(
-                onClick = {
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar("你選擇不提供任何材料，古樹似乎有些失落。")
-                    }
-                },
+                onClick = { onEventCompleted("你選擇了離開") },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = "我不想提供你任何的材料。")
+                Text(text = "離開")
             }
         }
     }
 }
 
+// 修正3: 刪除此處的資料類別定義，它們應該被放在 com.ntou01157.hunter.api.ApiService.kt 檔案中
+
 @Composable
-fun BlessingOption(title: String, description: String, onBlessClick: () -> Unit) {
+fun AncientTreeOption(title: String, description: String, onBlessClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth()
+            modifier = Modifier.padding(16.dp)
         ) {
-            Text(text = title, style = MaterialTheme.typography.titleMedium)
-            Text(text = description, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall
+            )
+            Spacer(modifier = Modifier.height(8.dp))
             Button(
                 onClick = onBlessClick,
-                modifier = Modifier
-                    .align(Alignment.End)
-                    .padding(top = 8.dp)
+                modifier = Modifier.align(Alignment.End)
             ) {
-                Text(text = "提供材料")
+                Text(text = "獻祭")
             }
         }
     }
 }
 
 @Composable
+// 修正2: 將參數類型從 List<UserItemModel> 改為 List<UserItem>
 fun InventoryDisplay(allItems: List<UserItem>) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -196,18 +185,14 @@ fun InventoryDisplay(allItems: List<UserItem>) {
             modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.Start
         ) {
-            Text(text = "你的背包", style = MaterialTheme.typography.titleMedium)
+            Text(text = "你的物品", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
-
-            val ordinarySlimeMucus = allItems.find { it.item.itemName == "普通的史萊姆黏液" }
-            val stickySlimeMucus = allItems.find { it.item.itemName == "黏稠的史萊姆黏液" }
-            val bronzeKeyFragment = allItems.find { it.item.itemName == "銅鑰匙碎片" }
-            val silverKeyFragment = allItems.find { it.item.itemName == "銀鑰匙碎片" }
-
-            Text(text = "普通的史萊姆黏液: ${ordinarySlimeMucus?.count?.value ?: 0}")
-            Text(text = "黏稠的史萊姆黏液: ${stickySlimeMucus?.count?.value ?: 0}")
-            Text(text = "銅鑰匙碎片: ${bronzeKeyFragment?.count?.value ?: 0}")
-            Text(text = "銀鑰匙碎片: ${silverKeyFragment?.count?.value ?: 0}")
+            // 修正4: UserItem 類別中直接有 item 屬性，其內有 itemName 屬性
+            val slime1 = allItems.find { it.item.itemName == "普通的史萊姆黏液" }
+            val slime2 = allItems.find { it.item.itemName == "黏稠的史萊姆黏液" }
+            // 修正4: count 屬性直接就是 Int，不需要 .value
+            Text(text = "普通的史萊姆黏液: ${slime1?.count ?: 0}")
+            Text(text = "黏稠的史萊姆黏液: ${slime2?.count ?: 0}")
         }
     }
 }
@@ -215,5 +200,5 @@ fun InventoryDisplay(allItems: List<UserItem>) {
 @Preview(showBackground = true)
 @Composable
 fun PreviewAncientTreeUI() {
-    AncientTreeUI()
+    AncientTreeUI(onEventCompleted = {})
 }
