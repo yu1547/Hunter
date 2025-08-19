@@ -74,12 +74,12 @@ class Main : ComponentActivity() {
                     var pageIndex by remember { mutableStateOf(0) }
                     var selectedSpot by remember { mutableStateOf<Spot?>(null) }
                     var showLockedDialog by remember { mutableStateOf(false) }
-                    
+
                     // 呼叫 Handler 取得 Spot 資料，轉成頁面格式
                     LaunchedEffect(Unit) {
                         pages = SpotLogHandler.getSpotPages() // 你已經實作好了
                     }
-                    
+
                     FavoritesScreen(
                         navController = navController,
                         user = user,
@@ -111,7 +111,6 @@ class Main : ComponentActivity() {
 @Composable
 fun MainScreen(navController: androidx.navigation.NavHostController) {
     var showDialog by remember { mutableStateOf(false) }
-    // 客服對話框
     var showChatDialog by remember { mutableStateOf(false) }
     val buttonColors = ButtonDefaults.buttonColors(
         containerColor = Color(0xFFbc8f8f),
@@ -126,11 +125,12 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
         latitude = 25.1508583,
         longitude = 121.771431
     )
-
     //補給站
     val supplyStations = remember { SupplyRepository.supplyStations }
+    var selectedSupply by remember { mutableStateOf<Supply?>(null) }
+    var showSupplyDialog by remember { mutableStateOf(false) }
     val user: User = FakeUser
-    val (spotsScanLogs, setSpotsScanLogs) = remember { mutableStateOf(user.spotsScanLogs) }
+    val supplyLog = selectedSupply?.supplyId?.let { user.supplyScanLogs[it] }
 
     val context = LocalContext.current
     val locationPermissionState = rememberPermissionState(android.Manifest.permission.ACCESS_FINE_LOCATION)
@@ -160,7 +160,7 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             cameraPositionState = cameraPositionState,
             uiSettings = MapUiSettings(myLocationButtonEnabled = true),
             properties = MapProperties(isMyLocationEnabled = true),
-            onMapClick = {  }
+            onMapClick = { selectedSupply = null }
         ) {
             userLocation?.let {
                 Marker(
@@ -168,7 +168,6 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                     title = "所在位置"
                 )
             }
-
             //顯示打卡點 Sopt_UI.kt
             spotMarker(spot = missionLandmark, userId = user.uid)
 
@@ -181,24 +180,13 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             }
         }
 
-            // 顯示打卡點
-            SpotMapSection(
-                missionLandmark = missionLandmark.value,
-                spotsScanLogs = spotsScanLogs,
-                setSpotsScanLogs = setSpotsScanLogs,
-                userLocation = userLocation,
-                cameraPositionState = cameraPositionState
-            )
-
-            // 顯示補給站
-            SupplyMapSection(
-                supplyStations = supplyStations,
+        if (showSupplyDialog && selectedSupply != null) {
+            SupplyHandlerDialog(
+                supply = selectedSupply!!,
                 user = user,
-                userLocation = userLocation,
-                cameraPositionState = cameraPositionState
+                onDismiss = { showSupplyDialog = false }
             )
         }
-
         IconButton(
             onClick = { showDialog = true },
             modifier = Modifier.align(Alignment.TopStart).padding(start = 16.dp, top = 50.dp)
@@ -261,7 +249,7 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
 
 
         Column(
-            modifier = Modifier.align(Alignment.CenterEnd).padding(end = 10.dp, bottom = 200.dp),
+            modifier = Modifier.align(Alignment.CenterEnd).padding(end = 10.dp, bottom = 320.dp),
             verticalArrangement = Arrangement.spacedBy(30.dp),
             horizontalAlignment = Alignment.End
         ) {
