@@ -11,12 +11,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.*
-import com.ntou01157.hunter.formattedRemainingCooldown
-import com.ntou01157.hunter.isSupplyAvailable
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
 import com.ntou01157.hunter.models.Supply
 import com.ntou01157.hunter.models.User
-import com.ntou01157.hunter.models.SupplyScanLogs
+import com.ntou01157.hunter.isSupplyAvailable
+import com.ntou01157.hunter.formattedRemainingCooldown
 import com.google.firebase.Timestamp
 import com.ntou01157.hunter.handlers.DropHandler
 import kotlinx.coroutines.delay
@@ -80,16 +80,6 @@ fun Timestamp.plusSeconds(seconds: Long): Timestamp {
     return Timestamp(this.seconds + seconds, this.nanoseconds)
 }
 
-// 將 Timestamp 轉為 SupplyScanLogs
-fun getSupplyScanLog(supplyId: String, timestamp: Timestamp?): SupplyScanLogs {
-    return if (timestamp != null) {
-        SupplyScanLogs(spotId = supplyId, nextClaimTime = timestamp)
-    } else {
-        SupplyScanLogs(spotId = supplyId)
-    }
-}
-
-// 領取補給站時，更新 user.supplyScanLogs 為新的 Timestamp
 fun collectSupply(user: User, supplyId: String) {
     val cooldownSeconds = 15 * 60L
     val nextClaim = Timestamp.now().plusSeconds(cooldownSeconds)
@@ -102,17 +92,14 @@ fun SupplyHandlerDialog(
     user: User,
     onDismiss: () -> Unit
 ) {
-    // 取得 SupplyScanLogs 物件
-    val scanLog = getSupplyScanLog(supply.supplyId, user.supplyScanLogs[supply.supplyId])
-    val nextClaimTime = scanLog.nextClaimTime
+    val nextClaimTime = user.supplyScanLogs[supply.supplyId]
     var isAvailable by remember { mutableStateOf(isSupplyAvailable(nextClaimTime)) }
     var cooldownText by remember { mutableStateOf(formattedRemainingCooldown(nextClaimTime)) }
 
     LaunchedEffect(nextClaimTime) {
         while (!isAvailable) {
-            val updatedScanLog = getSupplyScanLog(supply.supplyId, user.supplyScanLogs[supply.supplyId])
-            cooldownText = formattedRemainingCooldown(updatedScanLog.nextClaimTime)
-            isAvailable = isSupplyAvailable(updatedScanLog.nextClaimTime)
+            cooldownText = formattedRemainingCooldown(user.supplyScanLogs[supply.supplyId])
+            isAvailable = isSupplyAvailable(user.supplyScanLogs[supply.supplyId])
             delay(1000)
         }
     }
@@ -130,30 +117,4 @@ fun SupplyHandlerDialog(
 
 
     )
-}
-
-@Composable
-fun SupplyMapSection(
-    supplyStations: List<Supply>,
-    user: User,
-    userLocation: LatLng?,
-    cameraPositionState: CameraPositionState
-) {
-    var selectedSupply by remember { mutableStateOf<Supply?>(null) }
-    var showSupplyDialog by remember { mutableStateOf(false) }
-
-    supplyStations.forEach { supply ->
-        SupplyMarker(supply = supply, onClick = {
-            selectedSupply = it
-            showSupplyDialog = true
-        })
-    }
-
-    if (showSupplyDialog && selectedSupply != null) {
-        SupplyHandlerDialog(
-            supply = selectedSupply!!,
-            user = user,
-            onDismiss = { showSupplyDialog = false }
-        )
-    }
 }
