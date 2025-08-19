@@ -33,6 +33,7 @@ import com.ntou01157.hunter.models.User
 import com.ntou01157.hunter.ui.*
 import com.ntou01157.hunter.api.RetrofitClient // Correct import for RetrofitClient
 import com.ntou01157.hunter.data.RankRepository // Correct import for your RankRepository
+import com.ntou01157.hunter.handlers.SpotLogHandler
 
 
 class MainApplication : android.app.Application() {
@@ -65,28 +66,29 @@ class Main : ComponentActivity() {
                 composable("bag") {
                     BagScreen(navController = navController)
                 }
+                //收藏冊
                 composable("favorites") {
+                    val user = FakeUser // 先用目前的假使用者
+
+                    var pages by remember { mutableStateOf<List<List<Spot>>>(emptyList()) }
                     var pageIndex by remember { mutableStateOf(0) }
                     var selectedSpot by remember { mutableStateOf<Spot?>(null) }
                     var showLockedDialog by remember { mutableStateOf(false) }
-
-                    val user = FakeUser
-                    val pages = MockSpotData.pages
-
+                    
+                    // 呼叫 Handler 取得 Spot 資料，轉成頁面格式
+                    LaunchedEffect(Unit) {
+                        pages = SpotLogHandler.getSpotPages() // 你已經實作好了
+                    }
+                    
                     FavoritesScreen(
                         navController = navController,
                         user = user,
-                        pages = pages,
+//                        pages = pages,
                         pageIndex = pageIndex,
-                        onPageChange = { pageIndex = it },
-                        onSpotClicked = { spot ->
-                            val isUnlocked = user.spotsScanLogs[spot.spotId] == true
-                            if (isUnlocked) {
-                                selectedSpot = spot
-                            } else {
-                                showLockedDialog = true
-                            }
+                        onPageChange = { newIndex ->
+                            pageIndex = newIndex.coerceIn(0, (pages.size - 1).coerceAtLeast(0))
                         },
+                        onSpotClicked = { spot -> selectedSpot = spot },
                         selectedSpot = selectedSpot,
                         onDismissSpotDialog = { selectedSpot = null },
                         showLockedDialog = showLockedDialog,
@@ -116,8 +118,14 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
         contentColor = Color.White
     )
 
-    // 打卡點資料，從 MockSpotData 取得
-    val missionLandmark = remember { mutableStateOf(MockSpotData.allSpots) }
+    // 打卡點 測試資料（真實）
+    val missionLandmark = Spot(
+        spotId = "689214b1d4f0c98115826a38",
+        spotName = "book",
+        ChName = "寰宇之書",
+        latitude = 25.1508583,
+        longitude = 121.771431
+    )
 
     //補給站
     val supplyStations = remember { SupplyRepository.supplyStations }
@@ -160,6 +168,18 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                     title = "所在位置"
                 )
             }
+
+            //顯示打卡點 Sopt_UI.kt
+            spotMarker(spot = missionLandmark, userId = user.uid)
+
+            //顯示補給站
+            supplyStations.forEach { supply ->
+                SupplyMarker(supply = supply, onClick = {
+                    selectedSupply = it
+                    showSupplyDialog = true
+                })
+            }
+        }
 
             // 顯示打卡點
             SpotMapSection(
@@ -218,6 +238,27 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                 Text("背包", fontSize = 20.sp)
             }
         }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            Button(
+                onClick = {
+                    // 模擬點擊其中一個補給站
+                    selectedSupply = supplyStations.firstOrNull()
+                    showSupplyDialog = true
+                },
+                colors = buttonColors
+            ) {
+                Text("補給站")
+            }
+
+
+        }
+
 
         Column(
             modifier = Modifier.align(Alignment.CenterEnd).padding(end = 10.dp, bottom = 200.dp),

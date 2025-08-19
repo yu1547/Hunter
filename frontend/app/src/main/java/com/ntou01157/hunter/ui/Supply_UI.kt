@@ -8,6 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
@@ -17,6 +18,7 @@ import com.ntou01157.hunter.models.Supply
 import com.ntou01157.hunter.models.User
 import com.ntou01157.hunter.models.SupplyScanLogs
 import com.google.firebase.Timestamp
+import com.ntou01157.hunter.handlers.DropHandler
 import kotlinx.coroutines.delay
 
 // 補給站地圖上的圖標
@@ -114,7 +116,7 @@ fun SupplyHandlerDialog(
             delay(1000)
         }
     }
-
+    val context = LocalContext.current
     SupplyDialog(
         supply = supply,
         isAvailable = isAvailable,
@@ -122,8 +124,11 @@ fun SupplyHandlerDialog(
         onDismiss = onDismiss,
         onCollect = {
             collectSupply(user, supply.supplyId)
+            DropHandler.collectDrop(context = context, user = user, difficulty = 1)
             onDismiss()
         }
+
+
     )
 }
 
