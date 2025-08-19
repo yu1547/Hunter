@@ -16,15 +16,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
-import com.google.maps.android.compose.CameraPositionState
+import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
+import coil.compose.rememberImagePainter
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.ntou01157.hunter.DailyEvent
 import com.ntou01157.hunter.DailyEventDialog
+import com.ntou01157.hunter.dailyEvents
 import com.ntou01157.hunter.models.Spot
 import androidx.compose.ui.platform.LocalContext
 import android.util.Log
@@ -42,11 +45,6 @@ import com.ntou01157.hunter.utils.Vectorizer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.ntou01157.hunter.LocationService   // ← 新增：按下時再取最新定位
-
-// 將 Boolean 轉為 SpotScanLogs
-fun getSpotScanLog(isChecked: Boolean?): SpotScanLogs {
-    return SpotScanLogs(isCheck = isChecked == true)
-}
 
 @SuppressLint("UnrememberedMutableState")
 @Composable
@@ -113,9 +111,7 @@ fun spotMarker(
     Marker(
         state = markerState,
         title = spot.spotName,
-        icon = BitmapDescriptorFactory.defaultMarker(
-            if (scanLog.isCheck) BitmapDescriptorFactory.HUE_VIOLET else BitmapDescriptorFactory.HUE_AZURE
-        ),
+        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE),
         onClick = {
             showDialog = true
             true //回傳true，表示以處理點擊事件
@@ -231,24 +227,4 @@ fun spotMarker(
         }
     }
 
-}
-
-@Composable
-fun SpotMapSection(
-    missionLandmark: List<Spot>,
-    spotsScanLogs: Map<String, Boolean>,
-    setSpotsScanLogs: (Map<String, Boolean>) -> Unit,
-    userLocation: LatLng?,
-    cameraPositionState: CameraPositionState
-) {
-    missionLandmark.forEach { spot ->
-        val scanLog = getSpotScanLog(spotsScanLogs[spot.spotId])
-        spotMarker(
-            spot = spot,
-            scanLog = scanLog,
-            onCheckIn = {
-                setSpotsScanLogs(spotsScanLogs + (spot.spotId to true))
-            }
-        )
-    }
 }
