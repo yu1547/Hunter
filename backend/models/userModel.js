@@ -5,8 +5,9 @@ const { Schema } = mongoose;
 const userSchema = new Schema({
   // uid 由 MongoDB 自動生成的 _id 提供
   backpackItems: [{
+    _id: false, //不會自動生成 _id
     itemId: {
-      type: String,
+      type:mongoose.Schema.Types.ObjectId,//改成mongoDB的ObjectId
       required: true
     },
     quantity: {
@@ -16,8 +17,9 @@ const userSchema = new Schema({
     }
   }],
   missions: [{
+    _id: false,
     taskId: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
       required: true
     },
     state: {
@@ -38,6 +40,7 @@ const userSchema = new Schema({
       default: null
     },
     haveCheckPlaces: [{
+      _id: false,
       spotId: {
         type: Schema.Types.ObjectId,
         ref: 'Spot',
@@ -75,6 +78,11 @@ const userSchema = new Schema({
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  spotsScanLogs: {
+    type: Map,
+    of: Boolean,
+    default: {}
   }
 }, { collection: 'users' });
 

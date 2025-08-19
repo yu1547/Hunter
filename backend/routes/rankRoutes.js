@@ -1,5 +1,3 @@
-// backend/routes/rankRoutes.js
-
 const express = require('express');
 const router = express.Router();
 const { getRank } = require('../controllers/rankController');

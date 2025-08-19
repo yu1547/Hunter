@@ -3,6 +3,7 @@
 Thumbs.db
 cache/
 __pycache__/
+*.pyc
 
 # == Node backend ==
 /backend/node_modules/
