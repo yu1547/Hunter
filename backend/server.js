@@ -11,11 +11,13 @@ const spotRoutes = require("./routes/spotRoutes"); // 收藏冊
 const missionRoutes = require('./routes/missionRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const rankRoutes = require('./routes/rankRoutes');
+
+//LLM
+const chatRoutes = require('./routes/chatRoutes');
 const recognitionRoutes = require('./routes/recognitionRoutes');
 
-
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 const mongoose = require('mongoose');
 
 // 連接到資料庫
@@ -72,6 +74,9 @@ app.use('/api/rank', rankRoutes);
 
 //打卡點辨識
 app.use('/api/recognize', recognitionRoutes);
+
+//LLM客服
+app.use('/api/chat', chatRoutes);
 
 app.listen(PORT, () => {
     console.log(`伺服器運行於 http://localhost:${PORT}`);

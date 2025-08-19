@@ -13,8 +13,8 @@ RUN npm install
 # 複製專案的其餘檔案
 COPY . .
 
-# 開放容器的 3000 連接埠
-EXPOSE 3000
+# 開放容器的 4000 連接埠
+EXPOSE 4000
 
 # 執行啟動指令
 CMD [ "npm", "start" ]

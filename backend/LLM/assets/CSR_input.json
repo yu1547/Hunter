@@ -1,0 +1,20 @@
+{
+    "message": "鑰匙怎麼獲得？",
+    "history": [
+        {
+        "role": "user",
+        "content": "鑰匙是做什麼？",
+        "timestamp": "2025-07-31T11:58:00Z"
+        },
+        {
+        "role": "LLM",
+        "content": "您可以在寶箱事件中，使用鑰匙開啟寶箱並獲得獎勵。",
+        "timestamp": "2025-07-31T11:59:00Z"
+        },
+        {
+        "role": "user",
+        "content": "鑰匙怎麼獲得？",
+        "timestamp": "2025-07-31T12:00:00Z"
+        }
+    ]
+}

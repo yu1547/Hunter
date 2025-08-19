@@ -111,6 +111,7 @@ class Main : ComponentActivity() {
 @Composable
 fun MainScreen(navController: androidx.navigation.NavHostController) {
     var showDialog by remember { mutableStateOf(false) }
+    var showChatDialog by remember { mutableStateOf(false) }
     val buttonColors = ButtonDefaults.buttonColors(
         containerColor = Color(0xFFbc8f8f),
         contentColor = Color.White
@@ -260,6 +261,26 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             }
             Button(onClick = { navController.navigate("tasklist") }, colors = buttonColors) {
                 Text("任務版")
+            }
+            Button(
+                onClick = { showChatDialog = true }, colors = buttonColors) {
+                Text("客服")
+            }
+        }
+
+        // 客服聊天
+        if (showChatDialog) {
+            Dialog(onDismissRequest = { showChatDialog = false }) {
+                Surface(
+                    shape = RoundedCornerShape(24.dp),
+                    color = Color.White,
+                    tonalElevation = 4.dp,
+                    modifier = Modifier.width(350.dp).height(650.dp)
+                ) {
+                    ChatScreen(
+                        onClose = { showChatDialog = false }
+                    )
+                }
             }
         }
     }
