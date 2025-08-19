@@ -1,7 +1,8 @@
 # == Global ignores ==
 .DS_Store
 Thumbs.db
-*.pyc
+cache/
+__pycache__/
 
 # == Node backend ==
 /backend/node_modules/
