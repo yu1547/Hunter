@@ -1,6 +1,9 @@
 const User = require('../models/userModel');
 const Task = require('../models/taskModel');
 const Spot = require('../models/spotModel'); // 需有 Spot model
+const Rank = require('../models/rankModel'); // 引入 Rank model
+const { generateDropItems } = require('../services/dropService'); // 引入 generateDropItems
+const { addItemsToBackpack } = require('../services/backpackService'); // 引入 backpackService
 const axios = require('axios'); // 用於呼叫 Flask
 const mongoose = require('mongoose');
 
@@ -12,7 +15,7 @@ const acceptTask = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: '找不到用戶' });
 
-    const mission = user.missions.find(m => m.taskId === taskId);
+    const mission = user.missions.find(m => m.taskId.toString() === taskId);
     if (!mission) return res.status(404).json({ message: '用戶沒有此任務' });
 
     if (mission.state !== 'available') {
@@ -43,7 +46,7 @@ const declineTask = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: '找不到用戶' });
 
-    const mission = user.missions.find(m => m.taskId === taskId);
+    const mission = user.missions.find(m => m.taskId.toString() === taskId);
     if (!mission) return res.status(404).json({ message: '用戶沒有此任務' });
 
     if (!['available', 'in_progress'].includes(mission.state)) {
@@ -68,7 +71,7 @@ const completeTask = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: '找不到用戶' });
 
-    const mission = user.missions.find(m => m.taskId === taskId);
+    const mission = user.missions.find(m => m.taskId.toString() === taskId);
     if (!mission) return res.status(404).json({ message: '用戶沒有此任務' });
 
     if (mission.state !== 'in_progress') {
@@ -91,7 +94,7 @@ const claimReward = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: '找不到用戶' });
 
-    const mission = user.missions.find(m => m.taskId === taskId);
+    const mission = user.missions.find(m => m.taskId.toString() === taskId);
     if (!mission) return res.status(404).json({ message: '用戶沒有此任務' });
 
     if (mission.state !== 'completed') {
@@ -106,21 +109,20 @@ const claimReward = async (req, res) => {
 
     // 發放獎勵道具
     if (taskDetails.rewardItems && taskDetails.rewardItems.length > 0) {
-      taskDetails.rewardItems.forEach(reward => {
-        const itemIndex = user.backpackItems.findIndex(item => item.itemId.toString() === reward.itemId.toString());
-        if (itemIndex > -1) {
-          user.backpackItems[itemIndex].quantity += reward.quantity;
-        } else {
-          user.backpackItems.push({ itemId: reward.itemId.toString(), quantity: reward.quantity });
-        }
-      });
+      await addItemsToBackpack(user, taskDetails.rewardItems);
     }
 
     // 如果沒有超時，發放積分
-    // 這邊等排行榜寫好再移除註解
-    // if (!isOvertime && taskDetails.rewardScore > 0) {
-    //   user.score = (user.score || 0) + taskDetails.rewardScore;
-    // }
+    if (!isOvertime && taskDetails.rewardScore > 0) {
+      const scoreToAdd = taskDetails.rewardScore;
+
+      // 更新 Rank 集合中的分數
+      await Rank.findOneAndUpdate(
+        { userId: user._id },
+        { $inc: { score: scoreToAdd } },
+        { upsert: true, new: true } // 如果找不到用戶，就創建一個新的
+      );
+    }
 
     mission.state = 'claimed';
     
@@ -154,7 +156,7 @@ const refreshNormalMissions = async (user) => {
   const totalNewTasksNeeded = replaceableMissionsCount + Math.max(0, missionsToAddNew);
 
   if (totalNewTasksNeeded > 0) {
-    const currentUserTaskIds = user.missions.map(m => m.taskId.toString());
+    const currentUserTaskIds = user.missions.map(m => m.taskId);
     const newTasks = await Task.aggregate([
       {
         $match: {
@@ -172,10 +174,10 @@ const refreshNormalMissions = async (user) => {
         if (!mission.isLLM && mission.state === 'claimed' && newTaskIndex < newTasks.length) {
           const newTask = newTasks[newTaskIndex++];
           return {
-            taskId: newTask._id.toString(),
+            taskId: newTask._id,
             state: 'available',
             acceptedAt: null, expiresAt: null, refreshedAt: null,
-            haveCheckPlaces: Array.isArray(newTask.checkPlaces) ? newTask.checkPlaces.map(place => ({ spotId: place.spotId.toString(), isCheck: false })) : [],
+            haveCheckPlaces: Array.isArray(newTask.checkPlaces) ? newTask.checkPlaces.map(place => ({ spotId: place.spotId, isCheck: false })) : [],
             isLLM: false
           };
         }
@@ -189,10 +191,10 @@ const refreshNormalMissions = async (user) => {
       while (user.missions.filter(m => !m.isLLM).length < 2 && newTaskIndex < newTasks.length) {
         const newTask = newTasks[newTaskIndex++];
         user.missions.push({
-          taskId: newTask._id.toString(),
+          taskId: newTask._id,
           state: 'available',
           acceptedAt: null, expiresAt: null, refreshedAt: null,
-          haveCheckPlaces: Array.isArray(newTask.checkPlaces) ? newTask.checkPlaces.map(place => ({ spotId: place.spotId.toString(), isCheck: false })) : [],
+          haveCheckPlaces: Array.isArray(newTask.checkPlaces) ? newTask.checkPlaces.map(place => ({ spotId: place.spotId, isCheck: false })) : [],
           isLLM: false
         });
       }
@@ -277,6 +279,17 @@ const createLLMMission = async (req, res) => {
 
     const result = flaskRes.data;
 
+    // 根據 LLM 回傳的難度產生獎勵道具
+    const difficultyMap = { easy: 2, normal: 3, hard: 4 };
+    const difficulty = difficultyMap[result.taskDifficulty] || 3; // 預設為 normal
+    const generatedDrops = await generateDropItems(difficulty); // returns [{itemId, quantity}]
+
+    // 將掉落物轉換為 taskModel 需要的格式
+    const rewardItems = generatedDrops.map(drop => ({
+      itemId: new mongoose.Types.ObjectId(drop.itemId),
+      quantity: drop.quantity
+    }));
+
     // 依照 taskModel 組成任務
     const newTask = {
       taskName: result.taskName || 'LLM任務',
@@ -287,8 +300,8 @@ const createLLMMission = async (req, res) => {
         ? result.route.map(r => ({ spotId: new mongoose.Types.ObjectId(r.id) }))
         : [],
       taskDuration: result.taskDuration ? result.taskDuration * 1000 : null, // LLM 回傳秒，轉為毫秒
-      rewardItems: [],
-      rewardScore: 0,
+      rewardItems: rewardItems,
+      rewardScore: 50, // LLM 任務固定 50 分
       isLLM: true
     };
 
@@ -297,14 +310,14 @@ const createLLMMission = async (req, res) => {
 
     // 加入 user.missions，狀態設為 in_progress，checkPlaces 同步 task.checkPlaces
     user.missions.push({
-      taskId: createdTask._id.toString(),
+      taskId: createdTask._id,
       state: 'in_progress',
       acceptedAt: new Date(),
       expiresAt: newTask.taskDuration ? new Date(Date.now() + newTask.taskDuration) : null,
       refreshedAt: null,
       haveCheckPlaces: Array.isArray(createdTask.checkPlaces)
         ? createdTask.checkPlaces.map(place => ({
-            spotId: place.spotId.toString(),
+            spotId: place.spotId,
             isCheck: false
           }))
         : [],

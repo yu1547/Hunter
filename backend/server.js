@@ -4,10 +4,17 @@ const { connectDB } = require('./config/db');
 const itemRoutes = require('./routes/itemRoutes');
 const userRoutes = require('./routes/userRoutes');
 const taskRoutes = require('./routes/taskRoutes');
+
+const dropRoutes = require('./routes/dropRoutes'); // 掉落機制
+const spotRoutes = require("./routes/spotRoutes"); // 收藏冊
+
 const missionRoutes = require('./routes/missionRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const rankRoutes = require('./routes/rankRoutes');
+
 const chatRoutes = require('./routes/chatRoutes');
+const recognitionRoutes = require('./routes/recognitionRoutes');
+
 const app = express();
 const PORT = process.env.PORT || 4000;
 const mongoose = require('mongoose');
@@ -30,6 +37,11 @@ mongoose.connection.once('open', async () => {
 app.use(cors());
 app.use(express.json());
 
+//debug
+const testRoutes = require('./routes/testRoutes');
+app.use('/api/debug', testRoutes);
+
+
 // 基本路由
 app.get('/', (req, res) => {
     res.send('Hunter 遊戲後端 API');
@@ -44,12 +56,23 @@ app.use('/api/users', userRoutes);
 // 任務 API 路由
 app.use('/api/tasks', taskRoutes);
 
-app.use('/api/settings', settingsRoutes);
-
 // 使用者任務操作 API 路由
 app.use('/api', missionRoutes);
 
-app.use('/api/rank', rankRoutes); // 新增這行
+// 掉落機制
+app.use('/api/drop', dropRoutes);
+
+// 收藏冊
+app.use("/api/spots", spotRoutes);
+
+// 使用者設定 API 路由
+app.use('/api/settings', settingsRoutes);
+
+// 使用者排行榜 API 路由
+app.use('/api/rank', rankRoutes);
+
+//打卡點辨識
+app.use('/api/recognize', recognitionRoutes);
 
 //LLM客服
 app.use('/api/chat', chatRoutes);
