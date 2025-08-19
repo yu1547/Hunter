@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 import android.util.Log
 
 val eventApiService = RetrofitClient.apiService
-const val userId = "6880f31469ff254ed2fb0cc1"
+const val userId = "68a48da731f22c76b7a5f52c"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -97,9 +97,16 @@ fun StonePileUI(onEventCompleted: (message: String) -> Unit) {
                                 } else {
                                     snackbarHostState.showSnackbar(response.message)
                                 }
+                            } catch (e: retrofit2.HttpException) {
+                                Log.e("StonePileUI", "搬開石頭失敗：HTTP 錯誤", e)
+                                if (e.code() == 500) {
+                                    snackbarHostState.showSnackbar("伺服器發生了錯誤，請稍後再試。")
+                                } else {
+                                    snackbarHostState.showSnackbar("與伺服器通訊時發生了錯誤。")
+                                }
                             } catch (e: Exception) {
-                                Log.e("StonePileUI", "搬開石頭失敗", e)
-                                snackbarHostState.showSnackbar("網路錯誤，無法觸發事件。")
+                                Log.e("StonePileUI", "搬開石頭失敗：網路或其他錯誤", e)
+                                snackbarHostState.showSnackbar("網路連線錯誤，請檢查您的連線。")
                             }
                         }
                     },
@@ -125,10 +132,6 @@ fun StonePileUI(onEventCompleted: (message: String) -> Unit) {
     }
 }
 
-// 已將這兩個 data class 從此檔案移除，並在頂部進行了 import
-// data class GetStonePileStatusResponse(val hasTriggeredToday: Boolean)
-// data class TriggerStonePileRequest(val userId: String)
-// data class TriggerStonePileResponse(val success: Boolean, val message: String)
 
 @Preview(showBackground = true)
 @Composable

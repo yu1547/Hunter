@@ -6,13 +6,14 @@ const {
   completeTask,
   claimReward,
   refreshMissions,
-  completeBugHunt,
   openTreasureBox,
   trade,
   blessTree,
   completeSlimeAttack,
   getStonePileStatus,
   triggerStonePile,
+  startGame, // 新增
+  submitGuess, // 新增
 } = require('../controllers/missionController');
 
 // 刷新用戶任務列表 (例如：用戶打開任務面板時調用)
