@@ -14,23 +14,46 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 @app.route('/chat', methods=['POST'])
 def chat():
     data = request.get_json()
-    prompt = data.get("prompt")
-    # 從 session 中獲取對話歷史，如果沒有則初始化
-    conversation_history = session.get('conversation_history', [])
-    
-    if not prompt:
-        return jsonify({"error": "Missing prompt"}), 400
+    print("收到 /chat 請求，body:", data)
+    # 支援 CSR_input.json 格式
+    message = data.get("message")
+    history = data.get("history", [])
 
-    conversation_history.append({"role": "user", "content": prompt})
+    # 若前端傳舊格式（prompt），也能兼容
+    if not message:
+        message = data.get("prompt")
+    if not message:
+        return jsonify({"error": "Missing message"}), 400
 
-    # 呼叫 rag_v1 中的聊天處理函式
-    response_text = rag_v1.handle_chat_request(prompt, conversation_history)
-    
-    conversation_history.append({"role": "assistant", "content": response_text})
-    # 更新 session 中的對話歷史
-    session['conversation_history'] = conversation_history
+    # 將 history 轉換為 LLM 需要的格式
+    conversation_history = []
+    for h in history:
+        role = h.get("role")
+        # LLM 內部用 "assistant" 不是 "LLM"
+        if role == "LLM":
+            role = "assistant"
+        elif role == "user":
+            role = "user"
+        else:
+            role = "user"
+        conversation_history.append({
+            "role": role,
+            "content": h.get("content", "")
+        })
+    # 加入本次 user 輸入
+    conversation_history.append({"role": "user", "content": message})
 
-    return jsonify({"response": response_text})
+    try:
+        # 呼叫 rag_v1 處理
+        response_text = rag_v1.handle_chat_request(message, conversation_history)
+        # 回傳 CSR_output.json 格式
+        return jsonify({"reply": response_text})
+    except Exception as e:
+        import traceback
+        print("Error in /chat:", e)
+        traceback.print_exc()
+        print("請求內容:", data)
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/route', methods=['POST'])
 def route():
@@ -75,7 +98,7 @@ if __name__ == '__main__':
     # try:
     #     with open("js_to_py.json", "r", encoding="utf-8") as f:
     #         test_data = json.load(f)
-        
+
     #     with app.test_request_context('/route', method='POST', json=test_data):
     #         client = app.test_client()
     #         response = client.post('/route', json=test_data)

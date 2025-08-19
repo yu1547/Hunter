@@ -65,6 +65,10 @@ interface ApiService {
 
     @PUT("api/settings/{id}")
     suspend fun updateSettings(@Path("id") id: String, @Body settings: Settings)
+
+    // --- Chat endpoints ---
+    @POST("api/chat/{userId}")
+    suspend fun chatWithLLM(@Path("userId") userId: String, @Body body: ChatRequest): ChatResponse
 }
 
 // 請求 Body 的資料類別
@@ -79,9 +83,25 @@ data class UserResponse(
     @SerializedName("message") val message: String?
 )
 
+// 聊天對話 API
+data class ChatRequest(
+    val message: String,
+    val history: List<ChatHistoryItem>
+)
+
+data class ChatHistoryItem(
+    val role: String,
+    val content: String,
+    val timestamp: String
+)
+
+data class ChatResponse(
+    val reply: String
+)
+
 // 創建 Retrofit 實例
 object RetrofitClient {
-    private const val BASE_URL = "http://10.0.2.2:3000/"  // 10.0.2.2 是 Android 模擬器訪問主機的特殊 IP
+    private const val BASE_URL = "http://10.0.2.2:4000/"  // 10.0.2.2 是 Android 模擬器訪問主機的特殊 IP
 
     val apiService: ApiService by lazy {
         // 增加日誌攔截器以查看網路請求和回應的詳細資訊
@@ -90,6 +110,9 @@ object RetrofitClient {
         }
         val client = OkHttpClient.Builder()
             .addInterceptor(logging)
+            .connectTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(600, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(600, java.util.concurrent.TimeUnit.SECONDS)
             .build()
 
         Retrofit.Builder()

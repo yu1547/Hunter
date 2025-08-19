@@ -120,7 +120,6 @@ fun FavoritesScreen(
                             val index = row * 2 + col
                             if (index < items.size) {
                                 val landmark = items[index]
-
                                 val isUnlocked = scanLog[landmark.spotName.lowercase()] == true
 
 

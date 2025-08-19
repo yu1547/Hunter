@@ -24,6 +24,6 @@ val FakeUser = User(
         music = true,
         notification = true,
         language = "zh-TW"
-    ),
+    )
 
 )

@@ -9,7 +9,7 @@ data class User(
     @SerializedName("displayName") val displayName: String,
     @SerializedName("backpackItems") val backpackItems: List<BackpackItem>,
     @SerializedName("missions") val missions: List<Mission> = emptyList(),
-    @SerializedName("settings") val settings: Settings
+    @SerializedName("settings") val settings: Settings,
     // 其他用戶屬性...
 )
 
