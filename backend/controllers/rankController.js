@@ -1,84 +1,101 @@
 // backend/controllers/rankController.js
-
 const Rank = require('../models/rankModel');
-const mongoose = require('mongoose');
+const User = require('../models/userModel'); // 從 users 撈 username / photoURL
 
-// 輔助函數：將資料庫物件轉換為前端所需的顯示格式
-const convertRankItemToDisplay = (rankItem) => {
-  if (!rankItem) return null;
+// 將 Rank Doc 轉成前端要的格式
+const toDisplay = (doc) => ({
+  userId: doc.userId,
+  username: doc.username || '未知用戶',
+  userImg: doc.userImg || '',
+  score: typeof doc.score === 'number' ? doc.score : 0,
+});
+
+// 若沒有 rank 就用 users 的資料自動建一筆（score=0）
+async function ensureRankDoc(userId) {
+  if (!userId) return null;
+
+  // 1) 先找 ranks
+  let rank = await Rank.findOne({ userId }).lean();
+  if (rank) return rank;
+
+  // 2) 沒有就到 users 撈資料
+  const user = await User.findById(userId).lean();
+
+  const username =
+    (user && (user.username || user.displayName)) || '玩家';
+  const userImg = (user && user.photoURL) || '';
+
+  // 3) 建立一筆 score=0
+  const created = await Rank.create({
+    userId,
+    username,
+    userImg,
+    score: 0,
+  });
+
+  // 回傳 POJO（與上面 lean() 一致）
   return {
-    // 修正：將 uid 改為 userId，與 rankModel.js 一致
-    userId: rankItem.userId,
-    username: rankItem.username || "未知用戶",
-    userImg: rankItem.userImg || "",
-    score: rankItem.score || 0,
+    userId: created.userId,
+    username: created.username,
+    userImg: created.userImg,
+    score: created.score,
   };
-};
+}
 
 const getRank = async (req, res) => {
   try {
     const requestedUserId = req.params.userId;
 
-    // 1. 獲取前 100 名的排行榜資料
-    const topRankItems = await Rank.find({})
-      // 修正：select 中使用 userId
+    // 只取分數 > 0 的前 100 名
+    const topRankItems = await Rank.find({ score: { $gt: 0 } })
       .select('userId username userImg score')
-      .sort({ score: -1 }) // 降序排序
-      .limit(100) // 限制前 100 名
-      .lean(); // 使用 lean() 提高查詢效率，返回 POJO
+      .sort({ score: -1 })
+      .limit(100)
+      .lean();
 
-    // 將查詢到的資料轉換為前端顯示格式
-    const rankList = topRankItems.map(convertRankItemToDisplay);
+    const rankList = topRankItems.map(toDisplay);
 
     let userRank = null;
-    // 檢查是否有登入使用者以及其 ID
-    // 假設 req.user.userId 存放當前登入使用者的 ID
+
     if (requestedUserId) {
-      const foundInTopRank = rankList.find(item => item.userId === requestedUserId);
+      // 確保該使用者在 ranks 有一筆（沒有就新建 score=0）
+      const ensured = await ensureRankDoc(requestedUserId);
 
-      if (foundInTopRank) {
-        // 如果使用者在前 100 名內，直接從 rankList 中獲取資訊並計算排名
-        // 注意：這裡的排名是基於 topRankItems 陣列中的索引
-        const userIndexInTop = topRankItems.findIndex(item => item.userId === requestedUserId);
-        userRank = {
-          rank: userIndexInTop !== -1 ? userIndexInTop + 1 : -1, // Rank is index + 1
-          ...foundInTopRank
-        };
-      } else {
-        // 如果使用者不在前 100 名，則需要單獨查詢其排名和資料
-        // 首先，獲取所有使用者的分數，用來計算精確排名
-        const allRankItemsSortedByScore = await Rank.find({})
-          // 修正：select 中使用 userId
-          .select('userId score')
-          .sort({ score: -1 })
-          .lean();
+      // 再拿到目前使用者的 rank 資料
+      const curr = await Rank.findOne({ userId: requestedUserId })
+        .select('userId username userImg score')
+        .lean();
 
-        // 找到當前使用者的索引，即為其排名 (索引 + 1)
-        // 修正：findIndex 中使用 item.userId
-        const userIndex = allRankItemsSortedByScore.findIndex(item => item.userId === requestedUserId);
-
-        if (userIndex !== -1) {
-          // 查找到當前使用者的完整資料
-          const currentUserRankDoc = await Rank.findOne({ userId: requestedUserId })
-            .select('userId username userImg score')
+      if (curr) {
+        // 分數為 0 → 不上榜，rank = null
+        if ((curr.score ?? 0) === 0) {
+          userRank = {
+            rank: null,
+            ...toDisplay(curr),
+          };
+        } else {
+          // 分數 > 0 → 計算實際排名（只在 score>0 的集合中）
+          const allSorted = await Rank.find({ score: { $gt: 0 } })
+            .select('userId score')
+            .sort({ score: -1 })
             .lean();
+          const idx = allSorted.findIndex((x) => x.userId === requestedUserId);
 
-          if (currentUserRankDoc) {
-            userRank = {
-              rank: userIndex + 1, // 排名是索引加 1
-              ...convertRankItemToDisplay(currentUserRankDoc)
-            };
-          }
+          userRank = {
+            rank: idx !== -1 ? idx + 1 : null,
+            ...toDisplay(curr),
+          };
         }
+      } else if (ensured) {
+        // 理論上不會進來；保底處理
+        userRank = { rank: null, ...toDisplay(ensured) };
       }
     }
 
     res.status(200).json({ rankList, userRank });
-
   } catch (error) {
     console.error('獲取排行榜數據時出錯:', error);
-    // 提供更詳細的錯誤訊息，幫助前端調試
-    res.status(500).json({ message: 'Server Error', details: error.message, stack: error.stack });
+    res.status(500).json({ message: 'Server Error', details: error.message });
   }
 };
 

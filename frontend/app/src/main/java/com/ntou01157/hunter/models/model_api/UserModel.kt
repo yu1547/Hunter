@@ -6,12 +6,19 @@ import java.util.Date
 // 用戶模型
 data class User(
     @SerializedName("_id") val id: String,
-    @SerializedName("displayName") val displayName: String,
+    @SerializedName("username") val username: String,
     @SerializedName("backpackItems") val backpackItems: List<BackpackItem>,
     @SerializedName("missions") val missions: List<Mission> = emptyList(),
-    @SerializedName("settings") val settings: Settings,
+    @SerializedName("gender") val gender: String?,
+    @SerializedName("age") val age: String?,
+    @SerializedName("photoURL") val photoURL: String? = null,
+    @SerializedName("settings") val settings: List<Settings>?,
+    @SerializedName("spotsScanLogs") val spotsScanLogs: Map<String, Boolean>? = null
+
     // 其他用戶屬性...
 )
+
+data class SpotUpdateBody(@SerializedName("spotId") val spotId: String)
 
 // 背包中的物品
 data class BackpackItem(
@@ -26,11 +33,11 @@ data class Mission(
     @SerializedName("acceptedAt") val acceptedAt: Date?,
     @SerializedName("expiresAt") val expiresAt: Date?,
     @SerializedName("refreshedAt") val refreshedAt: Date?,
-    @SerializedName("haveCheckPlaces") val haveCheckPlaces: List<HaveCheckPlaces> = emptyList()
+    @SerializedName("checkPlaces") val checkPlaces: List<CheckPlace> = emptyList()
 )
 
-// 任務打卡點狀態(這邊的名字沒有加 "s")
-data class HaveCheckPlaces(
+// 任務打卡點狀態
+data class CheckPlace(
     @SerializedName("spotId") val spotId: String,
     @SerializedName("isCheck") val isCheck: Boolean
 )

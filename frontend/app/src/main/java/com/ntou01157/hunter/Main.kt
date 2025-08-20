@@ -28,12 +28,14 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 import com.ntou01157.hunter.mock.FakeUser
 import com.ntou01157.hunter.models.*
+import com.ntou01157.hunter.temp.*
 import com.ntou01157.hunter.models.SupplyRepository
 import com.ntou01157.hunter.models.User
 import com.ntou01157.hunter.ui.*
 import com.ntou01157.hunter.api.RetrofitClient // Correct import for RetrofitClient
 import com.ntou01157.hunter.data.RankRepository // Correct import for your RankRepository
 import com.ntou01157.hunter.handlers.SpotLogHandler
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 
 class MainApplication : android.app.Application() {
@@ -94,6 +96,11 @@ class Main : ComponentActivity() {
                         showLockedDialog = showLockedDialog,
                         onDismissLockedDialog = { showLockedDialog = false }
                     )
+                }
+
+                composable("profile") {
+                    val profileViewModel = viewModel<ProfileViewModel>()
+                    ProfileScreen(profileViewModel = profileViewModel)
                 }
 
                 composable("ranking") {
@@ -253,6 +260,9 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             verticalArrangement = Arrangement.spacedBy(30.dp),
             horizontalAlignment = Alignment.End
         ) {
+            Button(onClick = { navController.navigate("profile") }, colors = buttonColors) {
+                Text("個人設定")
+            }
             Button(onClick = { navController.navigate("favorites") }, colors = buttonColors) {
                 Text("收藏冊")
             }
