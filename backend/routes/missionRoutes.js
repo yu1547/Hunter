@@ -7,11 +7,8 @@ const {
   claimReward,
   refreshMissions,
   openTreasureBox,
-  trade,
   blessTree,
   completeSlimeAttack,
-  getStonePileStatus,
-  triggerStonePile,
   startGame, // 新增
   submitGuess, // 新增
 } = require('../controllers/missionController');
@@ -34,10 +31,8 @@ router.post('/users/:userId/missions/:taskId/claim', claimReward);
 router.post('/events/start', startGame);
 router.post('/events/guess', submitGuess);
 router.post('/events/open-treasure-box', openTreasureBox);
-router.post('/events/trade', trade);
 router.post('/events/bless-tree', blessTree);
 router.post('/events/complete-slime-attack', completeSlimeAttack);
-router.get('/events/stone-pile-status/:userId', getStonePileStatus);
-router.post('/events/trigger-stone-pile', triggerStonePile);
+
 
 module.exports = router;

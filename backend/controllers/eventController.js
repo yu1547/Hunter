@@ -2,11 +2,7 @@ const User = require('../models/userModel');
 const Item = require('../models/itemModel');
 const mongoose = require('mongoose');
 
-/**
- * 處理神秘商人交易的 API
- * @param {object} req - Express request object
- * @param {object} res - Express response object
- */
+// 處理神秘商人交易的 API
 const trade = async (req, res) => {
     const { userId, tradeType } = req.body;
 
@@ -58,11 +54,7 @@ const trade = async (req, res) => {
     }
 };
 
-/**
- * 獲取石堆事件狀態的 API
- * @param {object} req - Express request object
- * @param {object} res - Express response object
- */
+// 獲取石堆事件狀態的 API
 const getStonePileStatus = async (req, res) => {
     try {
         const { userId } = req.params;
@@ -97,11 +89,8 @@ const getStonePileStatus = async (req, res) => {
         return res.status(500).json({ success: false, message: '伺服器內部錯誤: ${error.message}' });
     }
 };
-/*
- * 處理觸發石堆事件的 API
- * @param {object} req - Express request object
- * @param {object} res - Express response object
- */
+
+// 處理觸發石堆事件的 API
 const triggerStonePile = async (req, res) => {
     const { userId } = req.body; // <-- 請將這裡改為 req.body
 

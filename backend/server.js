@@ -5,6 +5,7 @@ const itemRoutes = require('./routes/itemRoutes');
 const userRoutes = require('./routes/userRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const missionRoutes = require('./routes/missionRoutes');
+const eventRoutes = require('./routes/eventRoutes');
 const rankRoutes = require('./routes/rankRoutes');
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -45,6 +46,10 @@ app.use('/api/tasks', taskRoutes);
 // 使用者任務操作 API 路由
 app.use('/api', missionRoutes);
 
+// 日常事件 API 路由
+app.use('/api/events', eventRoutes);
+
+// 排行榜 API 路由
 app.use('/api/rank', rankRoutes);
 
 app.listen(PORT, () => {
