@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 import android.util.Log
 
 val eventApiService = RetrofitClient.apiService
-const val userId = "68a48da731f22c76b7a5f52c"
+const val userId = "68846d797609912e5e6ba9af"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
