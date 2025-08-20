@@ -327,24 +327,25 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             Button(
                 onClick = { navController.navigate("treasureBox") }, colors = buttonColors) {
                 Text("寶箱")
+            }
             Button(
                 onClick = { showChatDialog = true }, colors = buttonColors) {
                 Text("客服")
             }
-        }
 
-        // 客服聊天
-        if (showChatDialog) {
-            Dialog(onDismissRequest = { showChatDialog = false }) {
-                Surface(
-                    shape = RoundedCornerShape(24.dp),
-                    color = Color.White,
-                    tonalElevation = 4.dp,
-                    modifier = Modifier.width(350.dp).height(650.dp)
-                ) {
-                    ChatScreen(
-                        onClose = { showChatDialog = false }
-                    )
+            // 客服聊天
+            if (showChatDialog) {
+                Dialog(onDismissRequest = { showChatDialog = false }) {
+                    Surface(
+                        shape = RoundedCornerShape(24.dp),
+                        color = Color.White,
+                        tonalElevation = 4.dp,
+                        modifier = Modifier.width(350.dp).height(650.dp)
+                    ) {
+                        ChatScreen(
+                            onClose = { showChatDialog = false }
+                        )
+                    }
                 }
             }
         }
