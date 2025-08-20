@@ -6,6 +6,7 @@ const userRoutes = require('./routes/userRoutes');
 
 const dropRoutes = require('./routes/dropRoutes'); // 掉落機制
 const spotRoutes = require("./routes/spotRoutes"); // 收藏冊
+const suppliesRoutes = require('./routes/suppliesRoutes');//補給站
 
 const settingsRoutes = require('./routes/settingsRoutes');
 const rankRoutes = require('./routes/rankRoutes');
@@ -86,6 +87,9 @@ app.use('/api/recognize', recognitionRoutes);
 
 //LLM客服
 app.use('/api/chat', chatRoutes);
+
+//補給站
+app.use('/api/supplies', suppliesRoutes);
 
 app.listen(PORT, () => {
     console.log(`伺服器運行於 http://localhost:${PORT}`);
