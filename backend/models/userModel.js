@@ -1,13 +1,25 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
+// // 定義補給站領取紀錄schema
+// const supplyLogSchema = new Schema({
+//   spotId: {
+//     type: String, // 字串存 supplyId(key)
+//     required: true
+//   },
+//   nextClaimTime: {
+//     type: Date,
+//     required: true
+//   }
+// }, { _id: false }); // 不要自動生成 _id
+
 // 定義使用者模型結構
 const userSchema = new Schema({
   // uid 由 MongoDB 自動生成的 _id 提供
   backpackItems: [{
     _id: false, //不會自動生成 _id
     itemId: {
-      type:mongoose.Schema.Types.ObjectId,//改成mongoDB的ObjectId
+      type: mongoose.Schema.Types.ObjectId,//改成mongoDB的ObjectId
       required: true
     },
     quantity: {
@@ -83,7 +95,12 @@ const userSchema = new Schema({
     type: Map,
     of: Boolean,
     default: {}
-  }
+  },
+  supplyScanLogs: {
+    type: Map,
+    of: Date,   // 值直接是 nextClaimTime
+    default: {}
+  },
 }, { collection: 'users' });
 
 // 明確指定集合名稱為 'users'
