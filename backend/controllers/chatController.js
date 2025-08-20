@@ -114,4 +114,25 @@ const chatWithLLM = async (req, res) => {
   }
 };
 
-module.exports = { chatWithLLM };
+const deleteChatHistory = async (req, res) => {
+  const userId = req.params.id;
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({ error: 'userId 不是合法 ObjectId' });
+  }
+  try {
+    // 只清空 history，不刪除 chat 文件
+    const result = await Chat.updateOne(
+      { userId: new mongoose.Types.ObjectId(userId) },
+      { $set: { history: [] } }
+    );
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: '找不到對應 chat 紀錄' });
+    }
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("❌ 清空 chat history 失敗：", error);
+    return res.status(500).json({ error: '清空 chat history 失敗', detail: error.message });
+  }
+};
+
+module.exports = { chatWithLLM, deleteChatHistory };

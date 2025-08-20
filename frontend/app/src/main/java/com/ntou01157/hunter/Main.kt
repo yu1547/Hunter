@@ -289,10 +289,23 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
 
         }
 
+        // 右下角客服按鈕
+        FloatingActionButton(
+            onClick = { showChatDialog = true },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 24.dp, bottom = 32.dp),
+            containerColor = Color(0xFFbc8f8f),
+            contentColor = Color.White,
+            shape = RoundedCornerShape(50)
+        ) {
+            Text("客服", fontSize = 16.sp)
+        }
 
+        // 原本的右側按鈕列（移除客服按鈕）
         Column(
             modifier = Modifier.align(Alignment.CenterEnd).padding(end = 10.dp, bottom = 320.dp),
-            verticalArrangement = Arrangement.spacedBy(30.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.End
         ) {
             Button(onClick = { navController.navigate("favorites") }, colors = buttonColors) {
@@ -328,24 +341,20 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                 onClick = { navController.navigate("treasureBox") }, colors = buttonColors) {
                 Text("寶箱")
             }
-            Button(
-                onClick = { showChatDialog = true }, colors = buttonColors) {
-                Text("客服")
-            }
+        }
 
-            // 客服聊天
-            if (showChatDialog) {
-                Dialog(onDismissRequest = { showChatDialog = false }) {
-                    Surface(
-                        shape = RoundedCornerShape(24.dp),
-                        color = Color.White,
-                        tonalElevation = 4.dp,
-                        modifier = Modifier.width(350.dp).height(650.dp)
-                    ) {
-                        ChatScreen(
-                            onClose = { showChatDialog = false }
-                        )
-                    }
+        // 客服聊天 Dialog（保持原本功能，移到 Box 最外層）
+        if (showChatDialog) {
+            Dialog(onDismissRequest = { showChatDialog = false }) {
+                Surface(
+                    shape = RoundedCornerShape(24.dp),
+                    color = Color.White,
+                    tonalElevation = 4.dp,
+                    modifier = Modifier.width(350.dp).height(650.dp)
+                ) {
+                    ChatScreen(
+                        onClose = { showChatDialog = false }
+                    )
                 }
             }
         }

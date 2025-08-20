@@ -65,6 +65,7 @@ def handle_chat_request(prompt, conversation_history, enable_self_check=True):
             response = ollama.chat(model="ycchen/breeze-7b-instruct-v1_0", messages=current_messages)["message"]["content"]
             logger.info(f"\n🗨️ 回覆內容（第 {attempt} 次嘗試）:\n{response}\n")
 
+            # 呼叫 get_self_check_prompt
             check_response_prompt = get_self_check_prompt(question_type, response)
             audit_result = ollama.chat(
                 model="ycchen/breeze-7b-instruct-v1_0",
