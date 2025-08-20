@@ -14,3 +14,5 @@ data class Item(
     @SerializedName("resultId") val resultId: String? = null,
     @SerializedName("itemPic") val itemPic: String = "default_itempic" // 預設圖片名稱
 )
+
+annotation class ItemModel

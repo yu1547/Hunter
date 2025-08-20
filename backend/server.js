@@ -3,16 +3,20 @@ const cors = require('cors');
 const { connectDB } = require('./config/db');
 const itemRoutes = require('./routes/itemRoutes');
 const userRoutes = require('./routes/userRoutes');
-const taskRoutes = require('./routes/taskRoutes');
 
 const dropRoutes = require('./routes/dropRoutes'); // 掉落機制
 const spotRoutes = require("./routes/spotRoutes"); // 收藏冊
+const suppliesRoutes = require('./routes/suppliesRoutes');//補給站
 
-const missionRoutes = require('./routes/missionRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const rankRoutes = require('./routes/rankRoutes');
 
 const authRoutes = require('./routes/authRoutes'); // 認證路由
+
+// 事件相關
+const taskRoutes = require('./routes/taskRoutes');
+const missionRoutes = require('./routes/missionRoutes');
+const eventRoutes = require('./routes/eventRoutes');
 
 //LLM
 const chatRoutes = require('./routes/chatRoutes');
@@ -63,6 +67,12 @@ app.use('/api/tasks', taskRoutes);
 // 使用者任務操作 API 路由
 app.use('/api', missionRoutes);
 
+// 日常事件 API 路由
+app.use('/api/events', eventRoutes);
+
+// 排行榜 API 路由
+app.use('/api/rank', rankRoutes);
+
 // 掉落機制
 app.use('/api/drop', dropRoutes);
 
@@ -80,6 +90,9 @@ app.use('/api/recognize', recognitionRoutes);
 
 //LLM客服
 app.use('/api/chat', chatRoutes);
+
+//補給站
+app.use('/api/supplies', suppliesRoutes);
 
 app.listen(PORT, () => {
     console.log(`伺服器運行於 http://localhost:${PORT}`);
