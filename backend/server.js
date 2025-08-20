@@ -12,6 +12,8 @@ const missionRoutes = require('./routes/missionRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const rankRoutes = require('./routes/rankRoutes');
 
+const authRoutes = require('./routes/authRoutes'); // 認證路由
+
 //LLM
 const chatRoutes = require('./routes/chatRoutes');
 const recognitionRoutes = require('./routes/recognitionRoutes');
@@ -42,6 +44,7 @@ app.use(express.json());
 const testRoutes = require('./routes/testRoutes');
 app.use('/api/debug', testRoutes);
 
+app.use("/api/auth", authRoutes);
 
 // 基本路由
 app.get('/', (req, res) => {
