@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">kotlin_test1</string>
+    <string name="default_web_client_id">378125155567-25ddu9hmg414b4ffag7itgkf9l2ti7es.apps.googleusercontent.com</string>
 </resources>

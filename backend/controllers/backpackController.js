@@ -1,6 +1,11 @@
 const User = require('../models/userModel');
 const Item = require('../models/itemModel');
 
+// 新增道具到背包
+const addItemToBackpack = (req, res) => {
+  res.json({ message: "addItemToBackpack 測試成功" });
+};
+
 // 合成道具
 const craftItem = async (req, res) => {
   try {
@@ -73,5 +78,6 @@ const craftItem = async (req, res) => {
 };
 
 module.exports = {
+  addItemToBackpack,
   craftItem,
 };

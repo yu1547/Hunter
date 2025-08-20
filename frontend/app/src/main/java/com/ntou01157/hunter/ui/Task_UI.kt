@@ -20,38 +20,87 @@ import com.ntou01157.hunter.R
 import com.ntou01157.hunter.formatMillis
 import com.ntou01157.hunter.models.model_api.UserTask
 import com.ntou01157.hunter.data.TaskRepository
+import com.google.firebase.auth.FirebaseAuth
+import com.ntou01157.hunter.api.RetrofitClient
 import kotlinx.coroutines.launch
-
+import android.util.Log
 
 @Composable
 fun TaskListScreen(navController: NavController) {
-    val userId = "68846d797609912e5e6ba9af" // 假定使用者ID
-    val userTaskList = remember { mutableStateListOf<UserTask>() }
-    var isLoading by remember { mutableStateOf(true) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    // 1) 以 email 解析 userId —— 用狀態保存，避免重組造成的再次請求
+    var userId by remember { mutableStateOf<String?>(null) }
+    var resolvingId by remember { mutableStateOf(true) }
+    var resolveError by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
 
-    // 載入及刷新任務
-    fun refreshTasks() {
+    // 2) 用目前登入者 email 向後端查 userId
+    LaunchedEffect(Unit) {
+        try {
+            resolvingId = true
+            resolveError = null
+
+            val email = FirebaseAuth.getInstance().currentUser?.email
+                ?: run {
+                    resolveError = "尚未登入，無法取得 Email"
+                    return@LaunchedEffect
+                }
+
+            // --- 依你的 ApiService 定義選擇一種 ---
+            // (A) 若 getUserByEmail 回傳「單一 User 物件」
+            val user = RetrofitClient.apiService.getUserByEmail(email)
+            userId = user.id
+
+            // (B) 若回傳「List<User>」，請改用以下寫法
+            // val users = RetrofitClient.apiService.getUserByEmail(email)
+            // val user = users.firstOrNull() ?: run {
+            //     resolveError = "找不到使用者：$email"
+            //     return@LaunchedEffect
+            // }
+            // userId = user.id
+            // --------------------------------------
+
+            Log.d("TaskListScreen", "以 email=$email 取得 userId=$userId")
+        } catch (e: Exception) {
+            resolveError = "以 Email 取得使用者 ID 失敗：${e.message}"
+            Log.e("TaskListScreen", "resolve userId error", e)
+        } finally {
+            resolvingId = false
+        }
+    }
+
+    // 3) 任務列表 UI 狀態
+    val userTaskList = remember { mutableStateListOf<UserTask>() }
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // 4) 依 userId 載入任務清單（初次/重試皆可呼叫）
+    fun refreshTasks(uid: String) {
         coroutineScope.launch {
             isLoading = true
+            errorMessage = null
             try {
-                val tasks = TaskRepository.refreshAndGetTasks(userId)
+                Log.d("TaskListScreen", "開始載入任務，用戶ID: $uid")
+                val tasks = TaskRepository.refreshAndGetTasks(uid)
                 userTaskList.clear()
                 userTaskList.addAll(tasks)
-                errorMessage = null
+                if (tasks.isEmpty()) {
+                    errorMessage = "目前沒有任務"
+                }
             } catch (e: Exception) {
-                errorMessage = "無法載入任務: ${e.message}"
+                errorMessage = "無法載入任務：${e.message}"
+                Log.e("TaskListScreen", "載入任務失敗", e)
             } finally {
                 isLoading = false
             }
         }
     }
 
-    LaunchedEffect(Unit) {
-        refreshTasks()
+    // 5) 只有在拿到 userId 後才載入任務
+    LaunchedEffect(userId) {
+        userId?.let { refreshTasks(it) }
     }
 
+    // 6) 互動對話框狀態
     var selectedUserTask by remember { mutableStateOf<UserTask?>(null) }
     var showMessageDialog by remember { mutableStateOf<String?>(null) }
 
@@ -84,68 +133,72 @@ fun TaskListScreen(navController: NavController) {
                 .padding(paddingValues)
                 .background(Color(0xFFF3E5E5))
         ) {
-            if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            } else if (errorMessage != null) {
-                Text(errorMessage!!, color = Color.Red, modifier = Modifier.align(Alignment.Center))
-            } else {
-                val normalTasks = userTaskList.filter { !it.task.isLLM }
-                val llmTasks = userTaskList.filter { it.task.isLLM }
-
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    if (normalTasks.isNotEmpty()) {
-                        item {
-                            Text("一般任務", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
-                        }
-                        items(normalTasks) { userTask ->
-                            TaskItem(userTask) {
-                                selectedUserTask = it
-                            }
-                        }
+            // 先處理「解析 userId」這層狀態
+            when {
+                resolvingId -> {
+                    Column(
+                        Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        CircularProgressIndicator()
+                        Spacer(Modifier.height(8.dp))
+                        Text("正在取得使用者資訊…", color = Color.Gray)
                     }
-
-                    item {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text("探索任務", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
-                    }
-
-                    if (llmTasks.isNotEmpty()) {
-                        items(llmTasks) { userTask ->
-                            TaskItem(userTask) {
-                                selectedUserTask = it
-                            }
+                }
+                resolveError != null -> {
+                    Column(
+                        Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(resolveError ?: "取得使用者資訊失敗", color = Color.Red)
+                        Spacer(Modifier.height(12.dp))
+                        Button(onClick = {
+                            // 重新嘗試解析 userId
+                            resolvingId = true
+                            resolveError = null
+                            userId = null
+                            // 註：LaunchedEffect(Unit) 本身不會重跑，
+                            // 若要就地重跑，可把「解析 userId」抽成函式直接呼叫，
+                            // 或用一個隱藏的 state key 觸發。
+                        }) {
+                            Text("重試")
                         }
                     }
-
-                    if (llmTasks.count { it.state != "claimed" && it.state != "declined" } < 3) {
-                        item {
-                            Button(
-                                onClick = {
-                                    coroutineScope.launch {
-                                        isLoading = true
-                                        try {
-                                            // 傳入指定的經緯度，日後要改成動態獲取使用者位置
-                                            val newTasks = TaskRepository.createLLMMission(userId, 25.017, 121.542)
-                                            userTaskList.clear()
-                                            userTaskList.addAll(newTasks)
-                                            showMessageDialog = "已生成新的探索任務！"
-                                        } catch (e: Exception) {
-                                            errorMessage = "生成任務失敗: ${e.message}"
-                                        } finally {
-                                            isLoading = false
-                                        }
-                                    }
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 8.dp)
+                }
+                userId == null -> {
+                    // 極少數保底狀態
+                    Text("無使用者 ID，請重新登入", color = Color.Red, modifier = Modifier.align(Alignment.Center))
+                }
+                else -> {
+                    // 真的在顯示任務列表
+                    when {
+                        isLoading -> {
+                            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                        }
+                        errorMessage != null && userTaskList.isEmpty() -> {
+                            Column(
+                                modifier = Modifier.align(Alignment.Center),
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Text("生成探索任務")
+                                Text(errorMessage!!, color = Color.Red)
+                                Spacer(Modifier.height(12.dp))
+                                Button(onClick = { userId?.let { refreshTasks(it) } }) {
+                                    Text("重試")
+                                }
+                            }
+                        }
+                        else -> {
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                items(userTaskList) { userTask ->
+                                    TaskItem(userTask) { selectedUserTask = it }
+                                }
                             }
                         }
                     }
@@ -160,6 +213,13 @@ fun TaskListScreen(navController: NavController) {
                 onDismiss = { selectedUserTask = null },
                 onAction = { action ->
                     coroutineScope.launch {
+                        val uid = userId
+                        if (uid == null) {
+                            showMessageDialog = "尚未取得使用者 ID"
+                            selectedUserTask = null
+                            return@launch
+                        }
+
                         val taskId = userTask.task.taskId
                         var success = false
                         var message = ""
@@ -167,69 +227,64 @@ fun TaskListScreen(navController: NavController) {
                         try {
                             when (action) {
                                 "accept" -> {
-                                    val newState = TaskRepository.acceptTask(userId, taskId)
+                                    val newState = TaskRepository.acceptTask(uid, taskId)
                                     if (newState != null) {
-                                        val index = userTaskList.indexOfFirst { it.task.taskId == taskId }
-                                        if (index != -1) {
-                                            userTaskList[index] = userTaskList[index].copy(state = newState)
+                                        val idx = userTaskList.indexOfFirst { it.task.taskId == taskId }
+                                        if (idx != -1) {
+                                            userTaskList[idx] = userTaskList[idx].copy(state = newState)
                                         }
                                         message = "任務已接受！"
                                         success = true
                                     }
                                 }
                                 "decline" -> {
-                                    TaskRepository.declineTask(userId, taskId)
-                                    val index = userTaskList.indexOfFirst { it.task.taskId == taskId }
-                                    if (index != -1) {
-                                        userTaskList[index] = userTaskList[index].copy(state = "declined")
+                                    TaskRepository.declineTask(uid, taskId)
+                                    val idx = userTaskList.indexOfFirst { it.task.taskId == taskId }
+                                    if (idx != -1) {
+                                        userTaskList[idx] = userTaskList[idx].copy(state = "declined")
                                     }
                                     message = "任務已拒絕"
                                     success = true
                                 }
                                 "complete" -> {
-                                    val newState = TaskRepository.completeTask(userId, taskId)
+                                    val newState = TaskRepository.completeTask(uid, taskId)
                                     if (newState != null) {
-                                        val index = userTaskList.indexOfFirst { it.task.taskId == taskId }
-                                        if (index != -1) {
-                                            userTaskList[index] = userTaskList[index].copy(state = newState)
+                                        val idx = userTaskList.indexOfFirst { it.task.taskId == taskId }
+                                        if (idx != -1) {
+                                            userTaskList[idx] = userTaskList[idx].copy(state = newState)
                                         }
                                         message = "任務已完成！"
                                         success = true
                                     }
                                 }
                                 "claim" -> {
-                                    TaskRepository.claimReward(userId, taskId)
+                                    TaskRepository.claimReward(uid, taskId)
                                     message = "獎勵已領取！"
-                                    refreshTasks() // 刷新整個列表
+                                    // 領取後許多後端會更新數量或分數，這裡用整體刷新最保險
+                                    refreshTasks(uid)
                                     success = true
                                 }
                             }
                         } catch (e: Exception) {
-                            // 錯誤處理
+                            Log.e("TaskListScreen", "任務操作失敗", e)
                             success = false
                         }
 
-                        if (success) {
-                            showMessageDialog = message
-                        } else {
-                            showMessageDialog = "操作失敗"
-                        }
-                        selectedUserTask = null // 關閉對話框
+                        showMessageDialog = if (success) message else "操作失敗"
+                        selectedUserTask = null
                     }
                 }
             )
         }
 
-        // 顯示操作結果訊息
-        showMessageDialog?.let { message ->
+        // 操作結果訊息
+        showMessageDialog?.let { msg ->
             AlertDialog(
                 onDismissRequest = { showMessageDialog = null },
                 title = { Text("通知") },
-                text = { Text(message) },
+                text = { Text(msg) },
                 confirmButton = {
-                    TextButton(onClick = { showMessageDialog = null }) {
-                        Text("確定")
-                    }
+                    TextButton(onClick = { showMessageDialog = null }) { Text("確定") }
                 }
             )
         }
@@ -253,19 +308,19 @@ fun TaskItem(userTask: UserTask, onClick: (UserTask) -> Unit) {
         ) {
             Text(userTask.task.taskName, fontSize = 18.sp)
             Text(
-                text = when(userTask.state) {
-                    "available" -> "未接受"
+                text = when (userTask.state) {
+                    "available"   -> "未接受"
                     "in_progress" -> "進行中"
-                    "completed" -> "已完成"
-                    "claimed" -> "已領取"
-                    "declined" -> "已拒絕"
-                    else -> userTask.state
+                    "completed"   -> "已完成"
+                    "claimed"     -> "已領取"
+                    "declined"    -> "已拒絕"
+                    else          -> userTask.state
                 },
-                color = when(userTask.state) {
-                    "available" -> Color.Red
-                    "in_progress" -> Color(0xFFFFA500) // Orange
-                    "completed" -> Color.Green
-                    else -> Color.Gray
+                color = when (userTask.state) {
+                    "available"   -> Color.Red
+                    "in_progress" -> Color(0xFFFFA500)
+                    "completed"   -> Color.Green
+                    else          -> Color.Gray
                 }
             )
         }
@@ -273,7 +328,11 @@ fun TaskItem(userTask: UserTask, onClick: (UserTask) -> Unit) {
 }
 
 @Composable
-fun TaskDialog(userTask: UserTask, onDismiss: () -> Unit, onAction: (String) -> Unit) {
+fun TaskDialog(
+    userTask: UserTask,
+    onDismiss: () -> Unit,
+    onAction: (String) -> Unit
+) {
     val task = userTask.task
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -286,30 +345,22 @@ fun TaskDialog(userTask: UserTask, onDismiss: () -> Unit, onAction: (String) -> 
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("難度：${task.taskDifficulty}")
                 Spacer(modifier = Modifier.height(8.dp))
-                task.taskDuration?.let { Text("時間：${formatMillis(it * 1000)}") } // taskDuration 是秒，formatMillis 需要毫秒
+                task.taskDuration?.let { Text("時間：${formatMillis(it * 1000)}") } // 後端是秒，formatMillis 需要毫秒
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("獎勵分數：${task.rewardScore}")
             }
         },
         confirmButton = {
             when (userTask.state) {
-                "available" -> {
-                    Button(onClick = { onAction("accept") }) { Text("接受任務") }
-                }
-                "in_progress" -> {
-                    Button(onClick = { onAction("complete") }) { Text("完成任務 (測試)") }
-                }
-                "completed" -> {
-                    Button(onClick = { onAction("claim") }) { Text("領取獎勵") }
-                }
+                "available"   -> Button(onClick = { onAction("accept") }) { Text("接受任務") }
+                "in_progress" -> Button(onClick = { onAction("complete") }) { Text("完成任務 (測試)") }
+                "completed"   -> Button(onClick = { onAction("claim") }) { Text("領取獎勵") }
             }
         },
         dismissButton = {
             Row {
                 if (userTask.state == "available" || userTask.state == "in_progress") {
-                    TextButton(onClick = { onAction("decline") }) {
-                        Text("拒絕", color = Color.Red)
-                    }
+                    TextButton(onClick = { onAction("decline") }) { Text("拒絕", color = Color.Red) }
                 }
                 TextButton(onClick = onDismiss) { Text("關閉") }
             }

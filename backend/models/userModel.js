@@ -101,6 +101,10 @@ const userSchema = new Schema({
     of: Date,   // 值直接是 nextClaimTime
     default: {}
   },
+  buff: {
+    type: Object,
+    default: null
+  }
 }, { collection: 'users' });
 
 // 明確指定集合名稱為 'users'
