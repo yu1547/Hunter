@@ -68,7 +68,7 @@ class Main : ComponentActivity() {
                 }
                 //收藏冊
                 composable("favorites") {
-                    val user = FakeUser // 先用目前的假使用者
+                    val user = FakeUser // 先用目前的假使用者，後面要改
 
                     var pages by remember { mutableStateOf<List<List<Spot>>>(emptyList()) }
                     var pageIndex by remember { mutableStateOf(0) }
@@ -129,7 +129,7 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
     val supplyStations = remember { SupplyRepository.supplyStations }
     var selectedSupply by remember { mutableStateOf<Supply?>(null) }
     var showSupplyDialog by remember { mutableStateOf(false) }
-    val user: User = FakeUser
+    val user: User = FakeUser //後面要改
     val supplyLog = selectedSupply?.supplyId?.let { user.supplyScanLogs[it] }
 
     val context = LocalContext.current
@@ -203,7 +203,7 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                     modifier = Modifier.width(280.dp).wrapContentHeight()
                 ) {
                     SettingDialog(
-                        user = FakeUser,
+                        user = FakeUser,//後面要改
                         onDismiss = { showDialog = false },
                         onNameChange = {newName -> },
                         onLogout = {}
