@@ -6,11 +6,6 @@ const {
   completeTask,
   claimReward,
   refreshMissions,
-  openTreasureBox,
-  blessTree,
-  completeSlimeAttack,
-  startGame, // 新增
-  submitGuess, // 新增
 } = require('../controllers/missionController');
 
 // 刷新用戶任務列表 (例如：用戶打開任務面板時調用)
@@ -27,12 +22,5 @@ router.post('/users/:userId/missions/:taskId/complete', completeTask);
 
 // 領取任務獎勵
 router.post('/users/:userId/missions/:taskId/claim', claimReward);
-
-router.post('/events/start', startGame);
-router.post('/events/guess', submitGuess);
-router.post('/events/open-treasure-box', openTreasureBox);
-router.post('/events/bless-tree', blessTree);
-router.post('/events/complete-slime-attack', completeSlimeAttack);
-
 
 module.exports = router;
