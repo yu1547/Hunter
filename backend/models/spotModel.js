@@ -8,7 +8,7 @@ const spotSchema = new Schema({
     enum: ['anchor', 'ball', 'eagle', 'lovechair', 'moai', 'vending', 'book', 'bookcase', 'freedomship', 'fountain'],
     required: true
   },
-  spotPhoto: {
+  ChName: {
     type: String,
     required: true
   },
@@ -20,8 +20,6 @@ const spotSchema = new Schema({
     type: Number,
     required: true
   }
-}, {
-  timestamps: true // 自動添加 createdAt 和 updatedAt
 });
 
 // 明確指定集合名稱為 'spots'

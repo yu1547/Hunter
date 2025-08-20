@@ -8,6 +8,8 @@ import com.ntou01157.hunter.models.model_api.Task
 import com.ntou01157.hunter.models.model_api.EventModel
 import com.ntou01157.hunter.models.model_api.EventResponse
 import com.ntou01157.hunter.models.model_api.UserItem
+import com.ntou01157.hunter.models.model_api.Settings
+
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Response
@@ -17,6 +19,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.PUT
 
 
 // 為了 BugHuntUI
@@ -48,6 +51,7 @@ data class TriggerStonePileResponse(val success: Boolean, val message: String)
 
 // API 接口定義
 interface ApiService {
+    // --- Item endpoints ---
     @GET("api/items/{id}")
     suspend fun getItem(@Path("id") id: String): Item
 
@@ -57,16 +61,18 @@ interface ApiService {
     @POST("api/users/{id}/craft")
     suspend fun craftItem(@Path("id") id: String, @Body body: CraftRequestBody): User
 
+  
     // --- Task endpoints ---
     @GET("api/tasks/{id}")
     suspend fun getTask(@Path("id") id: String): Task
 
     @GET("api/rank/{userId}") // Changed "api/ranks" to "api/rank" for consistency with backend routes
     suspend fun getRank(@Path("userId") userId: String): Response<RankResponse>
-
+  
+  
     // --- Mission endpoints ---
     @POST("api/users/{userId}/missions/refresh")
-    suspend fun refreshMissions(@Path("userId") userId: String): User
+    suspend fun refreshAllMissions(@Path("userId") userId: String): User
 
     @POST("api/users/{userId}/missions/{taskId}/accept")
     suspend fun acceptTask(@Path("userId") userId: String, @Path("taskId") taskId: String): User
@@ -79,6 +85,7 @@ interface ApiService {
 
     @POST("api/users/{userId}/missions/{taskId}/claim")
     suspend fun claimReward(@Path("userId") userId: String, @Path("taskId") taskId: String): UserResponse
+
     @GET("events/all")
     suspend fun getEvents(): List<EventModel>
 
@@ -123,10 +130,28 @@ interface ApiService {
     // 您可能還需要一個 API 來獲取使用者背包物品
     @GET("api/users/{userId}/items")
     suspend fun fetchUserItems(@Path("userId") userId: String): List<UserItem>
+
+    @POST("api/missions/llm/{userId}")
+    suspend fun createLLMMission(@Path("userId") userId: String, @Body body: CreateLLMMissionRequest): User
+
+  
+    // --- Settings endpoints ---
+    @GET("api/settings/{id}")
+    suspend fun fetchSettings(@Path("id") id: String): Settings
+
+    @PUT("api/settings/{id}")
+    suspend fun updateSettings(@Path("id") id: String, @Body settings: Settings)
+
+    // --- Chat endpoints ---
+    @POST("api/chat/{userId}")
+    suspend fun chatWithLLM(@Path("userId") userId: String, @Body body: ChatRequest): ChatResponse
 }
 
 // 請求 Body 的資料類別
 data class CraftRequestBody(val itemId: String)
+
+data class Location(val latitude: Double, val longitude: Double)
+data class CreateLLMMissionRequest(val userLocation: Location)
 
 // 處理後端回傳 { user, message } 格式的資料類別
 data class UserResponse(
@@ -147,10 +172,25 @@ data class CompleteEventRequest(
     val gameResult: Int?
 )
 
+// 聊天對話 API
+data class ChatRequest(
+    val message: String,
+    val history: List<ChatHistoryItem>
+)
+
+data class ChatHistoryItem(
+    val role: String,
+    val content: String,
+    val timestamp: String
+)
+
+data class ChatResponse(
+    val reply: String
+)
 
 // 創建 Retrofit 實例
 object RetrofitClient {
-    private const val BASE_URL = "http://10.0.2.2:3000/"  // 10.0.2.2 是 Android 模擬器訪問主機的特殊 IP
+    private const val BASE_URL = "http://10.0.2.2:4000/"  // 10.0.2.2 是 Android 模擬器訪問主機的特殊 IP
 
     val apiService: ApiService by lazy {
         // 增加日誌攔截器以查看網路請求和回應的詳細資訊
@@ -159,6 +199,9 @@ object RetrofitClient {
         }
         val client = OkHttpClient.Builder()
             .addInterceptor(logging)
+            .connectTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(600, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(600, java.util.concurrent.TimeUnit.SECONDS)
             .build()
 
         Retrofit.Builder()

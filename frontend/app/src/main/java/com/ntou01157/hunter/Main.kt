@@ -33,6 +33,7 @@ import com.ntou01157.hunter.models.User
 import com.ntou01157.hunter.ui.*
 import com.ntou01157.hunter.api.RetrofitClient // Correct import for RetrofitClient
 import com.ntou01157.hunter.data.RankRepository // Correct import for your RankRepository
+import com.ntou01157.hunter.handlers.SpotLogHandler
 
 import com.ntou01157.hunter.ui.event_ui.AncientTreeUI
 import com.ntou01157.hunter.ui.event_ui.MerchantUI
@@ -73,9 +74,36 @@ class Main : ComponentActivity() {
                 composable("bag") {
                     BagScreen(navController = navController)
                 }
+                //收藏冊
                 composable("favorites") {
-                    FavoritesScreen(navController)
+                    val user = FakeUser // 先用目前的假使用者
+
+                    var pages by remember { mutableStateOf<List<List<Spot>>>(emptyList()) }
+                    var pageIndex by remember { mutableStateOf(0) }
+                    var selectedSpot by remember { mutableStateOf<Spot?>(null) }
+                    var showLockedDialog by remember { mutableStateOf(false) }
+
+                    // 呼叫 Handler 取得 Spot 資料，轉成頁面格式
+                    LaunchedEffect(Unit) {
+                        pages = SpotLogHandler.getSpotPages() // 你已經實作好了
+                    }
+
+                    FavoritesScreen(
+                        navController = navController,
+                        user = user,
+//                        pages = pages,
+                        pageIndex = pageIndex,
+                        onPageChange = { newIndex ->
+                            pageIndex = newIndex.coerceIn(0, (pages.size - 1).coerceAtLeast(0))
+                        },
+                        onSpotClicked = { spot -> selectedSpot = spot },
+                        selectedSpot = selectedSpot,
+                        onDismissSpotDialog = { selectedSpot = null },
+                        showLockedDialog = showLockedDialog,
+                        onDismissLockedDialog = { showLockedDialog = false }
+                    )
                 }
+
                 composable("ranking") {
                     RankingScreen(navController = navController)
                 }
@@ -125,17 +153,19 @@ class Main : ComponentActivity() {
 @Composable
 fun MainScreen(navController: androidx.navigation.NavHostController) {
     var showDialog by remember { mutableStateOf(false) }
+    var showChatDialog by remember { mutableStateOf(false) }
     val buttonColors = ButtonDefaults.buttonColors(
         containerColor = Color(0xFFbc8f8f),
         contentColor = Color.White
     )
-    //打卡點 假資料
+
+    // 打卡點 測試資料（真實）
     val missionLandmark = Spot(
-        spotId = "打卡點1",
-        spotName = "(地標)",
-        spotPhoto = "",
-        latitude = 25.149853,
-        longitude = 121.778352
+        spotId = "689214b1d4f0c98115826a38",
+        spotName = "book",
+        ChName = "寰宇之書",
+        latitude = 25.1508583,
+        longitude = 121.771431
     )
     //補給站
     val supplyStations = remember { SupplyRepository.supplyStations }
@@ -181,7 +211,7 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                 )
             }
             //顯示打卡點 Sopt_UI.kt
-            spotMarker(spot = missionLandmark)
+            spotMarker(spot = missionLandmark, userId = user.uid)
 
             //顯示補給站
             supplyStations.forEach { supply ->
@@ -239,6 +269,27 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             }
         }
 
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            Button(
+                onClick = {
+                    // 模擬點擊其中一個補給站
+                    selectedSupply = supplyStations.firstOrNull()
+                    showSupplyDialog = true
+                },
+                colors = buttonColors
+            ) {
+                Text("補給站")
+            }
+
+
+        }
+
+
         Column(
             modifier = Modifier.align(Alignment.CenterEnd).padding(end = 10.dp, bottom = 320.dp),
             verticalArrangement = Arrangement.spacedBy(30.dp),
@@ -257,20 +308,44 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                 onClick = { navController.navigate("bugHunt") }, colors = buttonColors){
                 Text("啟動 BugHunt 任務")
             }
-            Button(onClick = { navController.navigate("ancientTree") }, colors = buttonColors) {
+            Button(
+                onClick = { navController.navigate("ancientTree") }, colors = buttonColors) {
                 Text("古樹")
             }
-            Button(onClick = { navController.navigate("merchant") }, colors = buttonColors) {
+            Button(
+                onClick = { navController.navigate("merchant") }, colors = buttonColors) {
                 Text("神秘商人")
             }
-            Button(onClick = { navController.navigate("slimeAttack") }, colors = buttonColors) {
+            Button(
+                onClick = { navController.navigate("slimeAttack") }, colors = buttonColors) {
                 Text("史萊姆戰鬥")
             }
-            Button(onClick = { navController.navigate("stonePile") }, colors = buttonColors) {
+            Button(
+                onClick = { navController.navigate("stonePile") }, colors = buttonColors) {
                 Text("石堆")
             }
-            Button(onClick = { navController.navigate("treasureBox") }, colors = buttonColors) {
+            Button(
+                onClick = { navController.navigate("treasureBox") }, colors = buttonColors) {
                 Text("寶箱")
+            Button(
+                onClick = { showChatDialog = true }, colors = buttonColors) {
+                Text("客服")
+            }
+        }
+
+        // 客服聊天
+        if (showChatDialog) {
+            Dialog(onDismissRequest = { showChatDialog = false }) {
+                Surface(
+                    shape = RoundedCornerShape(24.dp),
+                    color = Color.White,
+                    tonalElevation = 4.dp,
+                    modifier = Modifier.width(350.dp).height(650.dp)
+                ) {
+                    ChatScreen(
+                        onClose = { showChatDialog = false }
+                    )
+                }
             }
         }
     }

@@ -1,6 +1,9 @@
 # == Global ignores ==
 .DS_Store
 Thumbs.db
+cache/
+__pycache__/
+*.pyc
 
 # == Node backend ==
 /backend/node_modules/
@@ -17,3 +20,4 @@ Thumbs.db
 
 # == macOS or OS-related ==
 *.log
+.DS_Store

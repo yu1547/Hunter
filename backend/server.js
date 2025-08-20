@@ -3,12 +3,24 @@ const cors = require('cors');
 const { connectDB } = require('./config/db');
 const itemRoutes = require('./routes/itemRoutes');
 const userRoutes = require('./routes/userRoutes');
+
+const dropRoutes = require('./routes/dropRoutes'); // 掉落機制
+const spotRoutes = require("./routes/spotRoutes"); // 收藏冊
+
+const settingsRoutes = require('./routes/settingsRoutes');
+const rankRoutes = require('./routes/rankRoutes');
+
+// 事件相關
 const taskRoutes = require('./routes/taskRoutes');
 const missionRoutes = require('./routes/missionRoutes');
 const eventRoutes = require('./routes/eventRoutes');
-const rankRoutes = require('./routes/rankRoutes');
+
+//LLM
+const chatRoutes = require('./routes/chatRoutes');
+const recognitionRoutes = require('./routes/recognitionRoutes');
+
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 const mongoose = require('mongoose');
 
 // 連接到資料庫
@@ -28,6 +40,11 @@ mongoose.connection.once('open', async () => {
 
 app.use(cors());
 app.use(express.json());
+
+//debug
+const testRoutes = require('./routes/testRoutes');
+app.use('/api/debug', testRoutes);
+
 
 // 基本路由
 app.get('/', (req, res) => {
@@ -51,6 +68,24 @@ app.use('/api/events', eventRoutes);
 
 // 排行榜 API 路由
 app.use('/api/rank', rankRoutes);
+
+// 掉落機制
+app.use('/api/drop', dropRoutes);
+
+// 收藏冊
+app.use("/api/spots", spotRoutes);
+
+// 使用者設定 API 路由
+app.use('/api/settings', settingsRoutes);
+
+// 使用者排行榜 API 路由
+app.use('/api/rank', rankRoutes);
+
+//打卡點辨識
+app.use('/api/recognize', recognitionRoutes);
+
+//LLM客服
+app.use('/api/chat', chatRoutes);
 
 app.listen(PORT, () => {
     console.log(`伺服器運行於 http://localhost:${PORT}`);

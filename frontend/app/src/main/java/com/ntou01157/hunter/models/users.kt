@@ -1,6 +1,7 @@
 package com.ntou01157.hunter.models
 
 import com.google.firebase.Timestamp
+import java.io.Serializable
 
 data class User (
     val uid: String,
@@ -20,7 +21,7 @@ data class User (
     val supplyScanLogs: MutableMap<String, Timestamp> = mutableMapOf(),
     val settings: Settings = Settings(language = "zh-TW"),
     val buff: Map<String, Int> = emptyMap(),
-)
+): Serializable
 
 data class BackpackItem(
     val itemId: String,
@@ -33,10 +34,10 @@ data class Mission(
     val acceptedAt: Timestamp?,
     val expiresAt: Timestamp?,
     val refreshedAt: Timestamp?,
-    val checkPlaces: List<CheckPlace> = emptyList()
+    val haveCheckPlaces: List<HaveCheckPlaces> = emptyList()
 )
 
-data class CheckPlace(
+data class HaveCheckPlaces(
     val spotId: String,
     val isCheck: Boolean
 )
