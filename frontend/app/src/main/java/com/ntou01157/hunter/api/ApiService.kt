@@ -94,27 +94,31 @@ interface ApiService {
         @Body request: CompleteEventRequest
     ): EventResponse
 
-    // 修正了以下路由
-    @POST("api/events/complete-bug-hunt")
-    suspend fun completeBugHunt(@Body requestBody: CompleteBugHuntRequestBody): CompleteBugHuntResponse
-
-    @POST("api/events/open-treasure-box")
-    suspend fun openTreasureBox(@Body request: OpenTreasureBoxRequest): OpenTreasureBoxResponse
-
+    // 日常事件測試路由
     @POST("api/events/trade")
     suspend fun trade(@Body request: TradeRequest): TradeResponse
-
-    @POST("api/events/bless-tree")
-    suspend fun blessTree(@Body request: BlessTreeRequest): BlessTreeResponse
-
-    @POST("api/events/complete-slime-attack")
-    suspend fun completeSlimeAttack(@Body request: CompleteSlimeAttackRequest): CompleteSlimeAttackResponse
 
     @GET("api/events/stone-pile-status/{userId}")
     suspend fun getStonePileStatus(@Path("userId") userId: String): GetStonePileStatusResponse
 
     @POST("api/events/trigger-stone-pile")
     suspend fun triggerStonePile(@Body request: TriggerStonePileRequest): TriggerStonePileResponse
+
+
+    // 任務測試路由
+    @POST("api/tasks/complete-bug-hunt")
+    suspend fun completeBugHunt(@Body requestBody: CompleteBugHuntRequestBody): CompleteBugHuntResponse
+
+    @POST("api/tasks/open-treasure-box")
+    suspend fun openTreasureBox(@Body request: OpenTreasureBoxRequest): OpenTreasureBoxResponse
+
+    @POST("api/tasks/bless-tree")
+    suspend fun blessTree(@Body request: BlessTreeRequest): BlessTreeResponse
+
+    @POST("api/tasks/complete-slime-attack")
+    suspend fun completeSlimeAttack(@Body request: CompleteSlimeAttackRequest): CompleteSlimeAttackResponse
+
+
 
     // 您可能還需要一個 API 來獲取使用者背包物品
     @GET("api/users/{userId}/items")
