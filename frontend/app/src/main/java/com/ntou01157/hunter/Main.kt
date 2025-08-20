@@ -34,6 +34,10 @@ import com.ntou01157.hunter.ui.*
 import com.ntou01157.hunter.api.RetrofitClient // Correct import for RetrofitClient
 import com.ntou01157.hunter.data.RankRepository // Correct import for your RankRepository
 import com.ntou01157.hunter.handlers.SpotLogHandler
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import com.ntou01157.hunter.api.SpotApi
+import com.ntou01157.hunter.api.SupplyApi
 
 
 class MainApplication : android.app.Application() {
@@ -117,16 +121,14 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
         contentColor = Color.White
     )
 
-    // 打卡點 測試資料（真實）
-    val missionLandmark = Spot(
-        spotId = "689214b1d4f0c98115826a38",
-        spotName = "book",
-        ChName = "寰宇之書",
-        latitude = 25.1508583,
-        longitude = 121.771431
-    )
-    //補給站
-    val supplyStations = remember { SupplyRepository.supplyStations }
+    // 打卡點 導入DB資料
+    var spots by remember { mutableStateOf<List<Spot>>(emptyList()) }
+
+    //補給站 導入DB資料
+    var supplyStations by remember { mutableStateOf<List<Supply>>(emptyList()) }
+    LaunchedEffect(Unit) {
+        supplyStations = withContext(Dispatchers.IO) { SupplyApi.getAll() }
+    }
     var selectedSupply by remember { mutableStateOf<Supply?>(null) }
     var showSupplyDialog by remember { mutableStateOf(false) }
     val user: User = FakeUser //後面要改
@@ -154,6 +156,11 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
         }
     }
 
+    // 載入所有打卡點
+    LaunchedEffect(Unit) {
+        spots = withContext(Dispatchers.IO) { SpotApi.getAllSpots() }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
@@ -168,8 +175,10 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                     title = "所在位置"
                 )
             }
-            //顯示打卡點 Sopt_UI.kt
-            spotMarker(spot = missionLandmark, userId = user.uid)
+            // 顯示所有打卡點
+            spots.forEach { spot ->
+                spotMarker(spot = spot, userId = user.uid)
+            }
 
             //顯示補給站
             supplyStations.forEach { supply ->
@@ -225,26 +234,6 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             ) {
                 Text("背包", fontSize = 20.sp)
             }
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            Button(
-                onClick = {
-                    // 模擬點擊其中一個補給站
-                    selectedSupply = supplyStations.firstOrNull()
-                    showSupplyDialog = true
-                },
-                colors = buttonColors
-            ) {
-                Text("補給站")
-            }
-
-
         }
 
 
