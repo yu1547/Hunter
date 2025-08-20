@@ -100,8 +100,27 @@ class Main : ComponentActivity() {
 
                 composable("profile") {
                     val profileViewModel = viewModel<ProfileViewModel>()
-                    ProfileScreen(profileViewModel = profileViewModel)
+                    val ctx = LocalContext.current
+
+                    val doLogout: () -> Unit = {
+                        // 雙保險：登出時一定關音樂
+                        com.ntou01157.hunter.temp.MusicPlayerManager.pauseMusic()
+                        com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+                        navController.navigate("login") {
+                            popUpTo(0) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
+
+
+                    ProfileScreen(
+                        profileViewModel = profileViewModel,
+                        navController = navController,
+                        onLogout = doLogout
+                    )
                 }
+
+
 
                 composable("ranking") {
                     RankingScreen(navController = navController)
@@ -193,12 +212,6 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                 user = user,
                 onDismiss = { showSupplyDialog = false }
             )
-        }
-        IconButton(
-            onClick = { showDialog = true },
-            modifier = Modifier.align(Alignment.TopStart).padding(start = 16.dp, top = 50.dp)
-        ) {
-            Icon(Icons.Default.Settings, contentDescription = "設定", tint = Color.Black)
         }
 
         if (showDialog) {
