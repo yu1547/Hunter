@@ -1,5 +1,6 @@
 const User = require('../models/userModel');
 const Task = require('../models/taskModel');
+const Item = require('../models/itemModel');
 const mongoose = require('mongoose');
 
 // =====================================================================
