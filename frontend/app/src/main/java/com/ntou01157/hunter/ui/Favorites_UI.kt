@@ -22,8 +22,7 @@ import com.ntou01157.hunter.models.User
 @Composable
 fun FavoritesScreen(
     navController: NavHostController,
-    user: User,
-//    pages: List<List<Spot>>,
+    userId: String,
     pageIndex: Int,
     onPageChange: (Int) -> Unit,
     onSpotClicked: (Spot) -> Unit,
@@ -33,11 +32,12 @@ fun FavoritesScreen(
     onDismissLockedDialog: () -> Unit
 ) {
     var scanLog by remember { mutableStateOf<Map<String, Boolean>>(emptyMap()) }
+
     LaunchedEffect(Unit) {
-        val logs = SpotLogHandler.getSpotLogs(user.uid)
-        println("【前端收到的 scanLog】$logs")  // 確認
+        val logs = SpotLogHandler.getSpotLogs(userId)   // 原本的 user.uid -> userId
         scanLog = logs
     }
+
 
     var pages by remember { mutableStateOf<List<List<Spot>>>(emptyList()) }
 

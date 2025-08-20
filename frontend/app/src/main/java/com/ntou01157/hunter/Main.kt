@@ -27,13 +27,21 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 import com.ntou01157.hunter.mock.FakeUser
+import android.util.Log
+import com.ntou01157.hunter.models.model_api.User as ApiUser
+import com.ntou01157.hunter.models.User as UiUser
 import com.ntou01157.hunter.models.*
+import com.ntou01157.hunter.temp.*
 import com.ntou01157.hunter.models.SupplyRepository
 import com.ntou01157.hunter.models.User
 import com.ntou01157.hunter.ui.*
 import com.ntou01157.hunter.api.RetrofitClient // Correct import for RetrofitClient
 import com.ntou01157.hunter.data.RankRepository // Correct import for your RankRepository
 import com.ntou01157.hunter.handlers.SpotLogHandler
+
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.firebase.auth.FirebaseAuth
+
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.ntou01157.hunter.api.SpotApi
@@ -80,33 +88,75 @@ class Main : ComponentActivity() {
                 }
                 //收藏冊
                 composable("favorites") {
-                    val user = FakeUser // 先用目前的假使用者，後面要改
-
+                    var userId by remember { mutableStateOf<String?>(null) }
                     var pages by remember { mutableStateOf<List<List<Spot>>>(emptyList()) }
                     var pageIndex by remember { mutableStateOf(0) }
                     var selectedSpot by remember { mutableStateOf<Spot?>(null) }
                     var showLockedDialog by remember { mutableStateOf(false) }
 
-                    // 呼叫 Handler 取得 Spot 資料，轉成頁面格式
                     LaunchedEffect(Unit) {
-                        pages = SpotLogHandler.getSpotPages() // 你已經實作好了
+                        try {
+                            val email = FirebaseAuth.getInstance().currentUser?.email
+                            if (email != null) {
+                                val apiUser = RetrofitClient.apiService.getUserByEmail(email)
+                                userId = apiUser.id              // 後端 User 的 id
+                            } else {
+                                // 沒登入就退而求其次用 FakeUser
+                                userId = FakeUser.uid
+                            }
+                        } catch (e: Exception) {
+                            Log.e("FavoritesScreen", "載入使用者失敗: ${e.message}", e)
+                            userId = FakeUser.uid
+                        }
+
+                        pages = SpotLogHandler.getSpotPages()
                     }
 
-                    FavoritesScreen(
+                    if (userId == null) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                    } else {
+                        FavoritesScreen(
+                            navController = navController,
+                            userId = userId!!,
+                            pageIndex = pageIndex,
+                            onPageChange = { newIndex ->
+                                pageIndex = newIndex.coerceIn(0, (pages.size - 1).coerceAtLeast(0))
+                            },
+                            onSpotClicked = { spot -> selectedSpot = spot },
+                            selectedSpot = selectedSpot,
+                            onDismissSpotDialog = { selectedSpot = null },
+                            showLockedDialog = showLockedDialog,
+                            onDismissLockedDialog = { showLockedDialog = false }
+                        )
+                    }
+                }
+
+
+                composable("profile") {
+                    val profileViewModel = viewModel<ProfileViewModel>()
+                    val ctx = LocalContext.current
+
+                    val doLogout: () -> Unit = {
+                        // 雙保險：登出時一定關音樂
+                        com.ntou01157.hunter.temp.MusicPlayerManager.pauseMusic()
+                        com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+                        navController.navigate("login") {
+                            popUpTo(0) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
+
+
+                    ProfileScreen(
+                        profileViewModel = profileViewModel,
                         navController = navController,
-                        user = user,
-//                        pages = pages,
-                        pageIndex = pageIndex,
-                        onPageChange = { newIndex ->
-                            pageIndex = newIndex.coerceIn(0, (pages.size - 1).coerceAtLeast(0))
-                        },
-                        onSpotClicked = { spot -> selectedSpot = spot },
-                        selectedSpot = selectedSpot,
-                        onDismissSpotDialog = { selectedSpot = null },
-                        showLockedDialog = showLockedDialog,
-                        onDismissLockedDialog = { showLockedDialog = false }
+                        onLogout = doLogout
                     )
                 }
+
+
 
                 composable("ranking") {
                     RankingScreen(navController = navController)
@@ -238,12 +288,6 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                 onDismiss = { showSupplyDialog = false }
             )
         }
-        IconButton(
-            onClick = { showDialog = true },
-            modifier = Modifier.align(Alignment.TopStart).padding(start = 16.dp, top = 50.dp)
-        ) {
-            Icon(Icons.Default.Settings, contentDescription = "設定", tint = Color.Black)
-        }
 
         if (showDialog) {
             Dialog(onDismissRequest = { showDialog = false }) {
@@ -284,6 +328,9 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             verticalArrangement = Arrangement.spacedBy(30.dp),
             horizontalAlignment = Alignment.End
         ) {
+            Button(onClick = { navController.navigate("profile") }, colors = buttonColors) {
+                Text("個人設定")
+            }
             Button(onClick = { navController.navigate("favorites") }, colors = buttonColors) {
                 Text("收藏冊")
             }

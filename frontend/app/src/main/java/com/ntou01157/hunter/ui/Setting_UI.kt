@@ -20,6 +20,7 @@ import com.ntou01157.hunter.models.model_api.User as ApiUser
 import com.ntou01157.hunter.models.model_api.BackpackItem
 import com.ntou01157.hunter.models.model_api.Mission
 import androidx.compose.ui.platform.LocalContext
+import com.google.firebase.auth.FirebaseAuth
 import com.ntou01157.hunter.models.model_api.Settings as ApiSettings
 import com.ntou01157.hunter.models.User as UiUser
 import com.ntou01157.hunter.models.Settings as UiSettings
@@ -44,31 +45,42 @@ fun SettingDialog(
     var isEditingName by remember { mutableStateOf(false) }
     var nameText by remember { mutableStateOf(user.displayName) }
 
-    val userId = "68846d797609912e5e6ba9b0"
+    // 這裡宣告 userId，讓下面 updateSettings 也能用
+    var userId by remember { mutableStateOf<String?>(null) }
 
     // ⏬ 初始化設定資料
     LaunchedEffect(Unit) {
-        coroutineScope.launch {
-            try {
-                val fetchedSettings = fetchSettings(userId) // 呼叫 data 層
-                musicEnabled = fetchedSettings.music
-                notificationsEnabled = fetchedSettings.notification
-                selectedLanguage = fetchedSettings.language
-            } catch (e: Exception) {
-                Log.e("SettingDialog", "取得設定失敗：${e.message}")
-            }
+        try {
+            val email = FirebaseAuth.getInstance().currentUser?.email ?: return@LaunchedEffect
+
+            val userData = RetrofitClient.apiService.getUserByEmail(email) // 回 User（內含 settings: List）
+            userId = userData.id
+
+            val s = userData.settings?.firstOrNull()   // ← 取第一筆
+            musicEnabled        = s?.music ?: false
+            notificationsEnabled= s?.notification ?: false
+            selectedLanguage    = s?.language ?: "zh-TW"
+
+        } catch (e: Exception) {
+            Log.e("SettingDialog", "取得設定失敗：${e.message}", e)
         }
     }
+
 
     fun updateSettings() {
         coroutineScope.launch {
             try {
+                val id = userId ?: run {
+                    Log.e("SettingDialog", "userId 為空，無法更新設定")
+                    return@launch
+                }
+
                 val updatedSettings = ApiSettings(
                     music = musicEnabled,
                     notification = notificationsEnabled,
                     language = selectedLanguage
                 )
-                RetrofitClient.apiService.updateSettings(userId, updatedSettings)
+                RetrofitClient.apiService.updateSettings(id, updatedSettings)
                 Log.d("SettingDialog", "設定已送出")
 
                 // 音樂控制

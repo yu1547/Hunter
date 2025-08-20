@@ -11,6 +11,8 @@ const suppliesRoutes = require('./routes/suppliesRoutes');//補給站
 const settingsRoutes = require('./routes/settingsRoutes');
 const rankRoutes = require('./routes/rankRoutes');
 
+const authRoutes = require('./routes/authRoutes'); // 認證路由
+
 // 事件相關
 const taskRoutes = require('./routes/taskRoutes');
 const missionRoutes = require('./routes/missionRoutes');
@@ -46,6 +48,7 @@ app.use(express.json());
 const testRoutes = require('./routes/testRoutes');
 app.use('/api/debug', testRoutes);
 
+app.use("/api/auth", authRoutes);
 
 // 基本路由
 app.get('/', (req, res) => {
