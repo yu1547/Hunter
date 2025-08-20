@@ -31,6 +31,8 @@ import com.ntou01157.hunter.models.model_api.Settings as ApiSettings
 import com.ntou01157.hunter.temp.MusicPlayerManager
 import com.ntou01157.hunter.temp.ProfileViewModel
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.interaction.MutableInteractionSource
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,6 +57,8 @@ fun ProfileScreen(
     var selectedLanguage by remember { mutableStateOf("zh-TW") }
 
     val snackbarHostState = remember { SnackbarHostState() }
+    var isAvatarUploading by remember { mutableStateOf(false) }
+
 
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
@@ -62,14 +66,22 @@ fun ProfileScreen(
         if (picked != null) {
             selectedImageUri = picked
             coroutineScope.launch {
+                isAvatarUploading = true
                 val r = profileViewModel.uploadPhotoToCloudinary(picked, context)
                 r.fold(
-                    onSuccess = { snackbarHostState.showSnackbar("頭像已更新") },
-                    onFailure = { e -> snackbarHostState.showSnackbar(e.message ?: "上傳失敗") }
+                    onSuccess = {
+                        isAvatarUploading = false
+                        snackbarHostState.showSnackbar("頭像已更新")
+                    },
+                    onFailure = { e ->
+                        isAvatarUploading = false
+                        snackbarHostState.showSnackbar(e.message ?: "上傳失敗")
+                    }
                 )
             }
         }
     }
+
 
     LaunchedEffect(Unit) {
         val email = FirebaseAuth.getInstance().currentUser?.email ?: return@LaunchedEffect
@@ -135,7 +147,7 @@ fun ProfileScreen(
                 .fillMaxSize()
                 .padding(16.dp)
                 .padding(innerPadding)
-                .offset(y = (-24).dp),   // 往上移 24dp
+                .offset(y = (-24).dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
@@ -151,7 +163,7 @@ fun ProfileScreen(
                     .size(120.dp)
                     .clip(CircleShape)
                     .background(Color.LightGray)
-                    .clickable { launcher.launch("image/*") },
+                    .clickable(enabled = !isAvatarUploading) { launcher.launch("image/*") },
                 contentAlignment = Alignment.Center
             ) {
                 val photoUrl = userState?.photoURL.orEmpty()
@@ -169,7 +181,17 @@ fun ProfileScreen(
                         contentScale = ContentScale.Crop
                     )
                 }
+
+                if (isAvatarUploading) {
+                    Box(
+                        Modifier
+                            .matchParentSize()
+                            .background(Color.Black.copy(alpha = 0.25f))
+                    )
+                    CircularProgressIndicator()
+                }
             }
+
 
             Spacer(Modifier.height(16.dp))
 
@@ -278,6 +300,23 @@ fun ProfileScreen(
                     }
 
                 }
+
+            }
+
+        }
+        if (isAvatarUploading) {
+            val blocker = remember { MutableInteractionSource() }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.40f))
+                    .clickable( // 吃掉所有點擊，避免穿透
+                        indication = null,
+                        interactionSource = blocker
+                    ) { },
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
             }
         }
     }
