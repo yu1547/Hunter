@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.ntou01157.hunter.R
+import com.ntou01157.hunter.handlers.SpotLogHandler
 import com.ntou01157.hunter.models.*
 import com.ntou01157.hunter.models.User
 
@@ -22,7 +23,7 @@ import com.ntou01157.hunter.models.User
 fun FavoritesScreen(
     navController: NavHostController,
     user: User,
-    pages: List<List<Spot>>,
+//    pages: List<List<Spot>>,
     pageIndex: Int,
     onPageChange: (Int) -> Unit,
     onSpotClicked: (Spot) -> Unit,
@@ -31,12 +32,51 @@ fun FavoritesScreen(
     showLockedDialog: Boolean,
     onDismissLockedDialog: () -> Unit
 ) {
+    var scanLog by remember { mutableStateOf<Map<String, Boolean>>(emptyMap()) }
+    LaunchedEffect(Unit) {
+        val logs = SpotLogHandler.getSpotLogs(user.uid)
+        println("【前端收到的 scanLog】$logs")  // 確認
+        scanLog = logs
+    }
+
+    var pages by remember { mutableStateOf<List<List<Spot>>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        pages = SpotLogHandler.getSpotPages()
+    }
+
     val buttonColors = ButtonDefaults.buttonColors(
         containerColor = Color(0xFFbc8f8f),
         contentColor = Color.White
     )
 
-    val items = pages[pageIndex]
+    val items = pages.getOrNull(pageIndex).orEmpty()
+
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        if (items.isEmpty()) {
+            // 資料還沒載入
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("正在載入地標資料...", color = Color.Gray)
+            }
+        } else {
+            // 原本的畫面（把你的收藏冊 UI 包進這裡）
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFFF3DCDC))
+                    .padding(horizontal = 16.dp)
+            ) {
+                // ←←← 後面照你原本的 IconButton、Box、Row 等
+            }
+        }
+    }
+
+
 
     Column(
         modifier = Modifier
@@ -80,8 +120,8 @@ fun FavoritesScreen(
                             val index = row * 2 + col
                             if (index < items.size) {
                                 val landmark = items[index]
+                                val isUnlocked = scanLog[landmark.spotName.lowercase()] == true
 
-                                val isUnlocked = user.spotsScanLogs[landmark.spotId] == true
 
                                 Box(
                                     modifier = Modifier
@@ -91,10 +131,23 @@ fun FavoritesScreen(
                                         .clickable { onSpotClicked(landmark) },
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        text = landmark.spotName,
-                                        color = if (isUnlocked) Color.Black else Color.Gray
-                                    )
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        if (isUnlocked) {
+                                            Image(
+                                                painter = painterResource(id = getSpotImageResId(landmark.spotName)),
+                                                contentDescription = landmark.spotName,
+                                                modifier = Modifier.size(48.dp)
+                                            )
+                                            Spacer(modifier = Modifier.height(6.dp))
+                                        }
+
+                                        Text(
+                                            text = landmark.ChName,
+                                            color = if (isUnlocked) Color.Black else Color.Gray
+                                        )
+
+                                    }
+
                                 }
                             } else {
                                 Spacer(modifier = Modifier.weight(1f))
@@ -153,5 +206,23 @@ fun FavoritesScreen(
             },
             text = { Text("此地標尚未解鎖，請先前往現場打卡！") }
         )
+    }
+}
+
+
+@Composable
+fun getSpotImageResId(spotName: String): Int {
+    return when (spotName.lowercase()) {
+        "moai" -> R.drawable.moai
+        "vending" -> R.drawable.vending
+        "anchor" -> R.drawable.anchor
+        "ball" -> R.drawable.ball
+        "eagle" -> R.drawable.eagle
+        "lovechair" -> R.drawable.lovechair
+        "book" -> R.drawable.book
+        "bookcase" -> R.drawable.bookcase
+        "freedomship" -> R.drawable.freedomship
+        "fountain" -> R.drawable.fountain
+        else -> R.drawable.placeholder // 建議準備一張 default 圖片
     }
 }

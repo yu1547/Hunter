@@ -1,6 +1,8 @@
 package com.ntou01157.hunter.data
 
 import android.util.Log
+import com.ntou01157.hunter.api.CreateLLMMissionRequest
+import com.ntou01157.hunter.api.Location
 import com.ntou01157.hunter.api.RetrofitClient
 import com.ntou01157.hunter.models.model_api.UserTask
 import com.ntou01157.hunter.models.model_api.Task
@@ -12,7 +14,7 @@ object TaskRepository {
 
     suspend fun refreshAndGetTasks(userId: String): List<UserTask> = withContext(Dispatchers.IO) {
         try {
-            val user = apiService.refreshMissions(userId)
+            val user = apiService.refreshAllMissions(userId)
             val taskDetailsList = user.missions.mapNotNull { mission ->
                 try {
                     // 從後端獲取每個任務的詳細資訊
@@ -70,6 +72,18 @@ object TaskRepository {
         } catch (e: Exception) {
             Log.e("TaskRepo", "使用者 $userId 領取任務 $taskId 獎勵失敗", e)
             null
+        }
+    }
+
+    suspend fun createLLMMission(userId: String, latitude: Double, longitude: Double): List<UserTask> = withContext(Dispatchers.IO) {
+        try {
+            val request = CreateLLMMissionRequest(userLocation = Location(latitude, longitude))
+            apiService.createLLMMission(userId, request)
+            // 創建後立即刷新任務列表
+            return@withContext refreshAndGetTasks(userId)
+        } catch (e: Exception) {
+            Log.e("TaskRepo", "為使用者 $userId 創建 LLM 任務失敗", e)
+            throw e
         }
     }
 }
