@@ -63,7 +63,8 @@ const chatWithLLM = async (req, res) => {
     // 檢查 Flask 回傳格式
     if (!flaskRes.data || typeof flaskRes.data.reply !== "string") {
       console.error("❌ Flask 回傳格式錯誤：", flaskRes.data);
-      return res.status(500).json({ error: "Flask 回傳格式錯誤", flaskData: flaskRes.data });
+      // 修正：始終回傳 reply 欄位，避免前端解析失敗
+      return res.json({ reply: "" });
     }
     const reply = flaskRes.data.reply;
     console.log("Flask 回覆 reply:", reply);
@@ -110,7 +111,8 @@ const chatWithLLM = async (req, res) => {
     return res.json({ reply });
   } catch (error) {
     console.error("❌ chatWithLLM 發生錯誤：", error);
-    return res.status(500).json({ error: error.message });
+    // 修正：始終回傳 reply 欄位
+    return res.json({ reply: "" });
   }
 };
 

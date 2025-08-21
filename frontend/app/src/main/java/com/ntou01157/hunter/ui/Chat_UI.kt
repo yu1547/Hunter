@@ -227,7 +227,8 @@ private fun sendMessage(
             val response: ChatResponse = RetrofitClient.apiService
                 .chatWithLLM(userId, request)
             Log.d("ChatScreen", "API 回傳: $response")
-            if (response.reply.isNotBlank()) {
+            // 修正：明確判斷 reply 是否為 null 或 undefined
+            if (response.reply != null && response.reply.isNotBlank()) {
                 val llmReply = History(
                     "LLM",
                     response.reply,
@@ -235,7 +236,7 @@ private fun sendMessage(
                 )
                 onResult(currentHistory + llmReply)
             } else {
-                Log.e("ChatScreen", "API 回傳 reply 為空")
+                Log.e("ChatScreen", "API 回傳 reply 為空或 null")
                 val llmReply = History(
                     "LLM",
                     "伺服器未回傳內容，請稍後再試",
@@ -253,9 +254,7 @@ private fun sendMessage(
                     try {
                         val json = org.json.JSONObject(errorBody)
                         val backendMsg = json.optString("error")
-                        if (backendMsg.contains("AI 服務暫時無法回應")) {
-                            errorMsg = backendMsg
-                        } else if (backendMsg.isNotBlank()) {
+                        if (backendMsg.isNotBlank()) {
                             errorMsg = backendMsg
                         }
                     } catch (jsonEx: Exception) {
