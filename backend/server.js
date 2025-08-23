@@ -6,9 +6,12 @@ const userRoutes = require('./routes/userRoutes');
 
 const dropRoutes = require('./routes/dropRoutes'); // 掉落機制
 const spotRoutes = require("./routes/spotRoutes"); // 收藏冊
+const suppliesRoutes = require('./routes/suppliesRoutes');//補給站
 
 const settingsRoutes = require('./routes/settingsRoutes');
 const rankRoutes = require('./routes/rankRoutes');
+
+const authRoutes = require('./routes/authRoutes'); // 認證路由
 
 // 事件相關
 const taskRoutes = require('./routes/taskRoutes');
@@ -45,6 +48,7 @@ app.use(express.json());
 const testRoutes = require('./routes/testRoutes');
 app.use('/api/debug', testRoutes);
 
+app.use("/api/auth", authRoutes);
 
 // 基本路由
 app.get('/', (req, res) => {
@@ -86,6 +90,9 @@ app.use('/api/recognize', recognitionRoutes);
 
 //LLM客服
 app.use('/api/chat', chatRoutes);
+
+//補給站
+app.use('/api/supplies', suppliesRoutes);
 
 app.listen(PORT, () => {
     console.log(`伺服器運行於 http://localhost:${PORT}`);

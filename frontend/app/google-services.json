@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "378125155567",
+    "project_id": "hunter-cde2a",
+    "storage_bucket": "hunter-cde2a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:378125155567:android:1d13a74a25bba261f2ef1a",
+        "android_client_info": {
+          "package_name": "com.ntou01157.hunter"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "378125155567-8aom594jmnjksovfjjmlsd5730617eo5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ntou01157.hunter",
+            "certificate_hash": "74633e359613627d73a4432d6c82906ecebe2055"
+          }
+        },
+        {
+          "client_id": "378125155567-25ddu9hmg414b4ffag7itgkf9l2ti7es.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBt9p01WjoLhJO9d3HaJptJ_A4dXNwzwWU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "378125155567-25ddu9hmg414b4ffag7itgkf9l2ti7es.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

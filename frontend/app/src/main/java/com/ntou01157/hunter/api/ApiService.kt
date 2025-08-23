@@ -9,6 +9,8 @@ import com.ntou01157.hunter.models.model_api.EventModel
 import com.ntou01157.hunter.models.model_api.EventResponse
 import com.ntou01157.hunter.models.model_api.UserItem
 import com.ntou01157.hunter.models.model_api.Settings
+import com.ntou01157.hunter.models.model_api.RankCreateRequest
+import com.ntou01157.hunter.models.PhotoUrlBody
 
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -21,6 +23,7 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.PUT
+import retrofit2.http.PATCH
 
 
 // 為了 BugHuntUI
@@ -62,6 +65,21 @@ interface ApiService {
     @POST("api/users/{id}/craft")
     suspend fun craftItem(@Path("id") id: String, @Body body: CraftRequestBody): User
 
+    @GET("api/users/email/{email}")
+    suspend fun getUserByEmail(@Path("email") email: String): User
+
+    @PUT("api/users/{id}")
+    suspend fun updateUser(@Path("id") id: String, @Body updatedUser: User): User
+
+    @PUT("api/users/{id}")
+    suspend fun updateUser(@Path("id") id: String, @Body updatedData: Map<String, String>): User
+
+    @PATCH("/api/users/{id}/photo")
+    suspend fun updatePhotoUrl(
+        @Path("id") userId: String,
+        @Body body: PhotoUrlBody
+    ): Response<Unit>
+
   
     // --- Task endpoints ---
     @GET("api/tasks/{id}")
@@ -69,6 +87,14 @@ interface ApiService {
 
     @GET("api/rank/{userId}") // Changed "api/ranks" to "api/rank" for consistency with backend routes
     suspend fun getRank(@Path("userId") userId: String): Response<RankResponse>
+
+    // ✅ 取得排行榜（帶目前使用者 userId）
+    @GET("api/ranks/{userId}")
+    suspend fun getRankByUserId(@Path("userId") userId: String): RankResponse
+
+    // ✅ 建立排名資料（當 userRank 不存在時用）
+    @POST("api/ranks")
+    suspend fun createRank(@Body body: RankCreateRequest): Response<Unit>
   
   
     // --- Mission endpoints ---
