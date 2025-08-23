@@ -18,6 +18,7 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -171,6 +172,10 @@ interface ApiService {
     // --- Chat endpoints ---
     @POST("api/chat/{userId}")
     suspend fun chatWithLLM(@Path("userId") userId: String, @Body body: ChatRequest): ChatResponse
+
+    // 新增：刪除對話紀錄
+    @DELETE("api/chat/{userId}")
+    suspend fun deleteChatHistory(@Path("userId") userId: String)
 }
 
 // 請求 Body 的資料類別
