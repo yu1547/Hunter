@@ -140,10 +140,6 @@ fun SlimeAttackUI(onEventCompleted: (message: String) -> Unit) {
     }
 }
 
-// 已將這兩個 data class 從此檔案移除，並在頂部進行了 import
-// data class CompleteSlimeAttackRequest(val userId: String, val totalDamage: Int)
-// data class CompleteSlimeAttackResponse(val success: Boolean, val message: String, val rewards: List<String>)
-
 @Preview(showBackground = true)
 @Composable
 fun PreviewSlimeAttackUI() {

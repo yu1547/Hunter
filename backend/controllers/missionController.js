@@ -140,7 +140,6 @@ const claimReward = async (req, res) => {
         { $inc: { score: scoreToAdd } },
         { upsert: true, new: true } // 如果找不到用戶，就創建一個新的
       );
-    }
 
     mission.state = 'claimed';
     

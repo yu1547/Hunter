@@ -5,10 +5,20 @@ const mongoose = require('mongoose');
 // 處理神秘商人交易的 API
 const trade = async (req, res) => {
     const { userId, tradeType } = req.body;
+    
+    // 更新
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
     try {
-        const user = await User.findById(userId);
-        if (!user) return res.status(404).json({ success: false, message: '使用者不存在。' });
+        // const user = await User.findById(userId);
+        // if (!user) return res.status(404).json({ success: false, message: '使用者不存在。' });
+        const user = await User.findById(userId).session(session);
+        if (!user) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(404).json({ success: false, message: '使用者不存在。' });
+        }
 
         let requiredItemName, requiredCount, givenItemName;
         if (tradeType === "bronzeKey") {
@@ -20,35 +30,64 @@ const trade = async (req, res) => {
             requiredCount = 5;
             givenItemName = "銀鑰匙";
         } else {
+            await session.abortTransaction();
+            session.endSession();
             return res.status(400).json({ success: false, message: '無效的交易類型' });
         }
 
-        const requiredItem = await Item.findOne({ itemName: requiredItemName });
-        if (!requiredItem) return res.status(404).json({ success: false, message: '所需物品不存在。' });
+        // const requiredItem = await Item.findOne({ itemName: requiredItemName });
+        // if (!requiredItem) return res.status(404).json({ success: false, message: '所需物品不存在。' });
+        const requiredItem = await Item.findOne({ itemName: requiredItemName }).session(session);
+        if (!requiredItem) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(404).json({ success: false, message: '所需物品不存在。' });
+        }
 
+        // const requiredItemInInv = user.backpackItems.find(item => item.itemId.toString() === requiredItem._id.toString());
+        // if (!requiredItemInInv || requiredItemInInv.quantity < requiredCount) {
+        //     return res.json({ success: false, message: `你的${requiredItemName}不足${requiredCount}個。` });
+        // }
         const requiredItemInInv = user.backpackItems.find(item => item.itemId.toString() === requiredItem._id.toString());
         if (!requiredItemInInv || requiredItemInInv.quantity < requiredCount) {
-            return res.json({ success: false, message: `你的${requiredItemName}不足${requiredCount}個。` });
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(400).json({ success: false, message: '道具數量不足' });
         }
 
-        const givenItem = await Item.findOne({ itemName: givenItemName });
-        if (!givenItem) return res.status(404).json({ success: false, message: '給予物品不存在。' });
-
-        // 執行交易：扣除所需物品，給予新物品
-        requiredItemInInv.quantity -= requiredCount;
-
-        const givenItemInInv = user.backpackItems.find(item => item.itemId.toString() === givenItem._id.toString());
-        if (givenItemInInv) {
-            givenItemInInv.quantity++;
-        } else {
-            user.backpackItems.push({ itemId: givenItem._id.toString(), quantity: 1 });
+        // const givenItem = await Item.findOne({ itemName: givenItemName });
+        // if (!givenItem) return res.status(404).json({ success: false, message: '給予物品不存在。' });
+        const givenItem = await Item.findOne({ itemName: givenItemName }).session(session);
+        if (!givenItem) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(404).json({ success: false, message: '給予物品不存在。' });
         }
+        await decFromBackpack(userId, requiredItem._id, session, requiredCount);
+        await addToBackpack(userId, givenItem._id, 1, session);
+        
+        await session.commitTransaction();
+        session.endSession();
 
-        await user.save();
+        return res.json({ success: true, message: `成功兌換${givenItemName}` });
 
-        return res.json({ success: true, message: `交易成功！你獲得了1個${givenItemName}。` });
+        // // 執行交易：扣除所需物品，給予新物品
+        // requiredItemInInv.quantity -= requiredCount;
+
+        // const givenItemInInv = user.backpackItems.find(item => item.itemId.toString() === givenItem._id.toString());
+        // if (givenItemInInv) {
+        //     givenItemInInv.quantity++;
+        // } else {
+        //     user.backpackItems.push({ itemId: givenItem._id.toString(), quantity: 1 });
+        // }
+
+        // await user.save();
+
+        // return res.json({ success: true, message: `交易成功！你獲得了1個${givenItemName}。` });
 
     } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
         console.error("交易失敗：", error);
         return res.status(500).json({ success: false, message: '伺服器內部錯誤' });
     }
@@ -121,9 +160,8 @@ const triggerStonePile = async (req, res) => {
              return res.status(404).json({ success: false, message: '獎勵物品不存在。' });
         }
 
-        const reward = { points: 10, items: [{ itemId: rewardItem._id.toString(), quantity: 1 }] };
+        const reward = { items: [{ itemId: rewardItem._id.toString(), quantity: 1 }] };
 
-        user.score = (user.score || 0) + reward.points;
         const existingItem = user.backpackItems.find(item => item.itemId.toString() === rewardItem._id.toString());
         if (existingItem) {
             existingItem.quantity++;
@@ -135,7 +173,7 @@ const triggerStonePile = async (req, res) => {
 
         await user.save();
 
-        return res.json({ success: true, message: '你搬開了石頭，獲得積分+${reward.points}和物品。' });
+        return res.json({ success: true, message: '你搬開了石頭，獲得物品。' });
 
     } catch (error) {
         console.error("觸發石堆事件失敗：", error);

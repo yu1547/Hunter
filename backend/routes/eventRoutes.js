@@ -8,6 +8,11 @@ const {
   triggerStonePile,
 } = require('../controllers/eventController');
 
+const {
+  refreshDailyEvents,
+  completeEvent,
+} = temp_eventController;
+
 // 每日自動刷新事件位置的 API，通常由排程任務 (cron job) 調用
 router.post('/daily-refresh', temp_eventController.refreshDailyEvents);
 
