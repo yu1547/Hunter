@@ -1,12 +1,17 @@
 const User = require('../models/userModel');
 const Task = require('../models/taskModel');
+const Item = require('../models/itemModel');
 const Spot = require('../models/spotModel'); // 需有 Spot model
 const Rank = require('../models/rankModel'); // 引入 Rank model
 const { generateDropItems } = require('../services/dropService'); // 引入 generateDropItems
 const { addItemsToBackpack } = require('../services/backpackService'); // 引入 backpackService
 const axios = require('axios'); // 用於呼叫 Flask
 const mongoose = require('mongoose');
+const { calculateDrops } = require('../logic/dropLogic');
 
+// =====================================================================
+// API 路由處理函式
+// =====================================================================
 // 接受任務
 const acceptTask = async (req, res) => {
   const { userId, taskId } = req.params;
@@ -19,7 +24,7 @@ const acceptTask = async (req, res) => {
     if (!mission) return res.status(404).json({ message: '用戶沒有此任務' });
 
     if (mission.state !== 'available') {
-      return res.status(400).json({ message: `任務狀態為 ${mission.state}，無法接受` });
+      return res.status(400).json({ message: '任務狀態為 ${mission.state}，無法接受' });
     }
 
     const taskDetails = await Task.findById(taskId);
@@ -50,7 +55,7 @@ const declineTask = async (req, res) => {
     if (!mission) return res.status(404).json({ message: '用戶沒有此任務' });
 
     if (!['available', 'in_progress'].includes(mission.state)) {
-      return res.status(400).json({ message: `任務狀態為 ${mission.state}，無法拒絕` });
+      return res.status(400).json({ message: '任務狀態為 ${mission.state}，無法拒絕' });
     }
 
     mission.state = 'declined';
@@ -75,7 +80,7 @@ const completeTask = async (req, res) => {
     if (!mission) return res.status(404).json({ message: '用戶沒有此任務' });
 
     if (mission.state !== 'in_progress') {
-      return res.status(400).json({ message: `任務狀態為 ${mission.state}，無法完成` });
+      return res.status(400).json({ message: '任務狀態為 ${mission.state}，無法完成' });
     }
 
     mission.state = 'completed';
@@ -98,7 +103,7 @@ const claimReward = async (req, res) => {
     if (!mission) return res.status(404).json({ message: '用戶沒有此任務' });
 
     if (mission.state !== 'completed') {
-      return res.status(400).json({ message: `任務狀態為 ${mission.state}，無法領取獎勵` });
+      return res.status(400).json({ message: '任務狀態為 ${mission.state}，無法領取獎勵' });
     }
 
     const taskDetails = await Task.findById(taskId);

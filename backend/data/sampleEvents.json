@@ -1,0 +1,92 @@
+
+[
+  {
+    "_id": "60c84f1b9f7a4c001f3e7b23",
+    "name": "神秘商人的試煉",
+    "description": "一位背著大袋子的神秘商人出現在你面前。他看起來像是走遍世界的收藏家。 「你願意用你手上的鑰匙碎片與我交易嗎？我有更值得的東西給你。」他咧嘴一笑。",
+    "type": "daily",
+    "spotId": null,
+    "options": [
+      {
+        "text": "交出銅鑰匙碎片 x3",
+        "rewards": {
+          "items": [{ "itemId": "60c84f1b9f7a4c001f3e7b24", "quantity": 1 }],
+          "consume": [{ "itemId": "60c84f1b9f7a4c001f3e7b25", "quantity": 3 }],
+          "points": 1
+        }
+      },
+      {
+        "text": "交出銀鑰匙碎片 x3",
+        "rewards": {
+          "items": [{ "itemId": "60c84f1b9f7a4c001f3e7b26", "quantity": 1 }],
+          "consume": [{ "itemId": "60c84f1b9f7a4c001f3e7b24", "quantity": 3 }],
+          "points": 1
+        }
+      },
+      {
+        "text": "什麼都不做",
+        "rewards": { "points": 1 }
+      }
+    ]
+  },
+  {
+    "_id": "60c84f1b9f7a4c001f3e7b27",
+    "name": "石堆下的碎片",
+    "description": "你發現打卡點旁有一堆亂石，當你搬開其中一顆後，發現底下藏著一枚閃閃發亮的東西。",
+    "type": "daily",
+    "spotId": null,
+    "rewards": { "items": [{ "itemId": "6892b1db16a96f6bb0af20c9", "quantity": 2 }] }
+  },
+  {
+    "_id": "60c84f1b9f7a4c001f3e7b28",
+    "name": "在小小的 code 裡面抓阿抓阿抓",
+    "description": "code 出現了異常，請找出 bug 並回報（隱含解謎）",
+    "type": "puzzle",
+    "spotId": "60c84f1b9f7a4c001f3e7b29",
+    "rewards": { "points": 5, "title": "解碼師" }
+  },
+  {
+    "_id": "60c84f1b9f7a4c001f3e7b30",
+    "name": "打扁史萊姆",
+    "description": "路上撞見了一隻史萊姆，他想要搶奪你的財寶，快攻擊他避免寶物被搶走！",
+    "type": "game",
+    "spotId": "60c84f1b9f7a4c001f3e7b31",
+    "rewards": null
+  },
+  {
+    "_id": "60c84f1b9f7a4c001f3e7b32",
+    "name": "偶遇銅寶箱",
+    "description": "偶遇一個銅寶箱，你要打開他嗎？",
+    "type": "chest",
+    "spotId": "60c84f1b9f7a4c001f3e7b33",
+    "rewards": { "points": 15, "items": [{ "itemId": "6892b1db16a96f6bb0af20cf", "quantity": 1 }] },
+    "consume": { "items": [{ "itemId": "6892b1db16a96f6bb0af20c6", "quantity": 1 }] }
+  },
+  {
+    "_id": "60c84f1b9f7a4c001f3e7b35",
+    "name": "古樹的祝福",
+    "description": "獵人站在一棵高大的古樹前，樹的表面閃爍著微光。",
+    "type": "bless",
+    "spotId": "60c84f1b9f7a4c001f3e7b36",
+    "options": [
+      {
+        "text": "交出普通的史萊姆黏液 x10",
+        "rewards": {
+          "items": [{ "itemId": "6892b1db16a96f6bb0af20c9", "quantity": 1 }],
+          "consume": [{ "itemId": "6892b1db16a96f6bb0af20c3", "quantity": 10 }]
+        }
+      },
+      {
+        "text": "交出黏稠的史萊姆黏液 x10",
+        "rewards": {
+          "items": [{ "itemId": "6892b1db16a96f6bb0af20ca", "quantity": 1 }],
+          "consume": [{ "itemId": "6892b1db16a96f6bb0af20c4", "quantity": 10 }]
+        }
+      },
+      {
+        "text": "我不想提供你任何的材料。",
+        "rewards": {}
+      }
+    ]
+  }
+]
