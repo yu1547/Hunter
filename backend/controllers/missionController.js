@@ -107,19 +107,32 @@ const claimReward = async (req, res) => {
     }
 
     const taskDetails = await Task.findById(taskId);
-    if (!taskDetails) return res.status(404).json({ message: '找不到任務詳細資訊' });
+    const eventDetails = await Event.findById(taskId);
 
-    // 檢查是否超時
-    const isOvertime = mission.expiresAt && new Date() > mission.expiresAt;
-
-    // 發放獎勵道具
-    if (taskDetails.rewardItems && taskDetails.rewardItems.length > 0) {
-      await addItemsToBackpack(user, taskDetails.rewardItems);
+    if (!taskDetails && !eventDetails) {
+      return res.status(404).json({ message: '找不到任務或事件詳細資訊' });
     }
 
-    // 如果沒有超時，發放積分
-    if (!isOvertime && taskDetails.rewardScore > 0) {
-      const scoreToAdd = taskDetails.rewardScore;
+
+    // 檢查是否有 expiresAt 欄位
+    if (mission.expiresAt){
+        // 檢查是否超時
+        const isOvertime = mission.expiresAt && new Date() > mission.expiresAt;
+
+        // 發放獎勵道具
+        if (taskDetails.rewardItems && taskDetails.rewardItems.length > 0) {
+          await addItemsToBackpack(user, taskDetails.rewardItems);
+        }
+
+        // 如果沒有超時，發放積分
+        if (!isOvertime && taskDetails.rewardScore > 0) {
+          const scoreToAdd = taskDetails.rewardScore;
+        }
+    }
+    else if (eventDetails) {
+          const scoreToAdd = eventDetails.rewards.points;
+    }
+
 
       // 更新 Rank 集合中的分數
       await Rank.findOneAndUpdate(
@@ -145,7 +158,7 @@ const refreshNormalMissions = async (user) => {
   
   // 處理 declined 和 claimed 的非 LLM 任務
   user.missions.forEach(mission => {
-    if (!mission.isLLM) {
+    if (!mission.isLLM & eventDetails.type != 'daily') {
       if (mission.state === 'declined' && mission.refreshedAt && now > mission.refreshedAt) {
         mission.state = 'claimed'; // 標記為可替換
       }
@@ -253,6 +266,45 @@ const refreshAllMissions = async (req, res) => {
   }
 };
 
+const checkSpotMission = async (req, res) => {
+  const { userId, spotId } = req.params;
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: '找不到使用者' });
+    }
+
+    let missionUpdated = false;
+
+    // 尋找使用者是否有需要檢查此地點的任務
+    user.missions.forEach(mission => {
+      // 確保任務處於進行中狀態，且有需要檢查的地點
+      if (mission.state === 'accepted' && mission.haveCheckPlaces) {
+        // 尋找匹配的補給站
+        const checkPlace = mission.haveCheckPlaces.find(place => place.spotId.toString() === spotId);
+
+        if (checkPlace && !checkPlace.isCheck) {
+          checkPlace.isCheck = true;
+          missionUpdated = true;
+        }
+      }
+    });
+
+    if (missionUpdated) {
+      await user.save();
+      return res.status(200).json({ message: '任務進度已更新', userMissions: user.missions });
+    } else {
+      return res.status(400).json({ message: '此補給站沒有需要檢查的任務' });
+    }
+
+  } catch (error) {
+    console.error('檢查補給站任務時發生錯誤:', error);
+    res.status(500).json({ message: '伺服器內部錯誤' });
+  }
+};
+
+
 
 // 產生 LLM 任務並分配給指定 user
 const createLLMMission = async (req, res) => {
@@ -346,4 +398,5 @@ module.exports = {
   claimReward,
   refreshAllMissions,
   createLLMMission,
+  checkSpotMission,
 };

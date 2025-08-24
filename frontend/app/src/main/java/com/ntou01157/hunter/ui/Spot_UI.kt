@@ -45,6 +45,7 @@ import com.ntou01157.hunter.utils.Vectorizer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.ntou01157.hunter.LocationService   // ← 新增：按下時再取最新定位
+import com.ntou01157.hunter.handlers.MissionHandler // 確保已正確導入
 
 @SuppressLint("UnrememberedMutableState")
 @Composable
@@ -157,6 +158,22 @@ fun spotMarker(
                                 Toast.makeText(ctx, "不在打卡範圍內（需 ≤ 30 公尺）", Toast.LENGTH_SHORT).show()
                                 return@launch
                             }
+                            // --- 新增：檢查補給站任務邏輯 ---
+                            try {
+                                // 修正: 使用 MissionHandler 類別
+                                val missionCheckRes = MissionHandler.checkSpotMission(userId, spot.spotId)
+                                if (missionCheckRes.success) {
+                                    Toast.makeText(ctx, "任務地點已標記完成！", Toast.LENGTH_LONG).show()
+                                    val isMissionCompleted = missionCheckRes.isCompleted ?: false
+                                    if (isMissionCompleted) {
+                                        Toast.makeText(ctx, "恭喜，您已完成一個任務！", Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                Log.e("MissionCheck", "檢查任務地點時發生錯誤: ${e.message}")
+                                Toast.makeText(ctx, "任務檢查失敗: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                            // --- 新增邏輯結束 ---
 
                             val hasCam = ContextCompat.checkSelfPermission(
                                 ctx,

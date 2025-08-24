@@ -47,7 +47,11 @@ data class GetStonePileStatusResponse(val hasTriggeredToday: Boolean)
 data class TriggerStonePileRequest(val userId: String)
 data class TriggerStonePileResponse(val success: Boolean, val message: String)
 
-
+data class CheckSpotMissionResponse(
+    val user: User?, // Make this field nullable
+    val message: String,
+    val isMissionCompleted: Boolean // Indicate if the mission is now fully completed
+)
 
 // API 接口定義
 interface ApiService {
@@ -85,6 +89,10 @@ interface ApiService {
 
     @POST("api/users/{userId}/missions/{taskId}/claim")
     suspend fun claimReward(@Path("userId") userId: String, @Path("taskId") taskId: String): UserResponse
+
+    // 新增: 檢查補給站任務點
+    @PUT("api/users/{userId}/missions/check-spot/{spotId}")
+    suspend fun checkSpotMission(@Path("userId") userId: String, @Path("spotId") spotId: String): CheckSpotMissionResponse
 
     @GET("events/all")
     suspend fun getEvents(): List<EventModel>
