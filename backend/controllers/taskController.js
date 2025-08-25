@@ -4,7 +4,6 @@ const { ObjectId } = mongoose.Types;
 const User = require('../models/userModel');
 const Item = require('../models/itemModel');
 const Game = require('../models/eventModel');
-const { calculateDrops } = require('../logic/dropLogic');
 
 // GET 所有任務
 const getAllTasks = async (req, res) => {
@@ -215,7 +214,6 @@ const openTreasureBox = async (req, res) => {
             keyInInv.quantity--;
         
         // 使用 dropService 中的函式來生成掉落物並自動添加到背包
-        // const drops = calculateDrops(keyType === 'bronze' ? 3 : keyType === 'silver' ? 4 : 5);
         const drops = await generateDropForUser(userId, difficulty);
 
         await user.save({ session });
