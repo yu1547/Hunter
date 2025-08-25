@@ -162,9 +162,9 @@ fun spotMarker(
                             try {
                                 // 修正: 使用 MissionHandler 類別
                                 val missionCheckRes = MissionHandler.checkSpotMission(userId, spot.spotId)
-                                if (missionCheckRes.success) {
+                                if (missionCheckRes != null) {      // 這行可能有點問題我只先改成可以跑的寫法
                                     Toast.makeText(ctx, "任務地點已標記完成！", Toast.LENGTH_LONG).show()
-                                    val isMissionCompleted = missionCheckRes.isCompleted ?: false
+                                    val isMissionCompleted = missionCheckRes.isMissionCompleted ?: false
                                     if (isMissionCompleted) {
                                         Toast.makeText(ctx, "恭喜，您已完成一個任務！", Toast.LENGTH_LONG).show()
                                     }

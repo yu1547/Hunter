@@ -279,7 +279,7 @@ const checkSpotMission = async (req, res) => {
     // 尋找使用者是否有需要檢查此地點的任務
     user.missions.forEach(mission => {
       // 確保任務處於進行中狀態，且有需要檢查的地點
-      if (mission.state === 'accepted' && mission.haveCheckPlaces) {
+      if (mission.state === 'in_progress' && mission.haveCheckPlaces) {
         // 尋找匹配的補給站
         const checkPlace = mission.haveCheckPlaces.find(place => place.spotId.toString() === spotId);
 
