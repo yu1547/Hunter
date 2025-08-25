@@ -146,11 +146,11 @@ fun spotMarker(
                             Log.i(
                                 "GeoCheck",
                                 "距離=%.2f m, 閾值=%.1f m, user=(%.6f,%.6f), spot=(%.6f,%.6f)".format(
-                                   distance,
-                                   GeoVerifier.DEFAULT_THRESHOLD_METERS,
-                                   currentLatLng.latitude, currentLatLng.longitude,
-                                   spotLatLng.latitude, spotLatLng.longitude
-                               )
+                                    distance,
+                                    GeoVerifier.DEFAULT_THRESHOLD_METERS,
+                                    currentLatLng.latitude, currentLatLng.longitude,
+                                    spotLatLng.latitude, spotLatLng.longitude
+                                )
                             )
                             val inRange = distance <= GeoVerifier.DEFAULT_THRESHOLD_METERS
 
