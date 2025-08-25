@@ -12,7 +12,7 @@ data class User(
     @SerializedName("gender") val gender: String?,
     @SerializedName("age") val age: String?,
     @SerializedName("photoURL") val photoURL: String? = null,
-    @SerializedName("settings") val settings: List<Settings>?,
+    @SerializedName("settings") val settings: Settings?,
     @SerializedName("spotsScanLogs") val spotsScanLogs: Map<String, Boolean>? = null
 
     // 其他用戶屬性...

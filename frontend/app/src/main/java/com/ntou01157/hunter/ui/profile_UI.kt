@@ -89,7 +89,7 @@ fun ProfileScreen(
         try {
             val apiUser = RetrofitClient.apiService.getUserByEmail(email)
             userId = apiUser.id
-            val s = apiUser.settings?.firstOrNull()
+            val s = apiUser.settings
             musicEnabled = s?.music ?: false
             selectedLanguage = s?.language ?: "zh-TW"
         } catch (e: Exception) {
