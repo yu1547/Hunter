@@ -56,7 +56,7 @@ fun SettingDialog(
             val userData = RetrofitClient.apiService.getUserByEmail(email) // 回 User（內含 settings: List）
             userId = userData.id
 
-            val s = userData.settings?.firstOrNull()   // ← 取第一筆
+            val s = userData.settings   // ← 取第一筆
             musicEnabled        = s?.music ?: false
             notificationsEnabled= s?.notification ?: false
             selectedLanguage    = s?.language ?: "zh-TW"

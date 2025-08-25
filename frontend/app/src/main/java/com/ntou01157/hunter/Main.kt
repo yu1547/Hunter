@@ -285,23 +285,23 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             )
         }
 
-        if (showDialog) {
-            Dialog(onDismissRequest = { showDialog = false }) {
-                Surface(
-                    shape = RoundedCornerShape(24.dp),
-                    color = Color(0xFFF6EDF7),
-                    tonalElevation = 4.dp,
-                    modifier = Modifier.width(280.dp).wrapContentHeight()
-                ) {
-                    SettingDialog(
-                        user = FakeUser,//後面要改
-                        onDismiss = { showDialog = false },
-                        onNameChange = {newName -> },
-                        onLogout = {}
-                    )
-                }
-            }
-        }
+//        if (showDialog) {
+//            Dialog(onDismissRequest = { showDialog = false }) {
+//                Surface(
+//                    shape = RoundedCornerShape(24.dp),
+//                    color = Color(0xFFF6EDF7),
+//                    tonalElevation = 4.dp,
+//                    modifier = Modifier.width(280.dp).wrapContentHeight()
+//                ) {
+//                    SettingDialog(
+//                        user = FakeUser,//後面要改
+//                        onDismiss = { showDialog = false },
+//                        onNameChange = {newName -> },
+//                        onLogout = {}
+//                    )
+//                }
+//            }
+//        }
 
         Column(
             modifier = Modifier.fillMaxSize(),

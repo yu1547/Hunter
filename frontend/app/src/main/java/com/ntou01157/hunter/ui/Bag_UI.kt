@@ -77,6 +77,7 @@ fun BagScreen(navController: NavHostController) {
     // 3) 有了 userId 才去抓背包
     LaunchedEffect(userIdState) {
         val userId = userIdState ?: return@LaunchedEffect
+        // val userId = "68846d797609912e5e6ba9af" // 測試用，之後刪掉
         isLoading.value = true
         hasError.value = false
         try {
