@@ -4,7 +4,7 @@ const User = require('../models/userModel');
 const dropService = require('../services/dropService');
 
 const COOLDOWN_MIN = 15;
-const DIFFICULTY = 2;
+const DIFFICULTY = 1;
 
 exports.getAllSupplies = async () => {
     return await Supply.find({}, { __v: 0 }).lean();
@@ -54,9 +54,50 @@ exports.claimSupply = async ({ userId, supplyId }) => {
 
 
     // 呼叫既有掉落（內部已負責加到背包、存檔）
-    const drops = await dropService.generateDropForUser(userId, DIFFICULTY);
+    let drops = await dropService.generateDropForUser(userId, DIFFICULTY);
+    let consumedAncient = false; // 是否消耗古樹 Buff
 
-    // 掉落成功才刷新冷卻（此處以能執行完 generateDropForUser 視為成功）
+    // 檢查古樹的枝幹 buff：未過期的話再掉一次（稀有度 +1）
+    try {
+        let ancientActive = false;
+
+        if (Array.isArray(user.buff)) {
+            const before = user.buff.length;
+
+            // 移除已過期的buff；未過期的保留並啟用
+            user.buff = user.buff.filter((b) => {
+                if (!b || b.name !== 'ancient_branch') return true;
+                if (b.expiresAt && new Date(b.expiresAt) <= now) {
+                    // 已過期 -> 移除
+                    return false;
+                }
+                // 未過期 -> 保留且啟用加成
+                ancientActive = true;
+                return true;
+            });
+
+            // 有移除才標記並先保存
+            if (user.buff.length !== before) {
+                if (typeof user.markModified === 'function') user.markModified('buff');
+                await user.save();
+            }
+        }
+
+        // 有效，再掉一次（稀有度 +1）
+        if (ancientActive) {
+            const extraDrops = await dropService.generateDropForUser(
+                userId,
+                Math.min(DIFFICULTY + 1, 5) 
+            );
+            drops = drops.concat(extraDrops);
+        }
+    } catch (e) {
+        console.warn('ancient_branch extra drop failed:', e);
+        // 失敗不影響第一次掉落與冷卻刷新
+    }
+
+
+    // 掉落成功才刷新冷卻（15 分鐘）
     const next = new Date(now.getTime() + COOLDOWN_MIN * 60 * 1000);
     writeSupplyNextDate(user, supplyId, next);
     await user.save();
