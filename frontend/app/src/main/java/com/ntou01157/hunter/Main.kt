@@ -3,7 +3,9 @@ package com.ntou01157.hunter
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
@@ -11,8 +13,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -35,38 +39,31 @@ import com.ntou01157.hunter.temp.*
 import com.ntou01157.hunter.models.SupplyRepository
 import com.ntou01157.hunter.models.User
 import com.ntou01157.hunter.ui.*
-import com.ntou01157.hunter.api.RetrofitClient // Correct import for RetrofitClient
-import com.ntou01157.hunter.data.RankRepository // Correct import for your RankRepository
+import com.ntou01157.hunter.api.RetrofitClient
+import com.ntou01157.hunter.data.RankRepository
 import com.ntou01157.hunter.handlers.SpotLogHandler
-
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.auth.FirebaseAuth
-
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import com.ntou01157.hunter.api.SpotApi
 import com.ntou01157.hunter.api.SupplyApi
-
 import com.ntou01157.hunter.ui.event_ui.AncientTreeUI
 import com.ntou01157.hunter.ui.event_ui.MerchantUI
 import com.ntou01157.hunter.ui.event_ui.SlimeAttackUI
 import com.ntou01157.hunter.ui.event_ui.StonePileUI
 import com.ntou01157.hunter.ui.event_ui.TreasureBoxUI
 import com.ntou01157.hunter.ui.event_ui.WordleGameUI
-
+import com.ntou01157.hunter.models.model_api.expireAtOf
 
 class MainApplication : android.app.Application() {
-
-    // 聲明為 lateinit var，因為它會在 onCreate 中初始化
     lateinit var rankRepository: RankRepository
-
     override fun onCreate() {
         super.onCreate()
         rankRepository = RankRepository(RetrofitClient.apiService)
     }
 }
-
-
 
 class Main : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -75,18 +72,12 @@ class Main : ComponentActivity() {
             val navController = rememberNavController()
             val context = LocalContext.current
 
-            // NavHost(navController = navController, startDestination = "login") {
             NavHost(navController = navController, startDestination = "login") {
-                composable("login") {
-                    LoginScreen(navController)
-                }
-                composable("main") {
-                    MainScreen(navController)
-                }
-                composable("bag") {
-                    BagScreen(navController = navController)
-                }
-                //收藏冊
+                composable("login") { LoginScreen(navController) }
+                composable("main") { MainScreen(navController) }
+                composable("bag") { BagScreen(navController = navController) }
+
+                // 收藏冊
                 composable("favorites") {
                     var userId by remember { mutableStateOf<String?>(null) }
                     var pages by remember { mutableStateOf<List<List<Spot>>>(emptyList()) }
@@ -99,16 +90,14 @@ class Main : ComponentActivity() {
                             val email = FirebaseAuth.getInstance().currentUser?.email
                             if (email != null) {
                                 val apiUser = RetrofitClient.apiService.getUserByEmail(email)
-                                userId = apiUser.id              // 後端 User 的 id
+                                userId = apiUser.id
                             } else {
-                                // 沒登入就退而求其次用 FakeUser
                                 userId = FakeUser.uid
                             }
                         } catch (e: Exception) {
                             Log.e("FavoritesScreen", "載入使用者失敗: ${e.message}", e)
                             userId = FakeUser.uid
                         }
-
                         pages = SpotLogHandler.getSpotPages()
                     }
 
@@ -133,22 +122,16 @@ class Main : ComponentActivity() {
                     }
                 }
 
-
                 composable("profile") {
                     val profileViewModel = viewModel<ProfileViewModel>()
-                    val ctx = LocalContext.current
-
                     val doLogout: () -> Unit = {
-                        // 雙保險：登出時一定關音樂
-                        com.ntou01157.hunter.temp.MusicPlayerManager.pauseMusic()
-                        com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+                        MusicPlayerManager.pauseMusic()
+                        FirebaseAuth.getInstance().signOut()
                         navController.navigate("login") {
                             popUpTo(0) { inclusive = true }
                             launchSingleTop = true
                         }
                     }
-
-
                     ProfileScreen(
                         profileViewModel = profileViewModel,
                         navController = navController,
@@ -156,43 +139,23 @@ class Main : ComponentActivity() {
                     )
                 }
 
-
-
-                composable("ranking") {
-                    RankingScreen(navController = navController)
-                }
-                composable("tasklist") {
-                    TaskListScreen(navController)
-                }
-
-                composable("bugHunt") {
-                    WordleGameUI()
-                }
-
+                composable("ranking") { RankingScreen(navController = navController) }
+                composable("tasklist") { TaskListScreen(navController) }
+                composable("bugHunt") { WordleGameUI() }
                 composable("ancientTree") {
-                    AncientTreeUI(onEventCompleted = {
-                        navController.popBackStack()
-                    })
+                    AncientTreeUI(onEventCompleted = { navController.popBackStack() })
                 }
                 composable("merchant") {
-                    MerchantUI(onEventCompleted = {
-                        navController.popBackStack()
-                    })
+                    MerchantUI(onEventCompleted = { navController.popBackStack() })
                 }
                 composable("slimeAttack") {
-                    SlimeAttackUI(onEventCompleted = {
-                        navController.popBackStack()
-                    })
+                    SlimeAttackUI(onEventCompleted = { navController.popBackStack() })
                 }
                 composable("stonePile") {
-                    StonePileUI(onEventCompleted = {
-                        navController.popBackStack()
-                    })
+                    StonePileUI(onEventCompleted = { navController.popBackStack() })
                 }
                 composable("treasureBox") {
-                    TreasureBoxUI(onEventCompleted = {
-                        navController.popBackStack()
-                    })
+                    TreasureBoxUI(onEventCompleted = { navController.popBackStack() })
                 }
             }
         }
@@ -209,17 +172,33 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
         contentColor = Color.White
     )
 
+    // ===== Buff 狀態 ===========================================
+    var branchExpireAt by remember { mutableStateOf<Long?>(null) }
+
+    LaunchedEffect(Unit) {
+        try {
+            // val email = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email
+            val email = "04150415creeper@gmail.com"
+                ?: return@LaunchedEffect
+            val apiUser: ApiUser = com.ntou01157.hunter.api.RetrofitClient.apiService.getUserByEmail(email)
+            branchExpireAt = apiUser.buff.expireAtOf("ancient_branch")
+        } catch (e: Exception) {
+            android.util.Log.e("MainScreen", "load buff failed: ${e.message}", e)
+        }
+    }
+    // ===========================================================
+
     // 打卡點 導入DB資料
     var spots by remember { mutableStateOf<List<Spot>>(emptyList()) }
 
-    //補給站 導入DB資料
+    // 補給站 導入DB資料
     var supplyStations by remember { mutableStateOf<List<Supply>>(emptyList()) }
     LaunchedEffect(Unit) {
         supplyStations = withContext(Dispatchers.IO) { SupplyApi.getAll() }
     }
     var selectedSupply by remember { mutableStateOf<Supply?>(null) }
     var showSupplyDialog by remember { mutableStateOf(false) }
-    val user: User = FakeUser //後面要改
+    val user: User = FakeUser // 後面要改
     val supplyLog = selectedSupply?.supplyId?.let { user.supplyScanLogs[it] }
 
     val context = LocalContext.current
@@ -268,7 +247,7 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                 spotMarker(spot = spot, userId = user.uid)
             }
 
-            //顯示補給站
+            // 顯示補給站
             supplyStations.forEach { supply ->
                 SupplyMarker(supply = supply, onClick = {
                     selectedSupply = it
@@ -285,24 +264,6 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             )
         }
 
-//        if (showDialog) {
-//            Dialog(onDismissRequest = { showDialog = false }) {
-//                Surface(
-//                    shape = RoundedCornerShape(24.dp),
-//                    color = Color(0xFFF6EDF7),
-//                    tonalElevation = 4.dp,
-//                    modifier = Modifier.width(280.dp).wrapContentHeight()
-//                ) {
-//                    SettingDialog(
-//                        user = FakeUser,//後面要改
-//                        onDismiss = { showDialog = false },
-//                        onNameChange = {newName -> },
-//                        onLogout = {}
-//                    )
-//                }
-//            }
-//        }
-
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -312,15 +273,20 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             Button(
                 onClick = { navController.navigate("bag") },
                 colors = buttonColors,
-                modifier = Modifier.align(Alignment.CenterHorizontally).size(120.dp).padding(bottom = 60.dp)
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .size(120.dp)
+                    .padding(bottom = 60.dp)
             ) {
                 Text("背包", fontSize = 20.sp)
             }
         }
 
-        // 原本的右側按鈕列（移除客服按鈕）
+        // 右側按鈕列
         Column(
-            modifier = Modifier.align(Alignment.CenterEnd).padding(end = 10.dp, bottom = 320.dp),
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 10.dp, bottom = 320.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.End
         ) {
@@ -336,32 +302,26 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             Button(onClick = { navController.navigate("tasklist") }, colors = buttonColors) {
                 Text("任務版")
             }
-            Button(
-                onClick = { navController.navigate("bugHunt") }, colors = buttonColors){
+            Button(onClick = { navController.navigate("bugHunt") }, colors = buttonColors) {
                 Text("啟動 BugHunt 任務")
             }
-            Button(
-                onClick = { navController.navigate("ancientTree") }, colors = buttonColors) {
+            Button(onClick = { navController.navigate("ancientTree") }, colors = buttonColors) {
                 Text("古樹")
             }
-            Button(
-                onClick = { navController.navigate("merchant") }, colors = buttonColors) {
+            Button(onClick = { navController.navigate("merchant") }, colors = buttonColors) {
                 Text("神秘商人")
             }
-            Button(
-                onClick = { navController.navigate("slimeAttack") }, colors = buttonColors) {
+            Button(onClick = { navController.navigate("slimeAttack") }, colors = buttonColors) {
                 Text("史萊姆戰鬥")
             }
-            Button(
-                onClick = { navController.navigate("stonePile") }, colors = buttonColors) {
+            Button(onClick = { navController.navigate("stonePile") }, colors = buttonColors) {
                 Text("石堆")
             }
-            Button(
-                onClick = { navController.navigate("treasureBox") }, colors = buttonColors) {
+            Button(onClick = { navController.navigate("treasureBox") }, colors = buttonColors) {
                 Text("寶箱")
             }
         }
-        
+
         // 右下角客服按鈕
         FloatingActionButton(
             onClick = { showChatDialog = true },
@@ -375,20 +335,75 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             Text("客服", fontSize = 16.sp)
         }
 
-        // 客服聊天 Dialog（保持原本功能，移到 Box 最外層）
         if (showChatDialog) {
             Dialog(onDismissRequest = { showChatDialog = false }) {
                 Surface(
                     shape = RoundedCornerShape(24.dp),
                     color = Color.White,
                     tonalElevation = 4.dp,
-                    modifier = Modifier.width(350.dp).height(650.dp)
+                    modifier = Modifier
+                        .width(350.dp)
+                        .height(650.dp)
                 ) {
-                    ChatScreen(
-                        onClose = { showChatDialog = false }
-                    )
+                    ChatScreen(onClose = { showChatDialog = false })
                 }
             }
         }
+
+        BuffBadge(
+            expireAtMillis = branchExpireAt,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(start = 12.dp, top = 12.dp)
+        )
     }
+}
+
+/**
+ * 在左上角顯示：圓形圖片 + 剩餘時間，剩餘時間每秒更新。
+ * 若 expireAtMillis 為 null 或已過期，不顯示任何內容。
+ */
+@Composable
+private fun BuffBadge(
+    expireAtMillis: Long?,
+    modifier: Modifier = Modifier
+) {
+    if (expireAtMillis == null) return
+
+    var now by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            now = System.currentTimeMillis()
+            delay(1000)
+        }
+    }
+    val remaining = expireAtMillis - now
+    if (remaining <= 0L) return
+
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.itembranch),
+            contentDescription = "ancient_branch",
+            modifier = Modifier
+                .size(44.dp)
+                .clip(CircleShape)
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = formatRemaining(remaining),
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.Black
+        )
+    }
+}
+
+private fun formatRemaining(millis: Long): String {
+    val totalSec = (millis / 1000).coerceAtLeast(0)
+    val h = totalSec / 3600
+    val m = (totalSec % 3600) / 60
+    val s = totalSec % 60
+    return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%d:%02d".format(m, s)
 }

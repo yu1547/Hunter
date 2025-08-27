@@ -20,6 +20,7 @@ val FakeUser = User(
         "station1" to Timestamp.now(),
         "station2" to Timestamp.now()
     ),
+    buff = null,
     settings = Settings(
         music = true,
         notification = true,
