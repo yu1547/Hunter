@@ -1,179 +1,171 @@
+// controllers/eventController.js
+const Event = require('../models/eventModel');
 const User = require('../models/userModel');
 const Item = require('../models/itemModel');
+const Spot = require('../models/spotModel');
 const mongoose = require('mongoose');
+
+// 每日刷新事件位置的邏輯
+const refreshDailyEvents = async (req, res) => {
+    try {
+        const dailyEvents = await Event.find({ type: 'daily' });
+        const allSpots = await Spot.find();
+
+        for (const event of dailyEvents) {
+            const randomSpot = allSpots[Math.floor(Math.random() * allSpots.length)];
+            event.spotId = randomSpot._id;
+            await event.save();
+        }
+        res.status(200).json({ message: '每日事件位置已刷新' });
+    } catch (error) {
+        res.status(500).json({ message: '每日事件刷新失敗', error: error.message });
+    }
+};
+
+// 完成事件，並發放獎勵
+const completeEvent = async (req, res) => {
+    const { eventId } = req.params;
+    const { userId, username, selectedOption, gameResult } = req.body;
+
+    try {
+        const event = await Event.findById(eventId);
+        if (!event) {
+            return res.status(404).json({ message: '找不到此事件' });
+        }
+
+        let user = null;
+        if (userId) {
+            user = await User.findById(userId);
+        }
+
+        if (!user && username) {
+            user = await User.findOne({ username: username });
+        }
+
+        if (!user) {
+            return res.status(404).json({ message: '找不到使用者' });
+        }
+
+        let finalRewards = event.rewards;
+        let consumeItems = event.consume;
+
+        if (selectedOption) {
+            const option = event.options.find(opt => opt.text === selectedOption);
+            if (!option) {
+                return res.status(400).json({ message: '無效的選項' });
+            }
+            if (option.rewards.consume) {
+                for (const itemToConsume of option.rewards.consume) {
+                    const userItem = user.items.find(item => item.itemId.toString() === itemToConsume.itemId.toString());
+                    if (!userItem || userItem.quantity < itemToConsume.quantity) {
+                        return res.status(400).json({ message: '道具數量不足' });
+                    }
+                }
+            }
+            finalRewards = option.rewards;
+            consumeItems = option.rewards.consume;
+        }
+
+        if (event.name === '打扁史萊姆' && gameResult) {
+            let slimeRewardItem;
+            if (gameResult < 100) {
+                slimeRewardItem = { itemId: (await Item.findOne({ name: '普通的史萊姆黏液' }))._id, quantity: 1 };
+            } else if (gameResult < 150) {
+                slimeRewardItem = { itemId: (await Item.findOne({ name: '普通的史萊姆黏液' }))._id, quantity: 2 };
+            } else if (gameResult < 200) {
+                slimeRewardItem = { itemId: (await Item.findOne({ name: '普通的史萊姆黏液' }))._id, quantity: 3 };
+            } else {
+                slimeRewardItem = { itemId: (await Item.findOne({ name: '黏稠的史萊姆黏液' }))._id, quantity: Math.floor(gameResult / 50) - 3 };
+            }
+            finalRewards = { items: [slimeRewardItem] };
+        }
+
+        const updatedUser = await updateUserRewards(user._id, finalRewards, consumeItems);
+
+        res.status(200).json({ message: '事件完成，獎勵已發放', rewards: finalRewards, updatedUser });
+
+    } catch (error) {
+        console.error('API 執行錯誤:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// 查詢地點是否有每日事件的共用 API
+const getDailyEventBySpot = async (req, res) => {
+    try {
+        const { spotId } = req.params;
+        const event = await Event.findOne({ spotId: spotId, type: 'daily' });
+        if (!event) {
+            return res.status(200).json({ success: true, hasEvent: false });
+        }
+        return res.status(200).json({ success: true, hasEvent: true, eventName: event.name });
+    } catch (error) {
+        console.error("查詢每日事件失敗:", error);
+        return res.status(500).json({ success: false, message: '伺服器內部錯誤' });
+    }
+};
 
 // 處理神秘商人交易的 API
 const trade = async (req, res) => {
     const { userId, tradeType } = req.body;
-    
-    // 更新
-    const session = await mongoose.startSession();
-    session.startTransaction();
 
     try {
-        // const user = await User.findById(userId);
-        // if (!user) return res.status(404).json({ success: false, message: '使用者不存在。' });
-        const user = await User.findById(userId).session(session);
-        if (!user) {
-            await session.abortTransaction();
-            session.endSession();
-            return res.status(404).json({ success: false, message: '使用者不存在。' });
+        const event = await Event.findOne({ name: '神秘商人' });
+        if (!event) {
+            return res.status(404).json({ success: false, message: '神秘商人事件不存在' });
         }
 
-        let requiredItemName, requiredCount, givenItemName;
-        if (tradeType === "bronzeKey") {
-            requiredItemName = "銅鑰匙碎片";
-            requiredCount = 5;
-            givenItemName = "銅鑰匙";
-        } else if (tradeType === "silverKey") {
-            requiredItemName = "銀鑰匙碎片";
-            requiredCount = 5;
-            givenItemName = "銀鑰匙";
-        } else {
-            await session.abortTransaction();
-            session.endSession();
+        const option = event.options.find(opt => opt.key === tradeType);
+        if (!option) {
             return res.status(400).json({ success: false, message: '無效的交易類型' });
         }
 
-        // const requiredItem = await Item.findOne({ itemName: requiredItemName });
-        // if (!requiredItem) return res.status(404).json({ success: false, message: '所需物品不存在。' });
-        const requiredItem = await Item.findOne({ itemName: requiredItemName }).session(session);
-        if (!requiredItem) {
-            await session.abortTransaction();
-            session.endSession();
-            return res.status(404).json({ success: false, message: '所需物品不存在。' });
-        }
+        req.params.eventId = event._id;
+        req.body.userId = userId;
+        req.body.selectedOption = option.text;
 
-        // const requiredItemInInv = user.backpackItems.find(item => item.itemId.toString() === requiredItem._id.toString());
-        // if (!requiredItemInInv || requiredItemInInv.quantity < requiredCount) {
-        //     return res.json({ success: false, message: `你的${requiredItemName}不足${requiredCount}個。` });
-        // }
-        const requiredItemInInv = user.backpackItems.find(item => item.itemId.toString() === requiredItem._id.toString());
-        if (!requiredItemInInv || requiredItemInInv.quantity < requiredCount) {
-            await session.abortTransaction();
-            session.endSession();
-            return res.status(400).json({ success: false, message: '道具數量不足' });
-        }
-
-        // const givenItem = await Item.findOne({ itemName: givenItemName });
-        // if (!givenItem) return res.status(404).json({ success: false, message: '給予物品不存在。' });
-        const givenItem = await Item.findOne({ itemName: givenItemName }).session(session);
-        if (!givenItem) {
-            await session.abortTransaction();
-            session.endSession();
-            return res.status(404).json({ success: false, message: '給予物品不存在。' });
-        }
-        await decFromBackpack(userId, requiredItem._id, session, requiredCount);
-        await addToBackpack(userId, givenItem._id, 1, session);
-        
-        await session.commitTransaction();
-        session.endSession();
-
-        return res.json({ success: true, message: `成功兌換${givenItemName}` });
-
-        // // 執行交易：扣除所需物品，給予新物品
-        // requiredItemInInv.quantity -= requiredCount;
-
-        // const givenItemInInv = user.backpackItems.find(item => item.itemId.toString() === givenItem._id.toString());
-        // if (givenItemInInv) {
-        //     givenItemInInv.quantity++;
-        // } else {
-        //     user.backpackItems.push({ itemId: givenItem._id.toString(), quantity: 1 });
-        // }
-
-        // await user.save();
-
-        // return res.json({ success: true, message: `交易成功！你獲得了1個${givenItemName}。` });
+        return await completeEvent(req, res);
 
     } catch (error) {
-        await session.abortTransaction();
-        session.endSession();
         console.error("交易失敗：", error);
         return res.status(500).json({ success: false, message: '伺服器內部錯誤' });
     }
 };
 
-// 獲取石堆事件狀態的 API
-const getStonePileStatus = async (req, res) => {
-    try {
-        const { userId } = req.params;
+// 處理觸發石堆事件的 API
+const triggerStonePile = async (req, res) => {
+    const { userId } = req.body;
 
-        // 1. 確保使用者 ID 是有效的 ObjectId 格式，如果無效則直接返回錯誤。
+    try {
         if (!mongoose.Types.ObjectId.isValid(userId)) {
             return res.status(400).json({ success: false, message: '無效的使用者 ID。' });
         }
 
-        // 2. 查找使用者。
         const user = await User.findById(userId);
-
-        // 3. 檢查使用者是否存在。如果不存在，返回 404 錯誤。
         if (!user) {
             return res.status(404).json({ success: false, message: '找不到使用者。' });
         }
 
-        // 4. 執行核心邏輯：判斷今天是否已觸發過石堆事件。
-        const today = new Date().toISOString().slice(0, 10);
-        // 如果 user.lastStonePileTriggeredDate 為 null，則 lastTriggeredDate 也會是 null
-        const lastTriggeredDate = user.lastStonePileTriggeredDate ? new Date(user.lastStonePileTriggeredDate).toISOString().slice(0, 10) : null;
-        const canTrigger = lastTriggeredDate !== today;
-
-        const available = {
-            stonePile: canTrigger
-        };
-
-        return res.json({ success: true, available });
-
-    } catch (error) {
-        console.error("獲取石堆狀態失敗：", error);
-        return res.status(500).json({ success: false, message: '伺服器內部錯誤: ${error.message}' });
-    }
-};
-
-// 處理觸發石堆事件的 API
-const triggerStonePile = async (req, res) => {
-    const { userId } = req.body; // <-- 請將這裡改為 req.body
-
-    try {
-        // 1. 確保使用者 ID 是有效的 ObjectId 格式，如果無效則直接返回錯誤。
-        if (!mongoose.Types.ObjectId.isValid(userId)) {
-            return res.status(400).json({ success: false, message: '無效的使用者 ID。' });
-        }
-
-        // 2. 查找使用者。
-        const user = await User.findById(userId);
-
         const today = new Date().toISOString().slice(0, 10);
         const hasTriggeredToday = user.lastStonePileTriggeredDate && user.lastStonePileTriggeredDate.toISOString().slice(0, 10) === today;
+
         if (hasTriggeredToday) {
             return res.json({ success: false, message: '你今天已經搬開過石頭了，請明天再來。' });
         }
 
-        // 確保 user.backpackItems 是陣列，如果不存在則初始化
-        if (!user.backpackItems) {
-            user.backpackItems = [];
-        }
-
-        const rewardItem = await Item.findOne({ itemName: "普通的史萊姆黏液" });
-
-        // 檢查 `rewardItem` 是否存在，如果不存在，返回 404 錯誤
-        if (!rewardItem) {
-             return res.status(404).json({ success: false, message: '獎勵物品不存在。' });
-        }
-
-        const reward = { items: [{ itemId: rewardItem._id.toString(), quantity: 1 }] };
-
-        const existingItem = user.backpackItems.find(item => item.itemId.toString() === rewardItem._id.toString());
-        if (existingItem) {
-            existingItem.quantity++;
-        } else {
-            user.backpackItems.push({ itemId: rewardItem._id.toString(), quantity: 1 });
-        }
-
+        // 更新觸發紀錄
         user.lastStonePileTriggeredDate = new Date();
-
         await user.save();
 
-        return res.json({ success: true, message: '你搬開了石頭，獲得物品。' });
+        const event = await Event.findOne({ name: '石堆事件' });
+        if (!event) {
+            return res.status(404).json({ success: false, message: '石堆事件不存在' });
+        }
+
+        req.params.eventId = event._id;
+        req.body.userId = userId;
+
+        return await completeEvent(req, res);
 
     } catch (error) {
         console.error("觸發石堆事件失敗：", error);
@@ -182,7 +174,9 @@ const triggerStonePile = async (req, res) => {
 };
 
 module.exports = {
+    getDailyEventBySpot,
     trade,
-    getStonePileStatus,
     triggerStonePile,
+    completeEvent,
+    refreshDailyEvents,
 };

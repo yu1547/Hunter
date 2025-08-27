@@ -1,11 +1,13 @@
 package com.ntou01157.hunter.ui
 
 import android.annotation.SuppressLint
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -13,64 +15,67 @@ import androidx.compose.ui.unit.dp
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
+import com.ntou01157.hunter.api.SupplyApi
+import com.ntou01157.hunter.handlers.MissionHandler // 確保已正確導入
 import com.ntou01157.hunter.models.Supply
 import com.ntou01157.hunter.models.User
-import kotlinx.coroutines.delay
-import android.widget.Toast
-import com.ntou01157.hunter.api.SupplyApi
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 // 補給站地圖上的圖標
 @SuppressLint("UnrememberedMutableState")
 @Composable
-fun SupplyMarker(
-    supply: Supply,
-    onClick: (Supply) -> Unit
-) {
+fun SupplyMarker(supply: Supply, onClick: (Supply) -> Unit) {
     Marker(
-        state = MarkerState(position = LatLng(supply.latitude, supply.longitude)),
-        // 顯示文字："-補給站-補給站的name"
-        title = "-補給站-${supply.name}",
-        snippet = supply.supplyId,
-        onClick = {
-            onClick(supply)
-            true
-        }
+            state = MarkerState(position = LatLng(supply.latitude, supply.longitude)),
+            // 顯示文字："-補給站-補給站的name"
+            title = "-補給站-${supply.name}",
+            snippet = supply.supplyId,
+            onClick = {
+                onClick(supply)
+                true
+            }
     )
 }
 
 // 對話框
 @Composable
 fun SupplyDialog(
-    supply: Supply,
-    onDismiss: () -> Unit,
-    onCollect: () -> Unit,
-    isCooldown: Boolean,
-    cooldownText: String
+        supply: Supply,
+        onDismiss: () -> Unit,
+        onCollect: () -> Unit,
+        onDailyEvent: () -> Unit, // 新增：每日事件按鈕的點擊事件
+        isCooldown: Boolean,
+        cooldownText: String,
+        hasDailyEvent: Boolean, // 新增：是否顯示每日事件按鈕的狀態
 ) {
     AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {},
-        title = {
-            Box(modifier = Modifier.fillMaxWidth()) {
-                Text("-補給站-${supply.name}", modifier = Modifier.align(Alignment.Center))
-                IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.TopEnd)) {
-                    Icon(Icons.Default.Close, contentDescription = "關閉")
+            onDismissRequest = onDismiss,
+            confirmButton = {},
+            title = {
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Text("-補給站-${supply.name}", modifier = Modifier.align(Alignment.Center))
+                    IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.TopEnd)) {
+                        Icon(Icons.Default.Close, contentDescription = "關閉")
+                    }
                 }
-            }
-        },
-        text = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Button(onClick = onCollect) { Text("領取資源") }
+            },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Button(onClick = onCollect) { Text("領取資源") }
                     if (isCooldown) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("冷卻中，剩餘 $cooldownText")
                     }
+                    // 如果有每日事件，顯示這個按鈕
+                    if (hasDailyEvent) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(onClick = onDailyEvent) { Text("執行任務") }
+                    }
+                }
             }
-        }
     )
 }
 
@@ -83,11 +88,7 @@ private fun formatMs(ms: Long): String {
 }
 
 @Composable
-fun SupplyHandlerDialog(
-    supply: Supply,
-    user: User,
-    onDismiss: () -> Unit
-) {
+fun SupplyHandlerDialog(supply: Supply, user: User, onDismiss: () -> Unit) {
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -95,6 +96,20 @@ fun SupplyHandlerDialog(
     var cooldownUntil by remember { mutableStateOf<Long?>(null) }
     var cooldownText by remember { mutableStateOf("") }
     val isCooldown = cooldownUntil?.let { System.currentTimeMillis() < it } ?: false
+
+    // 新增狀態來追蹤每日事件
+    var dailyEventName by remember { mutableStateOf<String?>(null) }
+    val hasDailyEvent = dailyEventName != null
+
+    // 每次對話框開啟時，檢查是否有每日事件
+    LaunchedEffect(supply) {
+        val res = withContext(Dispatchers.IO) { SupplyApi.getDailyEventForSpot(supply.supplyId) }
+        if (res.success && res.hasEvent) {
+            dailyEventName = res.eventName
+        } else {
+            dailyEventName = null
+        }
+    }
 
     // 每秒更新倒數
     LaunchedEffect(cooldownUntil) {
@@ -110,41 +125,82 @@ fun SupplyHandlerDialog(
     }
 
     SupplyDialog(
-        supply = supply,
-        isCooldown = isCooldown,
-        cooldownText = cooldownText,
-        onDismiss = onDismiss,
-        onCollect = {
-            // 呼叫後端 /api/supplies/{userId}/{supplyId}/claim（移出主執行緒）
-            scope.launch {
-                val res = withContext(Dispatchers.IO) {
-                    SupplyApi.claim(user.uid, supply.supplyId)
-                }
-                if (res.success) {
-                    Toast.makeText(context, "領取成功", Toast.LENGTH_SHORT).show()
-                    // 成功後後端也會回傳下一次可領取時間，啟動冷卻顯示
-                    val until = SupplyApi.parseUtcMillis(res.nextClaimTime)
-                    if (until != null) {
-                        cooldownUntil = until
-                        val left = (until - System.currentTimeMillis()).coerceAtLeast(0)
-                        cooldownText = formatMs(left)
-                    }
-                    onDismiss()
-                } else if (res.reason == "COOLDOWN" && res.nextClaimTime != null) {
-                    val until = SupplyApi.parseUtcMillis(res.nextClaimTime)
-                    if (until != null) {
-                        cooldownUntil = until
-                        val left = (until - System.currentTimeMillis()).coerceAtLeast(0)
-                        cooldownText = formatMs(left)
+            supply = supply,
+            isCooldown = isCooldown,
+            cooldownText = cooldownText,
+            onDismiss = onDismiss,
+            onCollect = {
+                scope.launch {
+                    val res =
+                            withContext(Dispatchers.IO) {
+                                SupplyApi.claim(user.uid, supply.supplyId)
+                            }
+                    if (res.success) {
+                        Toast.makeText(context, "領取成功", Toast.LENGTH_SHORT).show()
+                        val until = SupplyApi.parseUtcMillis(res.nextClaimTime)
+                        if (until != null) {
+                            cooldownUntil = until
+                            val left = (until - System.currentTimeMillis()).coerceAtLeast(0)
+                            cooldownText = formatMs(left)
+                        }
+                        onDismiss()
+                        // --- 新增：檢查補給站任務邏輯 ---
+                        try {
+                            val missionCheckRes =
+                                    withContext(Dispatchers.IO) {
+                                        // 修正：使用 MissionHandler 類別
+                                        MissionHandler.checkSpotMission(user.uid, supply.supplyId)
+                                    }
+                            // 修正：將 .isCompleted 改為 .isMissionCompleted
+                            if (missionCheckRes != null && missionCheckRes.isMissionCompleted) {
+                                Toast.makeText(context, "恭喜，您已完成一個任務！", Toast.LENGTH_LONG).show()
+                            } else if (missionCheckRes?.isMissionCompleted == false) {
+                                Toast.makeText(context, "任務地點已標記完成！", Toast.LENGTH_LONG).show()
+                            }
+                        } catch (e: Exception) {
+                            // 處理任務檢查失敗的錯誤
+                            // Log.e("MissionCheck", "檢查任務地點時發生錯誤: ${e.message}")
+                            Toast.makeText(context, "任務檢查失敗: ${e.message}", Toast.LENGTH_SHORT)
+                                    .show()
+                        }
+                        // --- 新增邏輯結束 ---
+
+                    } else if (res.reason == "COOLDOWN" && res.nextClaimTime != null) {
+                        val until = SupplyApi.parseUtcMillis(res.nextClaimTime)
+                        if (until != null) {
+                            cooldownUntil = until
+                            val left = (until - System.currentTimeMillis()).coerceAtLeast(0)
+                            cooldownText = formatMs(left)
+                        } else {
+                            Toast.makeText(context, "冷卻中", Toast.LENGTH_SHORT).show()
+                        }
                     } else {
-                        Toast.makeText(context, "冷卻中", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "領取失敗：${res.reason ?: "未知錯誤"}", Toast.LENGTH_SHORT)
+                                .show()
                     }
-                } else {
-                    Toast.makeText(context, "領取失敗：${res.reason ?: "未知錯誤"}", Toast.LENGTH_SHORT).show()
+                }
+            },
+            hasDailyEvent = hasDailyEvent, // 傳遞每日事件狀態
+            onDailyEvent = {
+                scope.launch {
+                    val res =
+                            when (dailyEventName) {
+                                "石堆事件" -> SupplyApi.triggerStonePile(user.uid)
+                                "神秘商人" ->
+                                        SupplyApi.trade(
+                                                user.uid,
+                                                "bronzeKey"
+                                        ) // 假設交易類型為 bronzeKey，您可以根據實際需求調整
+                                else -> SupplyApi.ClaimResponse(success = false, reason = "未知的每日事件")
+                            }
+
+                    if (res.success) {
+                        Toast.makeText(context, "任務完成！", Toast.LENGTH_SHORT).show()
+                        onDismiss()
+                    } else {
+                        Toast.makeText(context, "任務失敗：${res.reason}", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
-        }
-
-
     )
 }

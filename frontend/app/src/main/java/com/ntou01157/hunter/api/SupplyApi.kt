@@ -1,16 +1,18 @@
 package com.ntou01157.hunter.api
 
 import android.util.Log
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONArray
-import org.json.JSONObject
 import com.ntou01157.hunter.models.Supply
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
+import org.json.JSONObject
 
 object SupplyApi {
     private val client = OkHttpClient()
@@ -35,12 +37,12 @@ object SupplyApi {
                 for (i in 0 until arr.length()) {
                     val o = arr.getJSONObject(i)
                     list.add(
-                        Supply(
-                            supplyId = o.getString("_id"),
-                            name = o.getString("name"),
-                            latitude = o.getDouble("latitude"),
-                            longitude = o.getDouble("longitude")
-                        )
+                            Supply(
+                                    supplyId = o.getString("_id"),
+                                    name = o.getString("name"),
+                                    latitude = o.getDouble("latitude"),
+                                    longitude = o.getDouble("longitude")
+                            )
                     )
                 }
                 list
@@ -52,10 +54,10 @@ object SupplyApi {
     }
 
     data class ClaimResponse(
-        val success: Boolean,
-        val reason: String? = null,
-        val nextClaimTime: String? = null, // ISO8601 UTC
-        val drops: List<String>? = null
+            val success: Boolean,
+            val reason: String? = null,
+            val nextClaimTime: String? = null, // ISO8601 UTC
+            val drops: List<String>? = null
     )
 
     // 領取補給：POST /api/supplies/{userId}/{supplyId}/claim
@@ -75,7 +77,9 @@ object SupplyApi {
                 val reason = jo.optString("reason", null)
                 val next = jo.optString("nextClaimTime", null)
                 val dropsArr = jo.optJSONArray("drops")
-                val drops = if (dropsArr != null) List(dropsArr.length()) { i -> dropsArr.getString(i) } else null
+                val drops =
+                        if (dropsArr != null) List(dropsArr.length()) { i -> dropsArr.getString(i) }
+                        else null
                 ClaimResponse(success, reason, next, drops)
             }
         } catch (e: Exception) {
@@ -84,14 +88,108 @@ object SupplyApi {
         }
     }
 
+    data class DailyEventResponse(
+            val success: Boolean,
+            val hasEvent: Boolean = false,
+            val eventName: String? = null,
+            val message: String? = null
+    )
+
+    // 新增：查詢特定地點是否有每日事件
+    suspend fun getDailyEventForSpot(supplyId: String): DailyEventResponse =
+            withContext(Dispatchers.IO) {
+                val url = "${ApiConfig.BASE_URL}/api/events/daily-event/$supplyId"
+                val req = Request.Builder().url(url).get().build()
+
+                try {
+                    client.newCall(req).execute().use { resp ->
+                        val raw = resp.body?.string().orEmpty()
+                        if (!resp.isSuccessful || raw.isEmpty()) {
+                            Log.e("SupplyApi", "HTTP ${resp.code} from $url body=$raw")
+                            return@withContext DailyEventResponse(
+                                    success = false,
+                                    message = "HTTP_${resp.code}"
+                            )
+                        }
+                        val jo = JSONObject(raw)
+                        val success = jo.optBoolean("success", false)
+                        if (success) {
+                            DailyEventResponse(
+                                    success = true,
+                                    hasEvent = jo.optBoolean("hasEvent", false),
+                                    eventName = jo.optString("eventName", null)
+                            )
+                        } else {
+                            DailyEventResponse(
+                                    success = false,
+                                    message = jo.optString("message", "未知錯誤")
+                            )
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("SupplyApi", "getDailyEventForSpot 失敗", e)
+                    DailyEventResponse(success = false, message = "NETWORK_ERROR")
+                }
+            }
+    // 新增：呼叫後端 triggerStonePile API
+    suspend fun triggerStonePile(userId: String): ClaimResponse =
+            withContext(Dispatchers.IO) {
+                val url = "${ApiConfig.BASE_URL}/api/events/trigger-stone-pile"
+                val json = JSONObject().apply { put("userId", userId) }.toString()
+                val body = json.toRequestBody(JSON)
+                val req = Request.Builder().url(url).post(body).build()
+                return@withContext try {
+                    client.newCall(req).execute().use { resp ->
+                        val raw = resp.body?.string().orEmpty()
+                        val jo = JSONObject(raw)
+                        ClaimResponse(
+                                success = jo.optBoolean("success", false),
+                                reason = jo.optString("message", "未知錯誤")
+                        )
+                    }
+                } catch (e: Exception) {
+                    ClaimResponse(success = false, reason = "NETWORK_ERROR")
+                }
+            }
+
+    // 新增：呼叫後端 trade API
+    suspend fun trade(userId: String, tradeType: String): ClaimResponse =
+            withContext(Dispatchers.IO) {
+                val url = "${ApiConfig.BASE_URL}/api/events/trade"
+                val json =
+                        JSONObject()
+                                .apply {
+                                    put("userId", userId)
+                                    put("tradeType", tradeType)
+                                }
+                                .toString()
+                val body = json.toRequestBody(JSON)
+                val req = Request.Builder().url(url).post(body).build()
+                return@withContext try {
+                    client.newCall(req).execute().use { resp ->
+                        val raw = resp.body?.string().orEmpty()
+                        val jo = JSONObject(raw)
+                        ClaimResponse(
+                                success = jo.optBoolean("success", false),
+                                reason = jo.optString("message", "未知錯誤")
+                        )
+                    }
+                } catch (e: Exception) {
+                    ClaimResponse(success = false, reason = "NETWORK_ERROR")
+                }
+            }
+
     // 工具：UTC ISO8601 -> millis
     fun parseUtcMillis(s: String?): Long? {
         if (s.isNullOrBlank()) return null
         return try {
-            val fmt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
-                timeZone = TimeZone.getTimeZone("UTC")
-            }
+            val fmt =
+                    SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
+                        timeZone = TimeZone.getTimeZone("UTC")
+                    }
             fmt.parse(s)?.time
-        } catch (_: Exception) { null }
+        } catch (_: Exception) {
+            null
+        }
     }
 }
