@@ -177,8 +177,7 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
 
     LaunchedEffect(Unit) {
         try {
-            // val email = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email
-            val email = "04150415creeper@gmail.com"
+            val email = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email
                 ?: return@LaunchedEffect
             val apiUser: ApiUser = com.ntou01157.hunter.api.RetrofitClient.apiService.getUserByEmail(email)
             branchExpireAt = apiUser.buff.expireAtOf("ancient_branch")
