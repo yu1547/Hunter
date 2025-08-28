@@ -155,9 +155,20 @@ const claimReward = async (req, res) => {
 const refreshNormalMissions = async (user) => {
   const now = new Date();
   
+  // 取得所有非 LLM 任務的 ID
+  const nonLLMTaskIds = user.missions
+    .filter(m => !m.isLLM)
+    .map(m => m.taskId);
+
+  // 一次性查詢所有相關的事件詳細資訊
+  const events = await Event.find({ _id: { $in: nonLLMTaskIds } });
+  const eventsMap = new Map(events.map(e => [e._id.toString(), e]));
+
   // 處理 declined 和 claimed 的非 LLM 任務
   user.missions.forEach(mission => {
-    if (!mission.isLLM & eventDetails.type != 'daily') {
+    const eventDetails = eventsMap.get(mission.taskId.toString());
+    // 確保 eventDetails 存在且類型不是 'daily'
+    if (!mission.isLLM && eventDetails && eventDetails.type !== 'daily') {
       if (mission.state === 'declined' && mission.refreshedAt && now > mission.refreshedAt) {
         mission.state = 'claimed'; // 標記為可替換
       }
