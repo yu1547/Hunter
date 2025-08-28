@@ -173,10 +173,24 @@ const triggerStonePile = async (req, res) => {
     }
 };
 
+// 獲取單個事件
+const getEventById = async (req, res) => {
+    try {
+        const event = await Event.findById(req.params.eventId);
+        if (!event) {
+            return res.status(404).json({ message: '找不到此事件' });
+        }
+        res.status(200).json(event);
+    } catch (error) {
+        res.status(500).json({ message: '獲取事件失敗', error: error.message });
+    }
+};
+
 module.exports = {
     getDailyEventBySpot,
     trade,
     triggerStonePile,
     completeEvent,
     refreshDailyEvents,
+    getEventById,
 };

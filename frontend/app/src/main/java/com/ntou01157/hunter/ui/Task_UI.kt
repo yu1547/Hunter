@@ -122,7 +122,7 @@ fun TaskListScreen(navController: NavController) {
                         }
                     }
 
-                    if (llmTasks.count { it.state != "claimed" && it.state != "declined" } < 3) {
+                    if (llmTasks.count { it.state != "claimed" } < 3) {
                         item {
                             Button(
                                 onClick = {
