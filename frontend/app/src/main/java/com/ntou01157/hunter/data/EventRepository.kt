@@ -11,15 +11,6 @@ import com.ntou01157.hunter.models.model_api.*
 
 class EventRepository(private val apiService: ApiService) {
 
-    suspend fun getEvents(): NetworkResult<List<com.ntou01157.hunter.models.model_api.EventModel>> {
-        return try {
-            val response = apiService.getEvents()
-            NetworkResult.Success(response)
-        } catch (e: Exception) {
-            NetworkResult.Error(e.message ?: "未知錯誤")
-        }
-    }
-
     suspend fun triggerEvent(
         eventId: String,
         userId: String,

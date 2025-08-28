@@ -90,12 +90,13 @@ interface ApiService {
     @POST("api/users/{userId}/missions/{taskId}/claim")
     suspend fun claimReward(@Path("userId") userId: String, @Path("taskId") taskId: String): UserResponse
 
-    // 新增: 檢查補給站任務點
+    // 檢查補給站任務點
     @PUT("api/users/{userId}/missions/check-spot/{spotId}")
     suspend fun checkSpotMission(@Path("userId") userId: String, @Path("spotId") spotId: String): CheckSpotMissionResponse
 
-    @GET("events/all")
-    suspend fun getEvents(): List<EventModel>
+    // 取得事件詳細資訊
+    @GET("api/events/{eventId}")
+    suspend fun getEventById(@Path("eventId") eventId: String): EventModel
 
     @POST("events/trigger/{eventId}")
     suspend fun triggerEvent(

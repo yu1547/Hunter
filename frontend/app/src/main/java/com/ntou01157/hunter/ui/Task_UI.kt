@@ -284,10 +284,12 @@ fun TaskDialog(userTask: UserTask, onDismiss: () -> Unit, onAction: (String) -> 
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("目標：${task.taskTarget}")
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("難度：${task.taskDifficulty}")
-                Spacer(modifier = Modifier.height(8.dp))
-                task.taskDuration?.let { Text("時間：${formatMillis(it * 1000)}") } // taskDuration 是秒，formatMillis 需要毫秒
-                Spacer(modifier = Modifier.height(8.dp))
+                if (task.isLLM) {
+                    Text("難度：${task.taskDifficulty}")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    task.taskDuration?.let { Text("時間：${formatMillis(it * 1000)}") } // taskDuration 是秒，formatMillis 需要毫秒
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
                 Text("獎勵分數：${task.rewardScore}")
             }
         },
