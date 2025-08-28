@@ -2,6 +2,7 @@ const User = require('../models/userModel');
 const Task = require('../models/taskModel');
 const Item = require('../models/itemModel');
 const Spot = require('../models/spotModel'); // 需有 Spot model
+const Event = require('../models/eventModel'); // 引入 Event model
 const Rank = require('../models/rankModel'); // 引入 Rank model
 const { generateDropItems } = require('../services/dropService'); // 引入 generateDropItems
 const { addItemsToBackpack } = require('../services/backpackService'); // 引入 backpackService
@@ -173,44 +174,45 @@ const refreshNormalMissions = async (user) => {
 
   if (totalNewTasksNeeded > 0) {
     const currentUserTaskIds = user.missions.map(m => m.taskId);
-    const newTasks = await Task.aggregate([
+    // 從 Event model 獲取新任務，且 type 不為 'daily'
+    const newEvents = await Event.aggregate([
       {
         $match: {
           _id: { $nin: currentUserTaskIds }, // 過濾掉已經存在的任務
-          isLLM: { $ne: true } // 確保 isLLM 是 false 或不存在
+          type: { $ne: 'daily' } // 確保 type 不是 'daily'
         }
       },
-      { $sample: { size: totalNewTasksNeeded } } // 隨機選取 N 個任務
+      { $sample: { size: totalNewTasksNeeded } } // 隨機選取 N 個事件
     ]);
 
-    if (newTasks.length > 0) {
-      let newTaskIndex = 0;
+    if (newEvents.length > 0) {
+      let newEventIndex = 0;
       // 遍歷 user.missions，替換已 claimed 的任務
       const updatedMissions = user.missions.map(mission => {
-        if (!mission.isLLM && mission.state === 'claimed' && newTaskIndex < newTasks.length) {
-          const newTask = newTasks[newTaskIndex++];
+        if (!mission.isLLM && mission.state === 'claimed' && newEventIndex < newEvents.length) {
+          const newEvent = newEvents[newEventIndex++];
           return {
-            taskId: newTask._id,
+            taskId: newEvent._id,
             state: 'available',
             acceptedAt: null, expiresAt: null, refreshedAt: null,
-            haveCheckPlaces: Array.isArray(newTask.checkPlaces) ? newTask.checkPlaces.map(place => ({ spotId: place.spotId, isCheck: false })) : [],
+            haveCheckPlaces: newEvent.spotId ? [{ spotId: newEvent.spotId, isCheck: false }] : [],
             isLLM: false
           };
         }
         return mission;
       });
 
-      // 為了過濾掉已經被 claimed 的任務，但沒有被替換的情況（newTasks不夠）
+      // 為了過濾掉已經被 claimed 的任務，但沒有被替換的情況（newEvents不夠）
       user.missions = updatedMissions.filter(m => m.isLLM || m.state !== 'claimed');
 
       // 填充新任務直到滿2個
-      while (user.missions.filter(m => !m.isLLM).length < 2 && newTaskIndex < newTasks.length) {
-        const newTask = newTasks[newTaskIndex++];
+      while (user.missions.filter(m => !m.isLLM).length < 2 && newEventIndex < newEvents.length) {
+        const newEvent = newEvents[newEventIndex++];
         user.missions.push({
-          taskId: newTask._id,
+          taskId: newEvent._id,
           state: 'available',
           acceptedAt: null, expiresAt: null, refreshedAt: null,
-          haveCheckPlaces: Array.isArray(newTask.checkPlaces) ? newTask.checkPlaces.map(place => ({ spotId: place.spotId, isCheck: false })) : [],
+          haveCheckPlaces: newEvent.spotId ? [{ spotId: newEvent.spotId, isCheck: false }] : [],
           isLLM: false
         });
       }
