@@ -16,6 +16,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.auth.FirebaseAuth
 import com.ntou01157.hunter.api.RetrofitClient
 import com.ntou01157.hunter.api.ChatRequest
 import com.ntou01157.hunter.api.ChatHistoryItem
@@ -27,7 +28,6 @@ import retrofit2.HttpException
 
 @Composable
 fun ChatScreen(
-    userId: String = "68846d797609912e5e6ba9af",
     onClose: () -> Unit
 ) {
     var input by remember { mutableStateOf(TextFieldValue("")) }
@@ -36,10 +36,29 @@ fun ChatScreen(
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
 
+    // 新增：用 email 抓 userId
+    var userIdState by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        try {
+            val email = FirebaseAuth.getInstance().currentUser?.email
+                ?: run {
+                    Log.e("ChatScreen", "尚未登入，無法取得 email")
+                    return@LaunchedEffect
+                }
+            val user = RetrofitClient.apiService.getUserByEmail(email)
+            userIdState = user.id
+            Log.d("ChatScreen", "取得 userId=${userIdState}")
+        } catch (e: Exception) {
+            Log.e("ChatScreen", "以 email 取得 userId 失敗：${e.message}", e)
+        }
+    }
+
     fun deleteHistoryAndClose() {
+        val uid = userIdState ?: return
         coroutineScope.launch {
             try {
-                RetrofitClient.apiService.deleteChatHistory(userId)
+                RetrofitClient.apiService.deleteChatHistory(uid)
                 Log.d("ChatScreen", "已刪除對話紀錄")
             } catch (e: Exception) {
                 Log.e("ChatScreen", "刪除對話紀錄失敗", e)
@@ -78,7 +97,9 @@ fun ChatScreen(
                     Text("關閉")
                 }
             }
+
             Spacer(modifier = Modifier.height(8.dp))
+
             // 對話區域
             Box(
                 modifier = Modifier
@@ -143,7 +164,9 @@ fun ChatScreen(
                     }
                 }
             }
+
             Spacer(modifier = Modifier.height(8.dp))
+
             // 輸入區域
             Row(
                 modifier = Modifier
@@ -161,11 +184,12 @@ fun ChatScreen(
                     keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Send),
                     keyboardActions = KeyboardActions(
                         onSend = {
+                            val uid = userIdState ?: return@KeyboardActions
                             if (input.text.isNotBlank() && !isLoading) {
                                 sendMessage(
                                     input,
                                     messages,
-                                    userId,
+                                    uid,
                                     coroutineScope,
                                     onResult = { newMessages -> messages = newMessages },
                                     onLoading = { loading -> isLoading = loading },
@@ -178,11 +202,12 @@ fun ChatScreen(
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(
                     onClick = {
+                        val uid = userIdState ?: return@Button
                         if (input.text.isNotBlank() && !isLoading) {
                             sendMessage(
                                 input,
                                 messages,
-                                userId,
+                                uid,
                                 coroutineScope,
                                 onResult = { newMessages -> messages = newMessages },
                                 onLoading = { loading -> isLoading = loading },
