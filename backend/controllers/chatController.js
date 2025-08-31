@@ -36,7 +36,7 @@ const chatWithLLM = async (req, res) => {
     const flaskUrl = process.env.LLM_FLASK_URL || 'http://llm:5050/chat';
     let flaskRes;
     try {
-      flaskRes = await axios.post(flaskUrl, { message, history: usedHistory }, { timeout: 300000 });
+      flaskRes = await axios.post(flaskUrl, { message, history: usedHistory }, { timeout: 900000 });
     } catch (flaskErr) {
       // 更詳細的錯誤日誌
       console.error("❌ Flask 連線或回傳錯誤：", flaskErr);
