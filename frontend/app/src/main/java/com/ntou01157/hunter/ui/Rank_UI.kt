@@ -6,6 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -145,21 +146,20 @@ fun RankingScreen(navController: NavController) {
             }
         }
 
-        IconButton(
-            onClick = { navController.navigate("main") },
+        Box(
             modifier = Modifier
-                .align(Alignment.TopStart)
                 .padding(top = 25.dp, start = 16.dp)
+                .clickable { navController.navigate("main") }
         ) {
             Image(
-                painter = painterResource(id = R.drawable.ic_home),
+                painter = painterResource(id = R.drawable.home_icon),
                 contentDescription = "回首頁",
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier.size(60.dp)
             )
         }
+
     }
 }
-
 // ---------- UI：排行榜清單 + 我的排名 ----------
 @Composable
 private fun RankingBoard(
@@ -167,87 +167,136 @@ private fun RankingBoard(
     me: UserRank?,
     onBack: () -> Unit
 ) {
-    // 雙保險：過濾掉 score=0 的人（即使後端沒更新也不會出現在清單）
     val listToShow = remember(rankList) { rankList.filter { it.score > 0 } }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF2E3E3))
     ) {
-        // 1) 上半部排行榜（LazyColumn），內容下緣留空，避免被底部卡片遮住
-        LazyColumn(
+        // 背景圖
+        Image(
+            painter = painterResource(id = R.drawable.ranklist_background),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.matchParentSize()
+        )
+
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 64.dp, start = 16.dp, end = 16.dp, bottom = 16.dp)
-                .background(Color(0xFFDDDDDD), RoundedCornerShape(12.dp)),
-            contentPadding = PaddingValues(
-                top = 16.dp,
-                start = 12.dp,
-                end = 12.dp,
-                bottom = 124.dp   // 預留底部卡片高度 + 內距，避免擋住最後一列
-            ),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+                .padding(start = 20.dp, end = 20.dp, top = 30.dp, bottom = 95.dp)
+                .background(Color.White.copy(alpha = 0.7f), RoundedCornerShape(16.dp)) // 半透明白色
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp, vertical = 16.dp)
         ) {
-            item {
-                Text(
-                    text = "頂級獵人排行榜",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF8B4513),
+
+
+            Spacer(Modifier.height(30.dp))
+
+            // --- 前三名特殊區塊 ---
+            if (listToShow.isNotEmpty()) {
+                val top3 = listToShow.take(3)
+
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 6.dp),
-                    textAlign = TextAlign.Center
-                )
+                        .height(200.dp) // 總高度框架
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        // 第3名（最矮）
+                        if (top3.size > 2) TopRankItem(rank = 3, item = top3[2], height = 60.dp)
+                        // 第1名（最高）
+                        TopRankItem(rank = 1, item = top3[0], height = 100.dp)
+                        // 第2名（中間）
+                        if (top3.size > 1) TopRankItem(rank = 2, item = top3[1], height = 80.dp)
+                    }
+
+                    // 黑線直接貼在最底部
+                    Divider(
+                        color = Color.Black.copy(alpha = 0.6f),
+                        thickness = 1.dp,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(horizontal = 30.dp)
+                    )
+
+                }
             }
 
-            if (listToShow.isEmpty()) {
-                item {
-                    Box(
+
+
+            Spacer(Modifier.height(8.dp))
+
+            // 其餘排名
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                itemsIndexed(listToShow.drop(3)) { index, item ->
+                    RankingItemRow(rank = index + 4, item = item)
+                }
+            }
+
+            // 我的排名卡
+            me?.let { mine ->
+                val rankLabel = if (mine.rank == null || mine.score == 0) "(未上榜)" else "${mine.rank}"
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+                ) {
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(120.dp),
-                        contentAlignment = Alignment.Center
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("目前沒有數據", color = Color.Gray)
+                        Avatar(url = mine.userImg, size = 48.dp)
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(mine.username, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            Text("積分：${mine.score}", fontSize = 14.sp, color = Color.DarkGray)
+                        }
+                        Text(text = rankLabel, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                     }
-                }
-            } else {
-                itemsIndexed(listToShow) { index, item ->
-                    RankingItemRow(rank = index + 1, item = item)
                 }
             }
         }
+    }
+}
 
-        // 2) 底部固定「我的排名」卡
-        me?.let { mine ->
-            val rankLabel = if (mine.rank == null || mine.score == 0) "(未上榜)" else "${mine.rank}"
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Avatar(url = mine.userImg, size = 56.dp)
-                    Spacer(Modifier.width(14.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(mine.username, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                        Text("積分：${mine.score}", fontSize = 16.sp, color = Color.DarkGray)
-                    }
-                    Text(text = "$rankLabel", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-                }
-            }
+// --- 前三名特殊樣式 ---
+@Composable
+private fun TopRankItem(rank: Int, item: RankItem, height: Dp) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Bottom
+    ) {
+        Avatar(url = item.userImg, size = 72.dp)
+        Spacer(Modifier.height(4.dp))
+        Text(item.username, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.Black)
+        Text("${item.score}", fontSize = 12.sp, color = Color.Black)
+        Box(
+            modifier = Modifier
+                .height(height)
+                .width(60.dp)
+                .background(Color(0xFFE5D3B3), RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(rank.toString(), fontSize = 20.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -279,7 +328,7 @@ private fun RankingItemRow(rank: Int, item: RankItem) {
 
         // 右側白色卡片：頭像 + 名稱 + 積分
         Card(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.width(300.dp),
             shape = RoundedCornerShape(10.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
