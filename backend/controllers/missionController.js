@@ -304,6 +304,15 @@ const checkSpotMission = async (req, res) => {
 
     if (missionUpdated) {
       await user.save();
+      // 在任務進度更新後，檢查是否有事件要觸發
+      const eventRes = await checkAndTriggerEvent(userId, spotId);
+      if (eventRes.success) {
+        return res.status(200).json({ 
+          message: '任務進度已更新並觸發事件', 
+          userMissions: user.missions, 
+          eventResult: eventRes.data
+        });
+      }
       return res.status(200).json({ message: '任務進度已更新', userMissions: user.missions });
     } else {
       return res.status(400).json({ message: '此補給站沒有需要檢查的任務' });
@@ -315,6 +324,45 @@ const checkSpotMission = async (req, res) => {
   }
 };
 
+// 新增函式：檢查並觸發事件
+const checkAndTriggerEvent = async (userId, spotId) => {
+    try {
+        const event = await Event.findOne({ spotId: spotId, type: 'daily' });
+        if (!event) {
+            return { success: false, message: '此地點沒有每日事件' };
+        }
+
+        switch (event.name) {
+            case '石堆事件':
+                // 模擬 req 和 res 物件
+                const stonePileReq = { body: { userId: userId } };
+                const stonePileRes = { status: () => ({ json: (data) => data }) };
+                const stonePileResult = await triggerStonePile(stonePileReq, stonePileRes);
+                return { success: true, data: stonePileResult.json };
+            case '神秘商人':
+                // 神秘商人需要用戶選擇，這裡假設選擇一個預設選項
+                const merchantReq = { body: { userId: userId, tradeType: 'trade_gold_for_item' } };
+                const merchantRes = { status: () => ({ json: (data) => data }) };
+                const merchantResult = await trade(merchantReq, merchantRes);
+                return { success: true, data: merchantResult.json };
+            case '打扁史萊姆':
+                // 打扁史萊 姆需要遊戲結果，這裡假設一個結果
+                const slimeReq = { params: { eventId: event._id }, body: { userId: userId, gameResult: 120 } };
+                const slimeRes = { status: () => ({ json: (data) => data }) };
+                const slimeResult = await completeEvent(slimeReq, slimeRes);
+                return { success: true, data: slimeResult.json };
+            default:
+                // 對於其他事件，直接調用 completeEvent
+                const defaultReq = { params: { eventId: event._id }, body: { userId: userId } };
+                const defaultRes = { status: () => ({ json: (data) => data }) };
+                const defaultResult = await completeEvent(defaultReq, defaultRes);
+                return { success: true, data: defaultResult.json };
+        }
+    } catch (error) {
+        console.error('觸發事件時發生錯誤:', error);
+        return { success: false, message: '觸發事件失敗', error: error.message };
+    }
+};
 
 
 // 產生 LLM 任務並分配給指定 user
