@@ -181,17 +181,12 @@ const openTreasureBox = async (req, res) => {
     session.startTransaction();
 
     try {
-        // 這裡的 db.findUserById 和 db.updateUserInventory 需要替換成您實際的 Mongoose 或其他 ORM 方法
-        // const user = await User.findById(userId);
-        // if (!user) return res.status(404).json({ success: false, message: '使用者不存在。' });
         const user = await User.findById(userId).session(session);
         if (!user) {
             await session.abortTransaction();
             session.endSession();
             return res.status(404).json({ success: false, message: '使用者不存在。' });
         }
-            // const keyItem = await Item.findOne({ itemName: keyItemName });
-            // if (!keyItem) return res.status(404).json({ success: false, message: '鑰匙物品不存在。' });
             const keyItem = await Item.findOne({ itemName: keyItemName }).session(session);
             if (!keyItem) {
                 await session.abortTransaction();
@@ -199,10 +194,6 @@ const openTreasureBox = async (req, res) => {
                 return res.status(404).json({ success: false, message: '鑰匙物品不存在。' });
             }
 
-            // const keyInInv = user.backpackItems.find(item => item.itemId.toString() === keyItem._id.toString());
-            // if (!keyInInv || keyInInv.quantity <= 0) {
-            //     return res.json({ success: false, message: `你沒有${keyItemName}，無法開啟寶箱。` });
-            // }
             const keyInInv = user.backpackItems.find(item => item.itemId.toString() === keyItem._id.toString());
             if (!keyInInv || keyInInv.quantity <= 0) {
                 await session.abortTransaction();
@@ -295,23 +286,12 @@ const completeSlimeAttack = async (req, res) => {
     session.startTransaction();
 
     try {
-        // const user = await User.findById(userId);
-        // if (!user) return res.status(404).json({ success: false, message: '使用者不存在。' });
         const user = await User.findById(userId).session(session);
         if (!user) {
             await session.abortTransaction();
             session.endSession();
             return res.status(404).json({ success: false, message: '使用者不存在。' });
         }
-
-        // let rewards = { points: totalDamage * 2, items: [] };
-        // if (totalDamage > 10) {
-        //     const item = await Item.findOne({ itemName: "黏稠的史萊姆黏液" });
-        //     if (item) rewards.items.push({ itemId: item._id.toString(), quantity: 1 });
-        // } else {
-        //     const item = await Item.findOne({ itemName: "普通的史萊姆黏液" });
-        //     if (item) rewards.items.push({ itemId: item._id.toString(), quantity: 1 });
-        // }
         
         // --- 檢查並應用增益效果 ---
         let finalDamage = totalDamage;
@@ -352,24 +332,6 @@ const completeSlimeAttack = async (req, res) => {
             message: `你造成了${totalDamage}點傷害，獲得了物品。`,
             rewards: rewards.items.map(item => item.name) // 注意：這裡可能需要根據實際情況調整以顯示物品名稱
         });
-
-        // user.score = (user.score || 0) + rewards.points;
-        // for (const reward of rewards.items) {
-        //     const existingItem = user.backpackItems.find(item => item.itemId.toString() === reward.itemId);
-        //     if (existingItem) {
-        //         existingItem.quantity += reward.quantity;
-        //     } else {
-        //         user.backpackItems.push(reward);
-        //     }
-        // }
-
-        // await user.save();
-
-        // return res.json({
-        //     success: true,
-        //     message: `你造成了${totalDamage}點傷害，獲得積分+${rewards.points}和物品。`,
-        //     rewards: rewards.items.map(item => item.name)
-        // });
     } catch (error) {
         await session.abortTransaction();
         session.endSession();

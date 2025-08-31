@@ -287,9 +287,10 @@ const checkSpotMission = async (req, res) => {
     }
 
     let missionUpdated = false;
+    let triggeredEvent = null;
 
     // 尋找使用者是否有需要檢查此地點的任務
-    user.missions.forEach(mission => {
+    for (const mission of user.missions) {
       // 確保任務處於進行中狀態，且有需要檢查的地點
       if (mission.state === 'in_progress' && mission.haveCheckPlaces) {
         // 尋找匹配的補給站
@@ -298,25 +299,43 @@ const checkSpotMission = async (req, res) => {
         if (checkPlace && !checkPlace.isCheck) {
           checkPlace.isCheck = true;
           missionUpdated = true;
+          // Check if this mission is an event
+          const eventDetails = await Event.findById(mission.taskId);
+          if (eventDetails) {
+            triggeredEvent = eventDetails;
+            break; // Stop after finding the first matching mission/event
+          }
         }
       }
-    });
+    }
 
+    // If a mission was updated, save the user state first
     if (missionUpdated) {
       await user.save();
-      // 在任務進度更新後，檢查是否有事件要觸發
-      const eventRes = await checkAndTriggerEvent(userId, spotId);
-      if (eventRes.success) {
-        return res.status(200).json({ 
-          message: '任務進度已更新並觸發事件', 
-          userMissions: user.missions, 
-          eventResult: eventRes.data
-        });
-      }
-      return res.status(200).json({ message: '任務進度已更新', userMissions: user.missions });
     } else {
       return res.status(400).json({ message: '此補給站沒有需要檢查的任務' });
     }
+
+    // After updating the mission, check and trigger the event if one was found
+    if (triggeredEvent) {
+        const eventRes = await checkAndTriggerEvent(userId, triggeredEvent);
+        if (eventRes.success) {
+            return res.status(200).json({ 
+                message: '任務進度已更新並觸發事件', 
+                userMissions: user.missions, 
+                eventResult: eventRes
+            });
+        } else {
+            return res.status(200).json({ 
+                message: '任務進度已更新，但事件觸發失敗', 
+                userMissions: user.missions,
+                error: eventRes.message
+            });
+        }
+    }
+
+    // If no event was triggered but a mission was updated
+    return res.status(200).json({ message: '任務進度已更新', userMissions: user.missions });
 
   } catch (error) {
     console.error('檢查補給站任務時發生錯誤:', error);
@@ -325,44 +344,55 @@ const checkSpotMission = async (req, res) => {
 };
 
 // 新增函式：檢查並觸發事件
-const checkAndTriggerEvent = async (userId, spotId) => {
-    try {
-        const event = await Event.findOne({ spotId: spotId, type: 'daily' });
-        if (!event) {
-            return { success: false, message: '此地點沒有每日事件' };
-        }
+const checkAndTriggerEvent = async (userId, event) => {
+    // 模擬 req 物件，以便傳遞給其他 API 函式
+    const eventReq = { 
+        body: { userId: userId },
+        params: { eventId: event._id }
+    };
 
-        switch (event.name) {
-            case '石堆事件':
-                // 模擬 req 和 res 物件
-                const stonePileReq = { body: { userId: userId } };
-                const stonePileRes = { status: () => ({ json: (data) => data }) };
-                const stonePileResult = await triggerStonePile(stonePileReq, stonePileRes);
-                return { success: true, data: stonePileResult.json };
-            case '神秘商人':
-                // 神秘商人需要用戶選擇，這裡假設選擇一個預設選項
-                const merchantReq = { body: { userId: userId, tradeType: 'trade_gold_for_item' } };
-                const merchantRes = { status: () => ({ json: (data) => data }) };
-                const merchantResult = await trade(merchantReq, merchantRes);
-                return { success: true, data: merchantResult.json };
-            case '打扁史萊姆':
-                // 打扁史萊 姆需要遊戲結果，這裡假設一個結果
-                const slimeReq = { params: { eventId: event._id }, body: { userId: userId, gameResult: 120 } };
-                const slimeRes = { status: () => ({ json: (data) => data }) };
-                const slimeResult = await completeEvent(slimeReq, slimeRes);
-                return { success: true, data: slimeResult.json };
-            default:
-                // 對於其他事件，直接調用 completeEvent
-                const defaultReq = { params: { eventId: event._id }, body: { userId: userId } };
-                const defaultRes = { status: () => ({ json: (data) => data }) };
-                const defaultResult = await completeEvent(defaultReq, defaultRes);
-                return { success: true, data: defaultResult.json };
-        }
-    } catch (error) {
-        console.error('觸發事件時發生錯誤:', error);
-        return { success: false, message: '觸發事件失敗', error: error.message };
+    // 模擬 res 物件，以便捕捉回傳資料
+    const eventRes = {
+        status: (code) => ({
+            json: (data) => {
+                // 這個回傳是為了在非 res.json 情況下捕捉資料
+                return data;
+            }
+        })
+    };
+
+    // Note: '神秘商人的試煉' and '古樹的祝福' may require more specific body data
+    // to be passed to work correctly, as defined in taskController.js.
+    // The following is a basic integration.
+    switch (event.name) {
+        case '在小小的 code 裡面抓阿抓阿抓':
+            // 此為 Wordle 遊戲，觸發開始遊戲邏輯
+            return await startGame(eventReq, eventRes);
+        case '神秘商人的試煉':
+            // 觸發交易邏輯，這裡假設選擇第一個選項
+            eventReq.body.selectedOption = event.options[0].text;
+            return await trade(eventReq, eventRes);
+        case '石堆下的碎片':
+            // 觸發石堆事件的獨特邏輯
+            return await triggerStonePile(eventReq, eventRes);
+        case '打扁史萊姆':
+            // 觸發戰鬥結算，這裡假設傳入固定傷害值 120
+            eventReq.body.totalDamage = 120;
+            return await completeSlimeAttack(eventReq, eventRes);
+        case '偶遇銅寶箱':
+            // 觸發寶箱開啟邏輯，需要鑰匙類型
+            eventReq.body.keyType = 'bronze';
+            return await openTreasureBox(eventReq, eventRes);
+        case '古樹的祝福':
+            // 觸發獻祭邏輯，這裡假設選擇第一個選項
+            eventReq.body.itemToOffer = event.options[0].text.split(' ')[0].replace('交出', '');
+            return await blessTree(eventReq, eventRes);
+        default:
+            // 對於其他沒有特殊邏輯的事件，直接呼叫通用的 completeEvent
+            return await completeEvent(eventReq, eventRes);
     }
 };
+
 
 
 // 產生 LLM 任務並分配給指定 user
