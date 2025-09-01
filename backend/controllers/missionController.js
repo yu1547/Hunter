@@ -345,51 +345,61 @@ const checkSpotMission = async (req, res) => {
 
 // 新增函式：檢查並觸發事件
 const checkAndTriggerEvent = async (userId, event) => {
-    // 模擬 req 物件，以便傳遞給其他 API 函式
-    const eventReq = { 
-        body: { userId: userId },
-        params: { eventId: event._id }
-    };
+    try {
+        const eventReq = {
+            body: { userId: userId },
+            params: { eventId: event._id }
+        };
 
-    // 模擬 res 物件，以便捕捉回傳資料
-    const eventRes = {
-        status: (code) => ({
-            json: (data) => {
-                // 這個回傳是為了在非 res.json 情況下捕捉資料
-                return data;
+        // 模擬 res 物件，以便捕捉回傳資料
+        const eventRes = {
+            status: (code) => ({
+                json: (data) => ({ status: code, data: data })
+            })
+        };
+
+        let result;
+        // 使用一個獨立的物件來管理事件處理器，而不是在 switch case 中硬編碼
+        const eventHandlers = {
+            '在小小的 code 裡面抓阿抓阿抓': async () => await startGame(eventReq, eventRes),
+            '打扁史萊姆': async () => {
+                // 從 req.body 取得 totalDamage
+                if (!eventReq.body.totalDamage) {
+                    return eventRes.status(400).json({ message: '缺少 totalDamage 參數' });
+                }
+                return await completeSlimeAttack(eventReq, eventRes);
+            },
+            '偶遇銅寶箱': async () => {
+                // 從 req.body 中取得 keyType
+                if (!eventReq.body.keyType) {
+                    return eventRes.status(400).json({ message: '缺少 keyType 參數' });
+                }
+                return await openTreasureBox(eventReq, eventRes);
+            },
+            '古樹的祝福': async () => {
+                eventReq.body.itemToOffer = event.options[0].text.split(' ')[0].replace('交出', '');
+                return await blessTree(eventReq, eventRes);
             }
-        })
-    };
+        };
 
-    // Note: '神秘商人的試煉' and '古樹的祝福' may require more specific body data
-    // to be passed to work correctly, as defined in taskController.js.
-    // The following is a basic integration.
-    switch (event.name) {
-        case '在小小的 code 裡面抓阿抓阿抓':
-            // 此為 Wordle 遊戲，觸發開始遊戲邏輯
-            return await startGame(eventReq, eventRes);
-        case '神秘商人的試煉':
-            // 觸發交易邏輯，這裡假設選擇第一個選項
-            eventReq.body.selectedOption = event.options[0].text;
-            return await trade(eventReq, eventRes);
-        case '石堆下的碎片':
-            // 觸發石堆事件的獨特邏輯
-            return await triggerStonePile(eventReq, eventRes);
-        case '打扁史萊姆':
-            // 觸發戰鬥結算，這裡假設傳入固定傷害值 120
-            eventReq.body.totalDamage = 120;
-            return await completeSlimeAttack(eventReq, eventRes);
-        case '偶遇銅寶箱':
-            // 觸發寶箱開啟邏輯，需要鑰匙類型
-            eventReq.body.keyType = 'bronze';
-            return await openTreasureBox(eventReq, eventRes);
-        case '古樹的祝福':
-            // 觸發獻祭邏輯，這裡假設選擇第一個選項
-            eventReq.body.itemToOffer = event.options[0].text.split(' ')[0].replace('交出', '');
-            return await blessTree(eventReq, eventRes);
-        default:
-            // 對於其他沒有特殊邏輯的事件，直接呼叫通用的 completeEvent
-            return await completeEvent(eventReq, eventRes);
+        // 檢查是否有特定的處理器
+        if (eventHandlers[event.name]) {
+            result = await eventHandlers[event.name]();
+        } else {
+            // 如果沒有特殊處理器，則呼叫通用的 completeEvent
+            result = await completeEvent(eventReq, eventRes);
+        }
+
+        // 檢查回傳的狀態碼，判斷是否成功
+        if (result && result.status >= 200 && result.status < 300) {
+            return { success: true, message: '事件觸發成功', result: result.data };
+        } else {
+            return { success: false, message: '事件觸發失敗', error: result.data || '未知錯誤' };
+        }
+
+    } catch (error) {
+        console.error('觸發事件時發生錯誤:', error);
+        return { success: false, message: '伺服器內部錯誤', error: error.message };
     }
 };
 
