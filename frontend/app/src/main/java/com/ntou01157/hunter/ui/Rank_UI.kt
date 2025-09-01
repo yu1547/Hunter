@@ -6,6 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.shadow
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -175,7 +176,7 @@ private fun RankingBoard(
     ) {
         // 背景圖
         Image(
-            painter = painterResource(id = R.drawable.ranklist_background),
+            painter = painterResource(id = R.drawable.ranklist_background_light),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.matchParentSize()
@@ -184,7 +185,7 @@ private fun RankingBoard(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(start = 20.dp, end = 20.dp, top = 30.dp, bottom = 95.dp)
+                .padding(start = 20.dp, end = 20.dp, top = 250.dp, bottom = 95.dp)
                 .background(Color.White.copy(alpha = 0.7f), RoundedCornerShape(16.dp)) // 半透明白色
         )
 
@@ -213,11 +214,11 @@ private fun RankingBoard(
                         verticalAlignment = Alignment.Bottom
                     ) {
                         // 第3名（最矮）
-                        if (top3.size > 2) TopRankItem(rank = 3, item = top3[2], height = 60.dp)
+                        if (top3.size > 2) TopRankItem(rank = 3, item = top3[2], height = 50.dp)
                         // 第1名（最高）
-                        TopRankItem(rank = 1, item = top3[0], height = 100.dp)
+                        TopRankItem(rank = 1, item = top3[0], height = 90.dp)
                         // 第2名（中間）
-                        if (top3.size > 1) TopRankItem(rank = 2, item = top3[1], height = 80.dp)
+                        if (top3.size > 1) TopRankItem(rank = 2, item = top3[1], height = 70.dp)
                     }
 
                     // 黑線直接貼在最底部
@@ -285,21 +286,81 @@ private fun TopRankItem(rank: Int, item: RankItem, height: Dp) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Bottom
     ) {
-        Avatar(url = item.userImg, size = 72.dp)
-        Spacer(Modifier.height(4.dp))
-        Text(item.username, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.Black)
-        Text("${item.score}", fontSize = 12.sp, color = Color.Black)
+        // 頭像加陰影
         Box(
             modifier = Modifier
-                .height(height)
-                .width(60.dp)
-                .background(Color(0xFFE5D3B3), RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp)),
+                .size(72.dp) // 比 Avatar 稍大一點
+                .shadow(8.dp, CircleShape, clip = false) // 加陰影
+                .clip(CircleShape)                       // 圓形裁切
+        ) {
+            Avatar(url = item.userImg, size = 70.dp)
+        }
+
+        Spacer(Modifier.height(4.dp))
+
+        // 玩家名稱 (放在頭像下面，獎牌不會壓到)
+        Text(
+            text = item.username,
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp,
+            maxLines = 1
+        )
+
+        Spacer(Modifier.height(18.dp))
+
+        // 階梯 + 分數 + 獎牌
+        Box(
+            modifier = Modifier
+                .width(80.dp)
+                .height(height),
             contentAlignment = Alignment.Center
         ) {
-            Text(rank.toString(), fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            // 階梯背景
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Color(0xFFD9C6A5),
+                        RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                // 分數
+                Spacer(Modifier.height(20.dp))
+                Text(
+                    text = item.score.toString(),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            // 疊加獎牌（位置偏上，不會蓋名字）
+            val medalModifier = Modifier
+                .size(55.dp)
+                .align(Alignment.TopCenter)
+                .offset(y = (-25).dp)
+
+            when (rank) {
+                1 -> Image(
+                    painter = painterResource(id = R.drawable.ranklist_medal_1),
+                    contentDescription = "金牌",
+                    modifier = medalModifier
+                )
+                2 -> Image(
+                    painter = painterResource(id = R.drawable.ranklist_medal_2),
+                    contentDescription = "銀牌",
+                    modifier = medalModifier
+                )
+                3 -> Image(
+                    painter = painterResource(id = R.drawable.ranklist_medal_3),
+                    contentDescription = "銅牌",
+                    modifier = medalModifier
+                )
+            }
         }
     }
 }
+
 
 // ---------- UI：排行榜單列 ----------
 @Composable
