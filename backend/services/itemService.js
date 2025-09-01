@@ -89,7 +89,59 @@ async function upsertBuff(userId, { name, expiresAt, data }, session) {
     }
 }
 
-// --- 道具策略表（藍色區塊：在這裡完成） ---
+// --- 時間沙漏減速function：延長所有 in_progress 的 expiresAt + N 分鐘 ---
+async function extendClaimedMissions(userId, minutes, session) {
+    const User = require('../models/userModel');
+    const user = await User.findById(userId).session(session);
+    if (!user) throw new Error('USER_NOT_FOUND');
+
+    const now = new Date();
+    let changed = 0;
+
+    user.missions.forEach(m => {
+        if (m.state === 'in_progress') {
+            if (m.expiresAt) {
+                m.expiresAt = new Date(m.expiresAt.getTime() + minutes * 60 * 1000);
+            } else {
+                // 若原本沒有時限，給一個「從現在起」的時限
+                m.expiresAt = new Date(now.getTime() + minutes * 60 * 1000);
+            }
+            changed++;
+        }
+    });
+
+    if (changed > 0) {
+        await user.save({ session });
+    }
+    return changed; // 方便除錯/紀錄
+}
+
+// --- 時間沙漏加速function：把declined 中 refreshedAt 最晚的那一筆任務改為 claimed ---
+async function refreshMissionsNow(userId, session) {
+    const User = require('../models/userModel');
+    const user = await User.findById(userId).session(session);
+    if (!user) throw new Error('USER_NOT_FOUND');
+
+    const declined = user.missions.filter(m => m.state === 'declined');
+    if (declined.length === 0) return null;
+
+    // 取 refreshedAt 最大；若為空則當作最小
+    declined.sort((a, b) => {
+        const ta = a.refreshedAt ? new Date(a.refreshedAt).getTime() : -Infinity;
+        const tb = b.refreshedAt ? new Date(b.refreshedAt).getTime() : -Infinity;
+        return tb - ta;
+    });
+
+    const target = declined[0];
+    target.state = 'claimed'; // 改成 claimed，後續由刷新器替換
+    await user.save({ session });
+
+    return target.taskId; // 方便除錯/紀錄
+}
+
+
+
+// --- 道具策略表 ---
 const registry = {
     // 普通史萊姆：銅碎片 1~3，銀碎片 0~2
     'spawn_slime_small': async ({ userId, session, effects }) => {
@@ -192,8 +244,8 @@ exports.useItem = async ({ userId, itemId, requestId }) => {
         const effects = [];
         await fn({
             userId, session, effects,
-            refreshMissionsNow: async (uid, s) => { /* TODO: 綁到你現有刷新任務 */ },
-            extendClaimedMissions: async (uid, minutes, s) => { /* TODO: 綁到你現有延長任務 */ },
+            refreshMissionsNow,
+            extendClaimedMissions,
         });
 
         if (requestId) {
