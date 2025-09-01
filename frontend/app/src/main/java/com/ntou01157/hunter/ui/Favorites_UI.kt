@@ -49,7 +49,7 @@ fun FavoritesScreen(
     }
 
     val buttonColors = ButtonDefaults.buttonColors(
-        containerColor = Color(0xFFbc8f8f),
+        containerColor = Color(0xFFB49865),
         contentColor = Color.White
     )
 
@@ -73,7 +73,7 @@ fun FavoritesScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFFF3DCDC))
+                    .background(Color(0xFFF2EFDE))
                     .padding(horizontal = 16.dp)
             ) {
                 // 回首頁按鈕
@@ -88,7 +88,7 @@ fun FavoritesScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(40.dp))
+                Spacer(modifier = Modifier.height(60.dp))
 
                 // 地標顯示區域
                 Box(
@@ -102,12 +102,12 @@ fun FavoritesScreen(
                             .width(900.dp) // 調整地標區域寬度
                             .fillMaxHeight(1.0f) // 填滿父容器高度
                             .padding(5.dp), // 外圍留白
-                        verticalArrangement = Arrangement.spacedBy(100.dp) // 每一列之間的間距
+                        verticalArrangement = Arrangement.spacedBy(70.dp) // 每一列之間的間距
                     ) {
                         for (row in 0..1) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(), // 每列填滿寬度
-                                horizontalArrangement = Arrangement.spacedBy(20.dp) // 每個地標之間的間距
+                                horizontalArrangement = Arrangement.spacedBy(10.dp) // 每個地標之間的間距
                             ) {
                                 for (col in 0..1) {
                                     val index = row * 2 + col
@@ -125,7 +125,7 @@ fun FavoritesScreen(
                                             // polaroid和地標照片包在一起
                                             Box(
                                                 modifier = Modifier
-                                                    .width(180.dp)
+                                                    .width(130.dp)
                                                     .aspectRatio(527f / 866f), // polaroid比例
                                                 contentAlignment = Alignment.TopCenter
                                             ) {
@@ -134,20 +134,20 @@ fun FavoritesScreen(
                                                     contentDescription = "polaroid",
                                                     modifier = Modifier.fillMaxSize()
                                                 )
-                                                if (scanLog[landmark.spotName.lowercase()] == true) {
+                                                if (isUnlocked) {
                                                     Image(
                                                         painter = painterResource(id = getSpotImageResId(landmark.spotName)),
                                                         contentDescription = landmark.spotName,
                                                         modifier = Modifier
-                                                            .size(135.dp)
+                                                            .size(120.dp)
                                                             .align(Alignment.TopCenter)
-                                                            .offset(y = 53.dp) //數值越小，下移越少
+                                                            .offset(y = 45.dp) //數值越小，下移越少
                                                     )
                                                 }else{
                                                     // 灰底，置中顯示
                                                     Box(
                                                         modifier = Modifier
-                                                            .size(100.dp, 135.dp)
+                                                            .size(90.dp, 118.dp)
                                                             .align(Alignment.Center)
                                                             .background(Color(0xFFCCCCCC).copy(alpha = 0.7f))
                                                     )
@@ -157,12 +157,12 @@ fun FavoritesScreen(
                                                     modifier = Modifier
                                                         .fillMaxWidth()
                                                         .align(Alignment.BottomCenter)
-                                                        .padding(bottom = 18.dp), // 微調文字在 polaroid上的位置
+                                                        .padding(bottom = 15.dp), // 微調文字在 polaroid上的位置
                                                     contentAlignment = Alignment.Center
                                                 ) {
                                                     Text(
                                                         text = landmark.ChName,
-                                                        color = if (scanLog[landmark.spotName.lowercase()] == true) Color.Black else Color.Gray,
+                                                        color = if (isUnlocked) Color.Black else Color.Gray,
                                                         fontSize = 16.sp,
                                                         maxLines = 1,
                                                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
