@@ -134,7 +134,7 @@ fun FavoritesScreen(
                                                     contentDescription = "polaroid",
                                                     modifier = Modifier.fillMaxSize()
                                                 )
-                                                if (isUnlocked) {
+                                                if (scanLog[landmark.spotName.lowercase()] == true) {
                                                     Image(
                                                         painter = painterResource(id = getSpotImageResId(landmark.spotName)),
                                                         contentDescription = landmark.spotName,
@@ -142,6 +142,14 @@ fun FavoritesScreen(
                                                             .size(135.dp)
                                                             .align(Alignment.TopCenter)
                                                             .offset(y = 53.dp) //數值越小，下移越少
+                                                    )
+                                                }else{
+                                                    // 灰底，置中顯示
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(100.dp, 135.dp)
+                                                            .align(Alignment.Center)
+                                                            .background(Color(0xFFCCCCCC).copy(alpha = 0.7f))
                                                     )
                                                 }
                                                 // 文字覆蓋在 polaroid 下方白色區域
@@ -154,7 +162,7 @@ fun FavoritesScreen(
                                                 ) {
                                                     Text(
                                                         text = landmark.ChName,
-                                                        color = if (isUnlocked) Color.Black else Color.Gray,
+                                                        color = if (scanLog[landmark.spotName.lowercase()] == true) Color.Black else Color.Gray,
                                                         fontSize = 16.sp,
                                                         maxLines = 1,
                                                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
