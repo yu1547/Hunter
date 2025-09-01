@@ -63,8 +63,31 @@ async function ensureItemIdByName(lookup, session) {
 const PIC = {
     copperShard: 'copper_piece',   // DB的銅碎片 itemPic
     silverShard: 'silver_piece',   // DB的銀碎片 itemPic
-    goldShard:   'gold_piece',     // DB的金碎片 itemPic
+    goldShard: 'gold_piece',     // DB的金碎片 itemPic
 };
+
+//檢查重複buff
+async function upsertBuff(userId, { name, expiresAt, data }, session) {
+    // 若 buff 還是 null，先初始化為 []
+    await User.updateOne({ _id: userId, buff: null }, { $set: { buff: [] } }, { session });
+
+    const setDoc = { 'buff.$.expiresAt': expiresAt };
+    if (data !== undefined) setDoc['buff.$.data'] = data;
+
+    const r = await User.updateOne(
+        { _id: userId, 'buff.name': name },
+        { $set: setDoc },
+        { session }
+    );
+
+    if (r.matchedCount === 0) {
+        await User.updateOne(
+            { _id: userId },
+            { $push: { buff: { name, expiresAt, data } } },
+            { session }
+        );
+    }
+}
 
 // --- 道具策略表（藍色區塊：在這裡完成） ---
 const registry = {
@@ -93,7 +116,12 @@ const registry = {
     // 寶藏圖：設一次性 buff（TODO(在任務生成): 任務產生器讀到後注入金箱並移除）
     'treasure_map_trigger': async ({ userId, session, effects }) => {
         const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24); // 1 天示意
-        await pushBuff(userId, { name: 'treasure_map_once', expiresAt, data: {} }, session);
+        await upsertBuff(userId, {
+            name: 'treasure_map_once',
+            expiresAt,
+            data: {}
+        }, session);
+
         effects.push({ buffAdded: { name: 'treasure_map_once', expiresAt } });
     },
 
@@ -109,21 +137,28 @@ const registry = {
         effects.push({ missionsExtendedMin: 15 });
     },
 
+
     // 火把：加成 buff（TODO 史萊姆任務）
     'torch_buff': async ({ userId, session, effects }) => {
-        const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7); // 示意一週
-        await pushBuff(userId, { name: 'torch', expiresAt, data: { damageMultiplier: 2 } }, session);
+        const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7); // 1 週
+        await upsertBuff(userId, {
+            name: 'torch',
+            expiresAt,
+            data: { damageMultiplier: 2 }
+        }, session);
+
         effects.push({ buffAdded: { name: 'torch', expiresAt } });
     },
 
-    // 古樹的枝幹：2 小時 buff（TODO 道具刷新邏輯）
+    // 古樹的枝幹：2 小時 buff（掉落/補給站額外運行一次、稀有度+1 上限5）
     'ancient_branch_buff': async ({ userId, session, effects }) => {
-        const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 2);
-        await pushBuff(
-            userId,
-            { name: 'ancient_branch', expiresAt, data: { extraRoll: 1, rarityBoost: 1, rarityCap: 5 } },
-            session
-        );
+        const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 2); // 2 小時
+        await upsertBuff(userId, {
+            name: 'ancient_branch',
+            expiresAt,
+            data: { extraRoll: 1, rarityBoost: 1, rarityCap: 5 }
+        }, session);
+
         effects.push({ buffAdded: { name: 'ancient_branch', expiresAt } });
     },
 };
