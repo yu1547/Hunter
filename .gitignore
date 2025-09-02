@@ -5,6 +5,7 @@ cache/
 __pycache__/
 *.pyc
 .idea/
+google-services.json
 
 # == Node backend ==
 /backend/node_modules/
