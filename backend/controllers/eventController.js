@@ -33,10 +33,8 @@ const completeEvent = async (req, res) => {
             return res.status(404).json({ message: '找不到此事件' });
         }
 
-        let user = null;
-        if (userId) {
-            user = await User.findById(userId);
-        }
+        
+        const user = await User.findById(userId);
 
         if (!user && username) {
             user = await User.findOne({ username: username });
@@ -79,10 +77,30 @@ const completeEvent = async (req, res) => {
             }
             finalRewards = { items: [slimeRewardItem] };
         }
+        // 發放獎勵
+        if (finalRewards) {
+            if (finalRewards.points) {
+                user.points += finalRewards.points;
+            }
+            if (finalRewards.items) {
+                for (const rewardItem of finalRewards.items) {
+                    const userItem = user.items.find(item => item.itemId.toString() === rewardItem.itemId.toString());
+                    if (userItem) {
+                        userItem.quantity += rewardItem.quantity;
+                    } else {
+                        user.items.push({ itemId: rewardItem.itemId, quantity: rewardItem.quantity });
+                    }
+                }
+            }
+        }
+        event.state = 'completed';
+        await event.save();
+        // 移除數量為零的道具
+        user.items = user.items.filter(item => item.quantity > 0);
+        
+        await user.save();
 
-        const updatedUser = await updateUserRewards(user._id, finalRewards, consumeItems);
-
-        res.status(200).json({ message: '事件完成，獎勵已發放', rewards: finalRewards, updatedUser });
+        res.status(200).json({ message: '事件完成，獎勵已發放', rewards: finalRewards, updatedUser: user });
 
     } catch (error) {
         console.error('API 執行錯誤:', error);
@@ -110,15 +128,36 @@ const trade = async (req, res) => {
     const { userId, tradeType } = req.body;
 
     try {
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ success: false, message: '無效的使用者 ID。' });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: '找不到使用者。' });
+        }
+
         const event = await Event.findOne({ name: '神秘商人' });
         if (!event) {
             return res.status(404).json({ success: false, message: '神秘商人事件不存在' });
+        }
+
+        // 檢查使用者是否已經在今天交易過
+        const today = new Date().toISOString().slice(0, 10);
+        const hasTriggeredToday = user.lastTradeDate && user.lastTradeDate.toISOString().slice(0, 10) === today;
+
+        if (hasTriggeredToday) {
+            return res.json({ success: false, message: '你今天已經交易過了，請明天再來。' });
         }
 
         const option = event.options.find(opt => opt.key === tradeType);
         if (!option) {
             return res.status(400).json({ success: false, message: '無效的交易類型' });
         }
+        
+        // 更新使用者的交易紀錄
+        user.lastTradeDate = new Date();
+        await user.save();
 
         req.params.eventId = event._id;
         req.body.userId = userId;
@@ -131,6 +170,7 @@ const trade = async (req, res) => {
         return res.status(500).json({ success: false, message: '伺服器內部錯誤' });
     }
 };
+
 
 // 處理觸發石堆事件的 API
 const triggerStonePile = async (req, res) => {
