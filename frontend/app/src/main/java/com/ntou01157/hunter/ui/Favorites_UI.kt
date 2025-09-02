@@ -84,11 +84,11 @@ fun FavoritesScreen(
                     Image(
                         painter = painterResource(id = R.drawable.ic_home),
                         contentDescription = "回首頁",
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(45.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(60.dp))
+                Spacer(modifier = Modifier.height(40.dp))
 
                 // 地標顯示區域
                 Box(
