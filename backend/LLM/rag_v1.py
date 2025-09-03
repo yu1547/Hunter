@@ -25,6 +25,8 @@ doc = "rule.txt"
 paragraphs = None
 embeddings = None
 
+logger.info("✅ 已進入 rag_v1.py 檔案")
+
 def get_embeddings():
     global paragraphs, embeddings
     if paragraphs is None or embeddings is None:

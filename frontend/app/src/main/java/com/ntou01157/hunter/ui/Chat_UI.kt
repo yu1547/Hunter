@@ -278,7 +278,10 @@ private fun sendMessage(
                     try {
                         val json = org.json.JSONObject(errorBody)
                         val backendMsg = json.optString("error")
-                        if (backendMsg.contains("AI 服務暫時無法回應")) {
+                        val detailMsg = json.optString("detail")
+                        if (detailMsg.contains("timeout")) {
+                            errorMsg = "AI 回覆逾時，請稍後再試"
+                        } else if (backendMsg.contains("AI 服務暫時無法回應")) {
                             errorMsg = backendMsg
                         } else if (backendMsg.isNotBlank()) {
                             errorMsg = backendMsg

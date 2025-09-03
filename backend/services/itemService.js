@@ -63,10 +63,85 @@ async function ensureItemIdByName(lookup, session) {
 const PIC = {
     copperShard: 'copper_piece',   // DB的銅碎片 itemPic
     silverShard: 'silver_piece',   // DB的銀碎片 itemPic
-    goldShard:   'gold_piece',     // DB的金碎片 itemPic
+    goldShard: 'gold_piece',     // DB的金碎片 itemPic
 };
 
-// --- 道具策略表（藍色區塊：在這裡完成） ---
+//檢查重複buff
+async function upsertBuff(userId, { name, expiresAt, data }, session) {
+    // 若 buff 還是 null，先初始化為 []
+    await User.updateOne({ _id: userId, buff: null }, { $set: { buff: [] } }, { session });
+
+    const setDoc = { 'buff.$.expiresAt': expiresAt };
+    if (data !== undefined) setDoc['buff.$.data'] = data;
+
+    const r = await User.updateOne(
+        { _id: userId, 'buff.name': name },
+        { $set: setDoc },
+        { session }
+    );
+
+    if (r.matchedCount === 0) {
+        await User.updateOne(
+            { _id: userId },
+            { $push: { buff: { name, expiresAt, data } } },
+            { session }
+        );
+    }
+}
+
+// --- 時間沙漏減速function：延長所有 in_progress 的 expiresAt + N 分鐘 ---
+async function extendClaimedMissions(userId, minutes, session) {
+    const User = require('../models/userModel');
+    const user = await User.findById(userId).session(session);
+    if (!user) throw new Error('USER_NOT_FOUND');
+
+    const now = new Date();
+    let changed = 0;
+
+    user.missions.forEach(m => {
+        if (m.state === 'in_progress') {
+            if (m.expiresAt) {
+                m.expiresAt = new Date(m.expiresAt.getTime() + minutes * 60 * 1000);
+            } else {
+                // 若原本沒有時限，給一個「從現在起」的時限
+                m.expiresAt = new Date(now.getTime() + minutes * 60 * 1000);
+            }
+            changed++;
+        }
+    });
+
+    if (changed > 0) {
+        await user.save({ session });
+    }
+    return changed; // 方便除錯/紀錄
+}
+
+// --- 時間沙漏加速function：把declined 中 refreshedAt 最晚的那一筆任務改為 claimed ---
+async function refreshMissionsNow(userId, session) {
+    const User = require('../models/userModel');
+    const user = await User.findById(userId).session(session);
+    if (!user) throw new Error('USER_NOT_FOUND');
+
+    const declined = user.missions.filter(m => m.state === 'declined');
+    if (declined.length === 0) return null;
+
+    // 取 refreshedAt 最大；若為空則當作最小
+    declined.sort((a, b) => {
+        const ta = a.refreshedAt ? new Date(a.refreshedAt).getTime() : -Infinity;
+        const tb = b.refreshedAt ? new Date(b.refreshedAt).getTime() : -Infinity;
+        return tb - ta;
+    });
+
+    const target = declined[0];
+    target.state = 'claimed'; // 改成 claimed，後續由刷新器替換
+    await user.save({ session });
+
+    return target.taskId; // 方便除錯/紀錄
+}
+
+
+
+// --- 道具策略表 ---
 const registry = {
     // 普通史萊姆：銅碎片 1~3，銀碎片 0~2
     'spawn_slime_small': async ({ userId, session, effects }) => {
@@ -93,7 +168,12 @@ const registry = {
     // 寶藏圖：設一次性 buff（TODO(在任務生成): 任務產生器讀到後注入金箱並移除）
     'treasure_map_trigger': async ({ userId, session, effects }) => {
         const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24); // 1 天示意
-        await pushBuff(userId, { name: 'treasure_map_once', expiresAt, data: {} }, session);
+        await upsertBuff(userId, {
+            name: 'treasure_map_once',
+            expiresAt,
+            data: {}
+        }, session);
+
         effects.push({ buffAdded: { name: 'treasure_map_once', expiresAt } });
     },
 
@@ -109,21 +189,28 @@ const registry = {
         effects.push({ missionsExtendedMin: 15 });
     },
 
+
     // 火把：加成 buff（TODO 史萊姆任務）
     'torch_buff': async ({ userId, session, effects }) => {
-        const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7); // 示意一週
-        await pushBuff(userId, { name: 'torch', expiresAt, data: { damageMultiplier: 2 } }, session);
+        const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7); // 1 週
+        await upsertBuff(userId, {
+            name: 'torch',
+            expiresAt,
+            data: { damageMultiplier: 2 }
+        }, session);
+
         effects.push({ buffAdded: { name: 'torch', expiresAt } });
     },
 
-    // 古樹的枝幹：2 小時 buff（TODO 道具刷新邏輯）
+    // 古樹的枝幹：2 小時 buff（掉落/補給站額外運行一次、稀有度+1 上限5）
     'ancient_branch_buff': async ({ userId, session, effects }) => {
-        const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 2);
-        await pushBuff(
-            userId,
-            { name: 'ancient_branch', expiresAt, data: { extraRoll: 1, rarityBoost: 1, rarityCap: 5 } },
-            session
-        );
+        const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 2); // 2 小時
+        await upsertBuff(userId, {
+            name: 'ancient_branch',
+            expiresAt,
+            data: { extraRoll: 1, rarityBoost: 1, rarityCap: 5 }
+        }, session);
+
         effects.push({ buffAdded: { name: 'ancient_branch', expiresAt } });
     },
 };
@@ -157,8 +244,8 @@ exports.useItem = async ({ userId, itemId, requestId }) => {
         const effects = [];
         await fn({
             userId, session, effects,
-            refreshMissionsNow: async (uid, s) => { /* TODO: 綁到你現有刷新任務 */ },
-            extendClaimedMissions: async (uid, minutes, s) => { /* TODO: 綁到你現有延長任務 */ },
+            refreshMissionsNow,
+            extendClaimedMissions,
         });
 
         if (requestId) {

@@ -212,6 +212,7 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
         supplyStations = withContext(Dispatchers.IO) { SupplyApi.getAll() }
     }
 
+
     val bottomItems = listOf(
         NavItem("ranking", "排行榜", R.drawable.ranklist_icon),
         NavItem("tasklist", "任務版", R.drawable.tasklist_icon),
@@ -219,6 +220,19 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
         NavItem("favorites", "收藏冊", R.drawable.checkinbook_icon),
         NavItem("profile", "個人檔案", R.drawable.profile_icon),
     )
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        GoogleMap(
+            modifier = Modifier.fillMaxSize(),
+            cameraPositionState = cameraPositionState,
+            uiSettings = MapUiSettings(myLocationButtonEnabled = true),
+            properties = MapProperties(isMyLocationEnabled = true),
+            onMapClick = { selectedSupply = null }
+        ) {
+            // 顯示所有打卡點
+            spots.forEach { spot ->
+                spotMarker(spot = spot, userId = user.uid)
+            }
 
 
     Scaffold(
