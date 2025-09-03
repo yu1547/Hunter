@@ -235,12 +235,12 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             properties = MapProperties(isMyLocationEnabled = true),
             onMapClick = { selectedSupply = null }
         ) {
-            userLocation?.let {
-                Marker(
-                    state = MarkerState(position = it),
-                    title = "所在位置"
-                )
-            }
+            // userLocation?.let {
+            //     Marker(
+            //         state = MarkerState(position = it),
+            //         title = "所在位置"
+            //     )
+            // }
             // 顯示所有打卡點
             spots.forEach { spot ->
                 spotMarker(spot = spot, userId = user.uid)
