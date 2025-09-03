@@ -22,7 +22,9 @@ import com.ntou01157.hunter.models.model_api.UserTask
 import com.ntou01157.hunter.data.TaskRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.ntou01157.hunter.api.RetrofitClient
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import android.util.Log
 
 @Composable
@@ -103,6 +105,33 @@ fun TaskListScreen(navController: NavController) {
     // 6) 互動對話框狀態
     var selectedUserTask by remember { mutableStateOf<UserTask?>(null) }
     var showMessageDialog by remember { mutableStateOf<String?>(null) }
+
+    // 路線規劃 LLM 敘述 Dialog 狀態
+    var showRouteDialog by remember { mutableStateOf(false) }
+    var routeLLMText by remember { mutableStateOf("") }
+
+    // 假設你有兩個地點選擇 start/end
+    var startLocation by remember { mutableStateOf(" ") }
+    var endLocation by remember { mutableStateOf(" ") }
+
+    // 新增：呼叫 LLM API 取得貼心提示（只生成溫馨提示，不描述地點）
+    suspend fun requestRouteLLMDescription(start: String, end: String): String {
+        return withContext(Dispatchers.IO) {
+            try {
+                val message = "請用繁體中文給我一段貼心提示，提醒在限時內完成任務，並鼓勵玩家旅途順利，給予信心喊話和注意安全。"
+                val response = RetrofitClient.apiService.chatWithLLM(
+                    userId ?: "",
+                    com.ntou01157.hunter.api.ChatRequest(
+                        message = message,
+                        history = emptyList()
+                    )
+                )
+                response.reply
+            } catch (e: Exception) {
+                "無法取得貼心提示：${e.message}"
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -288,8 +317,40 @@ fun TaskListScreen(navController: NavController) {
                 }
             )
         }
+
+            // 路線規劃按鈕不使用 align，改用 Column + Spacer 讓按鈕在右下角
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.Bottom,
+                horizontalAlignment = Alignment.End
+            ) {
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            routeLLMText = requestRouteLLMDescription(startLocation, endLocation)
+                            showRouteDialog = true
+                        }
+                    }
+                ) {
+                    Text("接受路線規劃")
+                }
+            }
+
+            // 顯示 LLM 貼心提示 Dialog
+            if (showRouteDialog) {
+                AlertDialog(
+                    onDismissRequest = { showRouteDialog = false },
+                    title = { Text("貼心提示") },
+                    text = { Text(routeLLMText) },
+                    confirmButton = {
+                        TextButton(onClick = { showRouteDialog = false }) { Text("確定") }
+                    }
+                )
+            }
+        }
     }
-}
 
 @Composable
 fun TaskItem(userTask: UserTask, onClick: (UserTask) -> Unit) {
