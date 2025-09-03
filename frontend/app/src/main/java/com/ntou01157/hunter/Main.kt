@@ -165,40 +165,26 @@ class Main : ComponentActivity() {
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun MainScreen(navController: androidx.navigation.NavHostController) {
-    var showDialog by remember { mutableStateOf(false) }
     var showChatDialog by remember { mutableStateOf(false) }
-    val buttonColors = ButtonDefaults.buttonColors(
-        containerColor = Color(0xFFbc8f8f),
-        contentColor = Color.White
-    )
 
     // ===== Buff 狀態 ===========================================
     var branchExpireAt by remember { mutableStateOf<Long?>(null) }
-
     LaunchedEffect(Unit) {
         try {
-            val email = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email
-                ?: return@LaunchedEffect
-            val apiUser: ApiUser = com.ntou01157.hunter.api.RetrofitClient.apiService.getUserByEmail(email)
+            val email = FirebaseAuth.getInstance().currentUser?.email ?: return@LaunchedEffect
+            val apiUser: ApiUser = RetrofitClient.apiService.getUserByEmail(email)
             branchExpireAt = apiUser.buff.expireAtOf("ancient_branch")
         } catch (e: Exception) {
-            android.util.Log.e("MainScreen", "load buff failed: ${e.message}", e)
+            Log.e("MainScreen", "load buff failed: ${e.message}", e)
         }
     }
-    // ===========================================================
 
-    // 打卡點 導入DB資料
+    // 打卡點 / 補給站資料
     var spots by remember { mutableStateOf<List<Spot>>(emptyList()) }
-
-    // 補給站 導入DB資料
     var supplyStations by remember { mutableStateOf<List<Supply>>(emptyList()) }
-    LaunchedEffect(Unit) {
-        supplyStations = withContext(Dispatchers.IO) { SupplyApi.getAll() }
-    }
     var selectedSupply by remember { mutableStateOf<Supply?>(null) }
     var showSupplyDialog by remember { mutableStateOf(false) }
-    val user: User = FakeUser // 後面要改
-    val supplyLog = selectedSupply?.supplyId?.let { user.supplyScanLogs[it] }
+    val user: User = FakeUser
 
     val context = LocalContext.current
     val locationPermissionState = rememberPermissionState(android.Manifest.permission.ACCESS_FINE_LOCATION)
@@ -217,15 +203,23 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                 userLocation = latLng
                 cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(latLng, 16f))
             }
-        } else {
-            locationPermissionState.launchPermissionRequest()
-        }
+        } else locationPermissionState.launchPermissionRequest()
     }
 
-    // 載入所有打卡點
+    // 載入 DB
     LaunchedEffect(Unit) {
         spots = withContext(Dispatchers.IO) { SpotApi.getAllSpots() }
+        supplyStations = withContext(Dispatchers.IO) { SupplyApi.getAll() }
     }
+
+
+    val bottomItems = listOf(
+        NavItem("ranking", "排行榜", R.drawable.ranklist_icon),
+        NavItem("tasklist", "任務版", R.drawable.tasklist_icon),
+        NavItem("bag", "背包", R.drawable.backpack_icon),
+        NavItem("favorites", "收藏冊", R.drawable.checkinbook_icon),
+        NavItem("profile", "個人檔案", R.drawable.profile_icon),
+    )
 
     Box(modifier = Modifier.fillMaxSize()) {
         GoogleMap(
@@ -235,128 +229,141 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             properties = MapProperties(isMyLocationEnabled = true),
             onMapClick = { selectedSupply = null }
         ) {
-            // userLocation?.let {
-            //     Marker(
-            //         state = MarkerState(position = it),
-            //         title = "所在位置"
-            //     )
-            // }
             // 顯示所有打卡點
             spots.forEach { spot ->
                 spotMarker(spot = spot, userId = user.uid)
             }
 
-            // 顯示補給站
-            supplyStations.forEach { supply ->
-                SupplyMarker(supply = supply, onClick = {
-                    selectedSupply = it
-                    showSupplyDialog = true
-                })
-            }
-        }
 
-        if (showSupplyDialog && selectedSupply != null) {
-            SupplyHandlerDialog(
-                supply = selectedSupply!!,
-                user = user,
-                onDismiss = { showSupplyDialog = false }
-            )
-        }
-
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Bottom
-        ) {
-            Spacer(modifier = Modifier.weight(1f))
-            Button(
-                onClick = { navController.navigate("bag") },
-                colors = buttonColors,
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .size(120.dp)
-                    .padding(bottom = 60.dp)
-            ) {
-                Text("背包", fontSize = 20.sp)
-            }
-        }
-
-        // 右側按鈕列
-        Column(
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .padding(end = 10.dp, bottom = 320.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            horizontalAlignment = Alignment.End
-        ) {
-            Button(onClick = { navController.navigate("profile") }, colors = buttonColors) {
-                Text("個人設定")
-            }
-            Button(onClick = { navController.navigate("favorites") }, colors = buttonColors) {
-                Text("收藏冊")
-            }
-            Button(onClick = { navController.navigate("ranking") }, colors = buttonColors) {
-                Text("排行榜")
-            }
-            Button(onClick = { navController.navigate("tasklist") }, colors = buttonColors) {
-                Text("任務版")
-            }
-            Button(onClick = { navController.navigate("bugHunt") }, colors = buttonColors) {
-                Text("啟動 BugHunt 任務")
-            }
-            Button(onClick = { navController.navigate("ancientTree") }, colors = buttonColors) {
-                Text("古樹")
-            }
-            Button(onClick = { navController.navigate("merchant") }, colors = buttonColors) {
-                Text("神秘商人")
-            }
-            Button(onClick = { navController.navigate("slimeAttack") }, colors = buttonColors) {
-                Text("史萊姆戰鬥")
-            }
-            Button(onClick = { navController.navigate("stonePile") }, colors = buttonColors) {
-                Text("石堆")
-            }
-            Button(onClick = { navController.navigate("treasureBox") }, colors = buttonColors) {
-                Text("寶箱")
-            }
-        }
-
-        // 右下角客服按鈕
-        FloatingActionButton(
-            onClick = { showChatDialog = true },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 24.dp, bottom = 32.dp),
-            containerColor = Color(0xFFbc8f8f),
-            contentColor = Color.White,
-            shape = RoundedCornerShape(50)
-        ) {
-            Text("客服", fontSize = 16.sp)
-        }
-
-        if (showChatDialog) {
-            Dialog(onDismissRequest = { showChatDialog = false }) {
-                Surface(
-                    shape = RoundedCornerShape(24.dp),
-                    color = Color.White,
-                    tonalElevation = 4.dp,
-                    modifier = Modifier
-                        .width(350.dp)
-                        .height(650.dp)
-                ) {
-                    ChatScreen(onClose = { showChatDialog = false })
+    Scaffold(
+        bottomBar = {
+            NavigationBar {
+                val currentRoute = navController.currentBackStackEntry?.destination?.route
+                bottomItems.forEach { item ->
+                    NavigationBarItem(
+                        selected = currentRoute == item.route,
+                        onClick = {
+                            navController.navigate(item.route) {
+                                popUpTo("main") { inclusive = false }
+                                launchSingleTop = true
+                            }
+                        },
+                        icon = {
+                            Icon(
+                                painter = painterResource(id = item.iconRes),
+                                contentDescription = item.label,
+                                tint = Color.Unspecified,
+                                modifier = Modifier.size(40.dp)
+                            )
+                        },
+                        label = { Text(item.label, fontSize = 9.sp) }
+                    )
                 }
             }
         }
+    ) { innerPadding ->
+        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            GoogleMap(
+                modifier = Modifier.fillMaxSize(),
+                cameraPositionState = cameraPositionState,
+                uiSettings = MapUiSettings(myLocationButtonEnabled = true),
+                properties = MapProperties(isMyLocationEnabled = true),
+                onMapClick = { selectedSupply = null }
+            ) {
+                userLocation?.let {
+                    Marker(state = MarkerState(position = it), title = "所在位置")
+                }
+                spots.forEach { spot -> spotMarker(spot = spot, userId = user.uid) }
+                supplyStations.forEach { supply ->
+                    SupplyMarker(supply = supply, onClick = {
+                        selectedSupply = it
+                        showSupplyDialog = true
+                    })
+                }
+            }
 
-        BuffBadge(
-            expireAtMillis = branchExpireAt,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(start = 12.dp, top = 12.dp)
-        )
+            if (showSupplyDialog && selectedSupply != null) {
+                SupplyHandlerDialog(
+                    supply = selectedSupply!!,
+                    user = user,
+                    onDismiss = { showSupplyDialog = false }
+                )
+            }
+
+            // 右側活動類按鈕
+            Column(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 10.dp, bottom = 120.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.End
+            ) {
+                val sideButtonColors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFbc8f8f),
+                    contentColor = Color.White
+                )
+
+                Button(onClick = { navController.navigate("bugHunt") }, colors = sideButtonColors) {
+                    Text("BugHunt")
+                }
+                Button(onClick = { navController.navigate("ancientTree") }, colors = sideButtonColors) {
+                    Text("古樹")
+                }
+                Button(onClick = { navController.navigate("merchant") }, colors = sideButtonColors) {
+                    Text("商人")
+                }
+                Button(onClick = { navController.navigate("slimeAttack") }, colors = sideButtonColors) {
+                    Text("史萊姆")
+                }
+                Button(onClick = { navController.navigate("stonePile") }, colors = sideButtonColors) {
+                    Text("石堆")
+                }
+                Button(onClick = { navController.navigate("treasureBox") }, colors = sideButtonColors) {
+                    Text("寶箱")
+                }
+            }
+
+
+            // 客服
+            FloatingActionButton(
+                onClick = { showChatDialog = true },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 24.dp, bottom = 96.dp),
+                containerColor = Color(0xFFbc8f8f),
+                contentColor = Color.White,
+                shape = RoundedCornerShape(50)
+            ) {
+                Text("客服", fontSize = 16.sp)
+            }
+
+            if (showChatDialog) {
+                Dialog(onDismissRequest = { showChatDialog = false }) {
+                    Surface(
+                        shape = RoundedCornerShape(24.dp),
+                        color = Color.White,
+                        tonalElevation = 4.dp,
+                        modifier = Modifier
+                            .width(350.dp)
+                            .height(650.dp)
+                    ) {
+                        ChatScreen(onClose = { showChatDialog = false })
+                    }
+                }
+            }
+
+            BuffBadge(
+                expireAtMillis = branchExpireAt,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(start = 12.dp, top = 12.dp)
+            )
+        }
     }
 }
+
+data class NavItem(val route: String, val label: String, val iconRes: Int)
+
 
 /**
  * 在左上角顯示：圓形圖片 + 剩餘時間，剩餘時間每秒更新。
