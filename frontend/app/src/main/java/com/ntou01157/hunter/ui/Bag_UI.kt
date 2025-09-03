@@ -30,6 +30,7 @@ import com.ntou01157.hunter.Backpack.data.fetchUserItems
 import com.ntou01157.hunter.Backpack.data.craftItem
 import com.ntou01157.hunter.api.RetrofitClient
 import kotlinx.coroutines.launch
+import com.ntou01157.hunter.api.ItemApi
 
 class BagActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,23 +46,24 @@ class BagActivity : ComponentActivity() {
 
 @Composable
 fun BagScreen(navController: NavHostController) {
-    var userIdState by remember { mutableStateOf<String?>(null) }
+//    var userIdState by remember { mutableStateOf<String?>(null) }
+    var userIdState by remember { mutableStateOf<String?>("68886402bc049f83948150e8") }//測試用
     val coroutineScope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
-        try {
-            val email = FirebaseAuth.getInstance().currentUser?.email
-                ?: run {
-                    Log.e("BagScreen", "尚未登入，無法取得 email")
-                    return@LaunchedEffect
-                }
-            val user = RetrofitClient.apiService.getUserByEmail(email) // 回傳單一 User（若你是 List 就改 firstOrNull）
-            userIdState = user.id
-            Log.d("BagScreen", "取得 userId=${userIdState}")
-        } catch (e: Exception) {
-            Log.e("BagScreen", "以 email 取得 userId 失敗：${e.message}", e)
-        }
-    }
+//    LaunchedEffect(Unit) {
+//        try {
+//            val email = FirebaseAuth.getInstance().currentUser?.email
+//                ?: run {
+//                    Log.e("BagScreen", "尚未登入，無法取得 email")
+//                    return@LaunchedEffect
+//                }
+//            val user = RetrofitClient.apiService.getUserByEmail(email) // 回傳單一 User（若你是 List 就改 firstOrNull）
+//            userIdState = user.id
+//            Log.d("BagScreen", "取得 userId=${userIdState}")
+//        } catch (e: Exception) {
+//            Log.e("BagScreen", "以 email 取得 userId 失敗：${e.message}", e)
+//        }
+//    }
 
     // 物品列表與 UI 狀態
     val allItems = remember { mutableStateListOf<UserItem>() }
@@ -73,6 +75,18 @@ fun BagScreen(navController: NavHostController) {
     var selectedItem by remember { mutableStateOf<UserItem?>(null) }
     var filterState by remember { mutableStateOf(0) }
     var showCraftDialog by remember { mutableStateOf(false) }
+
+    // 可立即使用的道具 ID（排除鑰匙/碎片）
+    val USABLE_ITEM_IDS = setOf(
+            "6880f3f7d80b975b33f23e36", // 小史萊姆 spawn_slime_small
+            "6880f3f7d80b975b33f23e37", // 大史萊姆 spawn_slime_big
+            "6880f3f7d80b975b33f23e38", // 寶藏圖 treasure_map_trigger
+            "6880f3f7d80b975b33f23e39", // 時間沙漏-加速 hourglass_speed_refresh
+            "6880f3f7d80b975b33f23e3a", // 時間沙漏-減速 hourglass_slow_extend
+            "6880f3f7d80b975b33f23e3b", // 火把 torch_buff
+            "6880f3f7d80b975b33f23e3c"  // 古樹的枝幹 ancient_branch_buff
+    )
+
 
     // 3) 有了 userId 才去抓背包
     LaunchedEffect(userIdState) {
@@ -332,7 +346,88 @@ fun BagScreen(navController: NavHostController) {
         selectedItem?.let { userItem ->
             AlertDialog(
                 onDismissRequest = { selectedItem = null },
-                confirmButton = {},
+                confirmButton = {
+                    val canUse = userItem.item.itemId in USABLE_ITEM_IDS &&
+                            userItem.count.value > 0 &&
+                            userIdState != null
+                    if (canUse) {
+                        Button(onClick = {
+                            coroutineScope.launch {
+                                val uid = userIdState!!
+                                // 產生本次動作的 requestId（若要重試要重用同一個）
+                                val reqId = ItemApi.generateRequestId(uid, userItem.item.itemId)
+                                val resp = ItemApi.useItem(uid, userItem.item.itemId, reqId)
+
+                                when {
+                                    resp.success -> {
+                                        // 成功 → 重新抓背包
+                                        val refreshed = fetchUserItems(uid)
+                                        allItems.clear(); allItems.addAll(refreshed)
+                                        selectedItem = null
+
+                                        // NEW: 依 effects 顯示提示
+                                        val msgs = buildString {
+                                            resp.effects?.let { arr ->
+                                                for (i in 0 until arr.length()) {
+                                                    val e = arr.getJSONObject(i)
+
+                                                    // 碎片
+                                                    if (e.has("fragments")) {
+                                                        val f = e.getJSONObject("fragments")
+                                                        val it = f.keys()
+                                                        while (it.hasNext()) {
+                                                            val k = it.next()
+                                                            val name = when (k) {
+                                                                "copperKeyShard" -> "銅鑰匙碎片"
+                                                                "silverKeyShard" -> "銀鑰匙碎片"
+                                                                "goldKeyShard"   -> "金鑰匙碎片"
+                                                                else -> k
+                                                            }
+                                                            append("獲得 $name x${f.optInt(k)}\n")
+                                                        }
+                                                    }
+
+                                                    // Buff
+                                                    if (e.has("buffAdded")) {
+                                                        val b = e.getJSONObject("buffAdded")
+                                                        val buffName = when (b.optString("name")) {
+                                                            "torch" -> "火把"
+                                                            "ancient_branch" -> "古樹的枝幹"
+                                                            "treasure_map_once" -> "寶藏圖"
+                                                            else -> b.optString("name")
+                                                        }
+                                                        append("獲得 $buffName Buff\n")
+                                                    }
+
+                                                    // 任務類
+                                                    if (e.optBoolean("missionsRefreshed", false)) append("已立即刷新任務\n")
+                                                    if (e.has("missionsExtendedMin")) append("限時任務延長 ${e.optInt("missionsExtendedMin")} 分鐘\n")
+                                                }
+                                            }
+                                        }.trim()
+
+                                        if (msgs.isNotEmpty()) {
+                                            snackbarHostState.showSnackbar(msgs)
+                                        } else {
+                                            snackbarHostState.showSnackbar("已使用：${userItem.item.itemName}")
+                                        }
+                                    }
+                                    resp.duplicate -> {
+                                        // 重複請求：視為已處理成功（通常第一次已成功）
+                                        val refreshed = fetchUserItems(uid)
+                                        allItems.clear(); allItems.addAll(refreshed)
+                                        selectedItem = null
+                                        snackbarHostState.showSnackbar("已處理（先前的請求已完成）")
+                                    }
+
+                                    else -> {
+                                        snackbarHostState.showSnackbar("使用失敗，請稍後重試")
+                                    }
+                                }
+                            }
+                        }) { Text("使用") }
+                    }
+                },
                 title = {
                     Box(Modifier.fillMaxWidth()) {
                         Text(" ")
