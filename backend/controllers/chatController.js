@@ -97,8 +97,8 @@ const chatWithLLM = async (req, res) => {
       });
     } else {
       chat.history = [...chat.history, ...newHistoryItems];
-      if (chat.history.length > 6) {
-        chat.history = chat.history.slice(chat.history.length - 6);
+      if (chat.history.length > 10) {
+        chat.history = chat.history.slice(chat.history.length - 10);
       }
       chat.message = message;
       chat.userId = new mongoose.Types.ObjectId(userId);
