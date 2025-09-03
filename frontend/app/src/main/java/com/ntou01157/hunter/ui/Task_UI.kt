@@ -31,7 +31,7 @@ import android.util.Log
 fun TaskListScreen(navController: NavController) {
     // 1) 以 email 解析 userId —— 用狀態保存，避免重組造成的再次請求
     var userId by remember { mutableStateOf<String?>(null) }
-    var resolvingId by remember { mutableStateOf(true) }
+    var resolvingId by remember { mutableStateOf(true) } //可以改false
     var resolveError by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
 
@@ -68,6 +68,9 @@ fun TaskListScreen(navController: NavController) {
         } finally {
             resolvingId = false
         }
+        // userId = "68886402bc049f83948150e8"
+        // resolvingId = false
+        // resolveError = null
     }
 
     // 3) 任務列表 UI 狀態
