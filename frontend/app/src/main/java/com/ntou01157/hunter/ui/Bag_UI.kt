@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -138,7 +139,7 @@ fun BagScreen(navController: NavHostController) {
                 modifier = Modifier.padding(top = 25.dp, bottom = 4.dp)
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.ic_home),
+                    painter = painterResource(id = R.drawable.home_icon),
                     contentDescription = "回首頁",
                     modifier = Modifier.size(40.dp)
                 )
@@ -229,10 +230,21 @@ fun BagScreen(navController: NavHostController) {
                                             .clickable { selectedItem = userItem },
                                         contentAlignment = Alignment.BottomEnd
                                     ) {
+                                        val context = LocalContext.current
+                                        val resId = remember(userItem.item.itemPic) {
+                                            context.resources.getIdentifier(userItem.item.itemPic, "drawable", context.packageName)
+                                        }
+
+                                        val painter = if (resId != 0) {
+                                            painterResource(id = resId)  // 找得到就用對應圖片
+                                        } else {
+                                            painterResource(id = R.drawable.default_itempic) // 找不到用預設
+                                        }
+
                                         Image(
-                                            painter = painterResource(id = R.drawable.default_itempic),
-                                            contentDescription = userItem.item.itemName,
-                                            modifier = Modifier.fillMaxSize()
+                                            painter = painter,
+                                            contentDescription = userItem.item.itemPic,
+                                            modifier = Modifier.size(80.dp)
                                         )
                                         Text(
                                             "${userItem.count.value}",
@@ -294,7 +306,7 @@ fun BagScreen(navController: NavHostController) {
                                         Image(
                                             painter = painterResource(id = R.drawable.default_itempic),
                                             contentDescription = material.item.itemName,
-                                            modifier = Modifier.size(50.dp)
+                                            modifier = Modifier.size(80.dp)
                                         )
                                         Text("x1")
                                     }
@@ -441,10 +453,21 @@ fun BagScreen(navController: NavHostController) {
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        val context = LocalContext.current
+                        val resId = remember() {
+                            context.resources.getIdentifier(userItem.item.itemPic, "drawable", context.packageName)
+                        }
+
+                        val painter = if (resId != 0) {
+                            painterResource(id = resId)
+                        } else {
+                            painterResource(id = R.drawable.default_itempic)
+                        }
+
                         Image(
-                            painter = painterResource(id = R.drawable.default_itempic),
-                            contentDescription = null,
-                            modifier = Modifier.size(200.dp).padding(bottom = 8.dp)
+                            painter = painter,
+                            contentDescription = userItem.item.itemPic,
+                            modifier = Modifier.size(64.dp)
                         )
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
@@ -472,3 +495,4 @@ fun BagScreen(navController: NavHostController) {
         }
     }
 }
+
