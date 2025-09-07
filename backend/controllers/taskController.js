@@ -41,20 +41,35 @@ const WORD_LIST = ["APPLE", "POWER", "TIGER", "HOUSE", "CHAIR"];
 
  // 處理 Wordle 遊戲開始的 API
 const startGame = async (req, res) => {
+    const { eventId } = req.params;
     const { userId } = req.body;
 
     try {
+        const event = await Event.findById(eventId);
+        if (!event) {
+            return res.status(404).json({ success: false, message: '找不到事件' });
+        }
+
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ success: false, message: '找不到用戶' });
         }
+        
+        // 在startGame時就更新任務狀態，並存入資料庫
+        const mission = user.missions.find(m => m.taskId.toString() === eventId);
+        if (mission) {
+            mission.state = 'claimed';
+            await user.save();
+        }
 
         // 隨機選取一個謎底單字
         const secretWord = WORD_LIST[Math.floor(Math.random() * WORD_LIST.length)];
+    
 
         // 在資料庫中建立一場新遊戲的紀錄
         const newGame = new Game({
             userId: user._id,
+            eventId: eventId, // 儲存 Event ID 來建立關聯
             secretWord: secretWord,
             guesses: [],
             status: 'playing',
@@ -94,7 +109,7 @@ const submitGuess = async (req, res) => {
         }
 
         // ------------------------------------------
-        // 核心比對邏輯 (與前端邏輯類似，但在後端執行)
+        // 核心比對邏輯
         // ------------------------------------------
         const secretChars = game.secretWord.split('');
         const guessChars = guessWord.split('');
@@ -134,32 +149,40 @@ const submitGuess = async (req, res) => {
 
         // 檢查是否勝利
         if (guessWord.toUpperCase() === game.secretWord.toUpperCase()) {
-            game.status = 'win';
+            game.status = 'completed';
             message = '恭喜你！猜對了！';
-            // 遊戲獲勝，交由 completeEvent 處理獎勵發放
+            await game.save();
+            // 遊戲獲勝，交由 completeEvent 處理獎勵發放，傳遞正確的 eventId
             const eventReq = {
-                body: { userId: game.userId },
-                params: { eventId: gameId }
+                body: { userId: game.userId, gameResult: 'win' },
+                params: { eventId: game.eventId } // 從 game 物件取得關聯的 eventId
             };
             await completeEvent(eventReq, res);
             return;
         } else if (game.attemptsLeft <= 0) {
-            game.status = 'lose';
+            game.status = 'claimed';
             message = `猜測次數用完囉！謎底是 ${game.secretWord}`;
             success = false;
+            await game.save();
+
+            // 呼叫 completeEvent 處理失敗狀態
+            const eventReq = {
+                body: { userId: game.userId, gameResult: 'lose' },
+                params: { eventId: game.eventId } // 從 game 物件取得關聯的 eventId
+            };
         } else {
             message = '答案錯誤，請繼續猜測。';
         }
 
-    await game.save();
+        await game.save();
 
-    res.status(200).json({
-        success: success,
-        message: message,
-        feedback: feedback,
-        status: game.status,
-        attemptsLeft: game.attemptsLeft,
-    });
+        res.status(200).json({
+            success: success,
+            message: message,
+            feedback: feedback,
+            status: game.status,
+            attemptsLeft: game.attemptsLeft,
+        });
 
     } catch (error) {
         console.error("submitGuess API 錯誤:", error);

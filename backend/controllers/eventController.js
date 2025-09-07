@@ -46,13 +46,27 @@ const completeEvent = async (req, res) => {
         let rewardsToDistribute = { score: 0, items: [] };
         
         // ===========================================
-        // 新增史萊姆戰鬥的特殊處理邏輯
+        // Wordle 遊戲的特殊處理邏輯
         // ===========================================
-        if (event.name === '打扁史萊姆' && gameResult !== undefined) {
+        if (event.name === "在小小的 code 裡面抓阿抓阿抓") {
+            if (gameResult === 'win') {
+                event.status = 'completed';
+                rewardsToDistribute = { 
+                    score: 5
+                }; 
+            } else if (gameResult === 'lose') {
+                event.status = 'claimed';
+                rewardsToDistribute = { score: 0, items: [] };
+            }
+        }
+        
+        // ===========================================
+        // 史萊姆戰鬥的特殊處理邏輯
+        // ===========================================
+        else if (event.name === '打扁史萊姆' && gameResult !== undefined) {
             let finalDamage = gameResult;
             const slimeRewards = [];
             
-            // 根據傷害計算獎勵物品
             if (finalDamage > 100) {
                 const item = await Item.findOne({ itemName: "黏稠的史萊姆黏液" }).session(session);
                 if (item) {
@@ -65,11 +79,13 @@ const completeEvent = async (req, res) => {
                 }
             }
             rewardsToDistribute.items = slimeRewards;
-
-        } else {
-            // ===========================================
-            // 處理通用事件（寶箱、古樹等）
-            // ===========================================
+            event.status = 'completed';
+        } 
+        
+        // ===========================================
+        // 處理通用事件（寶箱、古樹等）
+        // ===========================================
+        else {
             const optionData = event.options.find(opt => opt.name === selectedOption);
             if (!optionData) {
                 await session.abortTransaction();
@@ -77,7 +93,6 @@ const completeEvent = async (req, res) => {
                 return res.status(400).json({ message: '無效的事件選項' });
             }
 
-            // 先處理消耗品
             if (optionData.consume && optionData.consume.length > 0) {
                 for (const consumeItem of optionData.consume) {
                     const itemInBackpack = user.backpackItems.find(
@@ -98,6 +113,7 @@ const completeEvent = async (req, res) => {
                 }
             }
             rewardsToDistribute = optionData.rewards;
+            event.status = 'completed';
         }
 
 
@@ -123,8 +139,7 @@ const completeEvent = async (req, res) => {
             }
         }
 
-        event.state = 'completed';
-        // 儲存變更
+        await event.save({ session });
         await user.save({ session });
         await session.commitTransaction();
         session.endSession();
