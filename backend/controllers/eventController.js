@@ -25,7 +25,7 @@ const refreshDailyEvents = async (req, res) => {
 // 完成事件，並發放獎勵
 const completeEvent = async (req, res) => {
     const { eventId } = req.params;
-    const { userId, selectedOption, gameResult } = req.body;
+    const { userId, selectedOption, gameResult, keyUsed } = req.body;
 
     try {
         const event = await Event.findById(eventId);
@@ -59,10 +59,20 @@ const completeEvent = async (req, res) => {
         // 統一處理所有寶箱事件（銅、銀、金）
         // ===========================================
         else if (event.type === 'chest') {
+            if (keyUsed) {
+                const keyToConsume = await Item.findOne({ itemName: keyUsed });
+                if (keyToConsume) {
+                    await decFromBackpack(userId, keyToConsume._id);
+                } else {
+                    return res.status(400).json({ success: false, message: '無效的鑰匙類型。' });
+                }
+            }
+
             const dropItems = await generateDropItems(selectedOption);
             rewardsToDistribute.items = dropItems;
             event.status = 'completed';
         }
+
         // ===========================================
         // 史萊姆戰鬥的特殊處理邏輯
         // ===========================================

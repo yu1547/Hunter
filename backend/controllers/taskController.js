@@ -208,7 +208,8 @@ const openTreasureBox = async (req, res) => {
     }
 
     try {
-        const eventName = `偶遇${keyType === 'bronze' ? '銅' : keyType === 'silver' ? '銀' : '金'}寶箱`;
+        // const eventName = `偶遇${keyType === 'bronze' ? '銅' : keyType === 'silver' ? '銀' : '金'}寶箱`;
+        const eventName = `偶遇銅寶箱`;
         const event = await Event.findOne({ name: eventName });
         if (!event) {
             return res.status(404).json({ success: false, message: `${eventName} 不存在` });
