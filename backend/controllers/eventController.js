@@ -27,9 +27,6 @@ const completeEvent = async (req, res) => {
     const { eventId } = req.params;
     const { userId, selectedOption, gameResult } = req.body;
 
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
     try {
         const event = await Event.findById(eventId);
         if (!event) {
@@ -38,8 +35,6 @@ const completeEvent = async (req, res) => {
 
         const user = await User.findById(userId);
         if (!user) {
-            await session.abortTransaction();
-            session.endSession();
             return res.status(404).json({ message: '找不到使用者' });
         }
 
@@ -52,14 +47,22 @@ const completeEvent = async (req, res) => {
             if (gameResult === 'win') {
                 event.status = 'completed';
                 rewardsToDistribute = { 
-                    score: 5
+                    score: 5, 
+                    items: [] 
                 }; 
             } else if (gameResult === 'lose') {
                 event.status = 'claimed';
                 rewardsToDistribute = { score: 0, items: [] };
             }
         }
-        
+        // ===========================================
+        // 統一處理所有寶箱事件（銅、銀、金）
+        // ===========================================
+        else if (event.type === 'chest') {
+            const dropItems = await generateDropItems(selectedOption);
+            rewardsToDistribute.items = dropItems;
+            event.status = 'completed';
+        }
         // ===========================================
         // 史萊姆戰鬥的特殊處理邏輯
         // ===========================================
@@ -68,12 +71,12 @@ const completeEvent = async (req, res) => {
             const slimeRewards = [];
             
             if (finalDamage > 100) {
-                const item = await Item.findOne({ itemName: "黏稠的史萊姆黏液" }).session(session);
+                const item = await Item.findOne({ itemName: "黏稠的史萊姆黏液" });
                 if (item) {
                     slimeRewards.push({ itemId: item._id, quantity: 1 });
                 }
             } else {
-                const item = await Item.findOne({ itemName: "普通的史萊姆黏液" }).session(session);
+                const item = await Item.findOne({ itemName: "普通的史萊姆黏液" });
                 if (item) {
                     slimeRewards.push({ itemId: item._id, quantity: 1 });
                 }
@@ -81,15 +84,12 @@ const completeEvent = async (req, res) => {
             rewardsToDistribute.items = slimeRewards;
             event.status = 'completed';
         } 
-        
         // ===========================================
-        // 處理通用事件（寶箱、古樹等）
+        // 處理通用事件（古樹、神秘商人、石堆等）
         // ===========================================
         else {
             const optionData = event.options.find(opt => opt.name === selectedOption);
             if (!optionData) {
-                await session.abortTransaction();
-                session.endSession();
                 return res.status(400).json({ message: '無效的事件選項' });
             }
 
@@ -98,10 +98,7 @@ const completeEvent = async (req, res) => {
                     const itemInBackpack = user.backpackItems.find(
                         item => item.itemId.equals(consumeItem.itemId)
                     );
-                    
                     if (!itemInBackpack || itemInBackpack.quantity < consumeItem.quantity) {
-                        await session.abortTransaction();
-                        session.endSession();
                         const requiredItem = await Item.findById(consumeItem.itemId);
                         const itemName = requiredItem ? requiredItem.itemName : '未知物品';
                         return res.status(400).json({ 
@@ -116,7 +113,6 @@ const completeEvent = async (req, res) => {
             event.status = 'completed';
         }
 
-
         // ===========================================
         // 統一發放獎勵
         // ===========================================
@@ -124,35 +120,18 @@ const completeEvent = async (req, res) => {
             user.score += rewardsToDistribute.score;
         }
         if (rewardsToDistribute.items && rewardsToDistribute.items.length > 0) {
-            for (const rewardItem of rewardsToDistribute.items) {
-                const itemInBackpack = user.backpackItems.find(
-                    item => item.itemId.equals(rewardItem.itemId)
-                );
-                if (itemInBackpack) {
-                    itemInBackpack.quantity += rewardItem.quantity;
-                } else {
-                    user.backpackItems.push({
-                        itemId: rewardItem.itemId,
-                        quantity: rewardItem.quantity
-                    });
-                }
-            }
+            await addItemsToBackpack(user, rewardsToDistribute.items);
         }
 
-        await event.save({ session });
-        await user.save({ session });
-        await session.commitTransaction();
-        session.endSession();
+        await event.save();
+        await user.save();
 
         res.status(200).json({
             success: true,
             message: '事件完成，獎勵已發放。',
-            rewards: optionData.rewards
+            rewards: rewardsToDistribute.items
         });
-
     } catch (error) {
-        await session.abortTransaction();
-        session.endSession();
         console.error("完成事件時發生錯誤：", error);
         res.status(500).json({ success: false, message: '伺服器內部錯誤' });
     }

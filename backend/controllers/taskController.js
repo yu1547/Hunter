@@ -193,15 +193,30 @@ const submitGuess = async (req, res) => {
 // 處理寶箱開啟的 API
 const openTreasureBox = async (req, res) => {
     const { userId, keyType } = req.body;
+    
+    // 定義鑰匙類型與難度值的對應關係
+    const keyToDifficultyMap = {
+        'bronze': 3, // 銅鑰匙對應難度 3
+        'silver': 4, // 銀鑰匙對應難度 4
+        'gold': 5    // 金鑰匙對應難度 5
+    };
+
+    const difficulty = keyToDifficultyMap[keyType];
+    
+    if (!difficulty) {
+        return res.status(400).json({ success: false, message: '無效的鑰匙類型。' });
+    }
+
     try {
-        const event = await Event.findOne({ name: '偶遇銅寶箱' });
+        const eventName = `偶遇${keyType === 'bronze' ? '銅' : keyType === 'silver' ? '銀' : '金'}寶箱`;
+        const event = await Event.findOne({ name: eventName });
         if (!event) {
-            return res.status(404).json({ success: false, message: '偶遇銅寶箱不存在' });
+            return res.status(404).json({ success: false, message: `${eventName} 不存在` });
         }
 
-        // 將偶遇銅寶箱的 ID 和選定的選項傳遞給 completeEvent
+        // 將寶箱的 ID 和對應的 difficulty 傳遞給 completeEvent
         req.params.eventId = event._id;
-        req.body.selectedOption = keyType;
+        req.body.selectedOption = difficulty;
         
         return await completeEvent(req, res);
     } catch (error) {
@@ -209,6 +224,7 @@ const openTreasureBox = async (req, res) => {
         return res.status(500).json({ success: false, message: '伺服器內部錯誤' });
     }
 };
+
 
 
 // 處理古樹獻祭的 API
