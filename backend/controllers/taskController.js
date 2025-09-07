@@ -136,17 +136,13 @@ const submitGuess = async (req, res) => {
         if (guessWord.toUpperCase() === game.secretWord.toUpperCase()) {
             game.status = 'win';
             message = '恭喜你！猜對了！';
-        // 處理積分和任務移除 (與你原本的邏輯相同)
-        const user = await User.findById(game.userId);
-        if (user) {
-            user.score = (user.score || 0) + 500;
-            await user.save();
-            const bugHuntTask = await Task.findOne({ name: "Bug Hunt" });
-            if (bugHuntTask) {
-                user.missions = user.missions.filter(mission => mission.taskId.toString() !== bugHuntTask._id.toString());
-                await user.save();
-            }
-        }
+            // 遊戲獲勝，交由 completeEvent 處理獎勵發放
+            const eventReq = {
+                body: { userId: game.userId },
+                params: { eventId: gameId }
+            };
+            await completeEvent(eventReq, res);
+            return;
         } else if (game.attemptsLeft <= 0) {
             game.status = 'lose';
             message = `猜測次數用完囉！謎底是 ${game.secretWord}`;
@@ -174,171 +170,65 @@ const submitGuess = async (req, res) => {
 // 處理寶箱開啟的 API
 const openTreasureBox = async (req, res) => {
     const { userId, keyType } = req.body;
-    const keyItemName = `${keyType === 'bronze' ? '銅' : keyType === 'silver' ? '銀' : '金'}鑰匙`;
-    const difficulty = keyType === 'bronze' ? 3 : keyType === 'silver' ? 4 : 5;
-
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
     try {
-        const user = await User.findById(userId).session(session);
-        if (!user) {
-            await session.abortTransaction();
-            session.endSession();
-            return res.status(404).json({ success: false, message: '使用者不存在。' });
+        const event = await Event.findOne({ name: '偶遇銅寶箱' });
+        if (!event) {
+            return res.status(404).json({ success: false, message: '偶遇銅寶箱不存在' });
         }
-            const keyItem = await Item.findOne({ itemName: keyItemName }).session(session);
-            if (!keyItem) {
-                await session.abortTransaction();
-                session.endSession();
-                return res.status(404).json({ success: false, message: '鑰匙物品不存在。' });
-            }
 
-            const keyInInv = user.backpackItems.find(item => item.itemId.toString() === keyItem._id.toString());
-            if (!keyInInv || keyInInv.quantity <= 0) {
-                await session.abortTransaction();
-                session.endSession();
-                return res.json({ success: false, message: `你沒有${keyItemName}，無法開啟寶箱。` });
-            }
-
-            // 減少鑰匙數量
-            keyInInv.quantity--;
+        // 將偶遇銅寶箱的 ID 和選定的選項傳遞給 completeEvent
+        req.params.eventId = event._id;
+        req.body.selectedOption = keyType;
         
-        // 使用 dropService 中的函式來生成掉落物並自動添加到背包
-        const drops = await generateDropForUser(userId, difficulty);
-
-        await user.save({ session });
-
-        await session.commitTransaction();
-        session.endSession();
-
-
-        return res.json({ success: true, message: `你用${keyItemName}打開了寶箱`, drops });
+        return await completeEvent(req, res);
     } catch (error) {
-        await session.abortTransaction();
-        session.endSession();
         console.error("開啟寶箱失敗：", error);
         return res.status(500).json({ success: false, message: '伺服器內部錯誤' });
     }
 };
 
+
 // 處理古樹獻祭的 API
 const blessTree = async (req, res) => {
     const { userId, itemToOffer } = req.body;
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
     try {
-        const user = await User.findById(userId).session(session);
-        if (!user) {
-            await session.abortTransaction();
-            session.endSession();
-            return res.status(404).json({ success: false, message: '使用者不存在。' });
+        const event = await Event.findOne({ name: '古樹的祝福' });
+        if (!event) {
+            return res.status(404).json({ success: false, message: '古樹事件不存在' });
         }
 
-        const offerItem = await Item.findOne({ itemName: itemToOffer }).session(session);
-        if (!offerItem) {
-            await session.abortTransaction();
-            session.endSession();
-            return res.status(404).json({ success: false, message: '獻祭物品不存在。' });
-        }
-
-        let rewardItemName;
-        if (itemToOffer === "普通的史萊姆黏液" || itemToOffer === "黏稠的史萊姆黏液") {
-            rewardItemName = "古樹的枝幹";
-        } else {
-            await session.abortTransaction();
-            session.endSession();
-            return res.status(400).json({ success: false, message: '無效的獻祭物品' });
-        }
-
-        const rewardItem = await Item.findOne({ itemName: rewardItemName }).session(session);
-        if (!rewardItem) {
-            await session.abortTransaction();
-            session.endSession();
-            return res.status(404).json({ success: false, message: '獎勵物品不存在。' });
-        }
-
-        // 檢查並扣除獻祭物品
-        await decFromBackpack(userId, offerItem._id, session);
+        // 將古樹事件的 ID 和選定的選項傳遞給 completeEvent
+        req.params.eventId = event._id;
+        req.body.selectedOption = `交出${itemToOffer}`;
         
-        await session.commitTransaction();
-        session.endSession();
-
-        return res.json({ success: true, message: `你獻祭了${itemToOffer}，古樹給予了你祝福。`, effects: result.effects });
-
+        return await completeEvent(req, res);
     } catch (error) {
-        await session.abortTransaction();
-        session.endSession();
         console.error("獻祭古樹失敗：", error);
-        // 如果是 itemService 拋出的錯誤，可以更精確地回傳
-        if (error.message === 'NO_STOCK') {
-            return res.status(400).json({ success: false, message: `你的${itemToOffer}不足，無法獻祭。` });
-        }
         return res.status(500).json({ success: false, message: '伺服器內部錯誤' });
     }
 };
+
 
 // 處理史萊姆戰鬥結果的 API
 const completeSlimeAttack = async (req, res) => {
     const { userId, totalDamage } = req.body;
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
     try {
-        const user = await User.findById(userId).session(session);
-        if (!user) {
-            await session.abortTransaction();
-            session.endSession();
-            return res.status(404).json({ success: false, message: '使用者不存在。' });
+        const event = await Event.findOne({ name: '打扁史萊姆' });
+        if (!event) {
+            return res.status(404).json({ success: false, message: '史萊姆事件不存在' });
         }
+
+        // 將史萊姆事件的 ID 和遊戲結果傳遞給 completeEvent
+        req.params.eventId = event._id;
+        req.body.gameResult = totalDamage;
         
-        // --- 檢查並應用增益效果 ---
-        let finalDamage = totalDamage;
-        const now = new Date();
-        const torchBuff = user.buff?.find(b => b.name === 'torch' && b.expiresAt > now);
-
-        if (torchBuff) {
-            // 如果有火把增益，傷害加倍
-            finalDamage = totalDamage * (torchBuff.data?.damageMultiplier || 1);
-        }
-
-        console.log(`原始傷害: ${totalDamage}, 最終傷害: ${finalDamage}`);
-
-        // 根據傷害計算獎勵物品
-        let rewards = { items: [] };
-        if (totalDamage > 100) {
-            const item = await Item.findOne({ itemName: "黏稠的史萊姆黏液" }).session(session);
-            if (item) {
-                rewards.items.push({ itemId: item._id, quantity: 1 });
-            }
-        } else {
-            const item = await Item.findOne({ itemName: "普通的史萊姆黏液" }).session(session);
-            if (item) {
-                rewards.items.push({ itemId: item._id, quantity: 1 });
-            }
-        }
-
-        // 使用 itemService 統一處理道具發放
-        for (const reward of rewards.items) {
-            await addToBackpack(userId, reward.itemId, reward.quantity, session);
-        }
-        
-        await session.commitTransaction();
-        session.endSession();
-        
-        return res.json({
-            success: true,
-            message: `你造成了${totalDamage}點傷害，獲得了物品。`,
-            rewards: rewards.items.map(item => item.name) // 注意：這裡可能需要根據實際情況調整以顯示物品名稱
-        });
+        return await completeEvent(req, res);
     } catch (error) {
-        await session.abortTransaction();
-        session.endSession();
         console.error("史萊姆戰鬥結算失敗：", error);
         return res.status(500).json({ success: false, message: '伺服器內部錯誤' });
     }
 };
+
 
 module.exports = {
     getAllTasks,
