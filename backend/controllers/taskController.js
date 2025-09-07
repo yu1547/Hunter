@@ -258,9 +258,32 @@ const completeSlimeAttack = async (req, res) => {
             return res.status(404).json({ success: false, message: '史萊姆事件不存在' });
         }
 
+        // 檢查 totalDamage 是否為有效數字
+        if (typeof totalDamage !== 'number' || totalDamage < 0) {
+            return res.status(400).json({ success: false, message: '無效的遊戲結果' });
+        }
+
+        // 尋找使用者並檢查是否有火把 buff
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: '找不到使用者。' });
+        }
+
+         // --- 檢查並應用增益效果 ---
+        let finalDamage = totalDamage;
+        const now = new Date();
+        const torchBuff = user.buff?.find(b => b.name === 'torch' && b.expiresAt > now);
+
+        if (torchBuff) {
+            // 如果有火把增益，傷害加倍
+            finalDamage = totalDamage * (torchBuff.data?.damageMultiplier || 1);
+        }
+
+        console.log(`原始傷害: ${totalDamage}, 最終傷害: ${finalDamage}`);
+
         // 將史萊姆事件的 ID 和遊戲結果傳遞給 completeEvent
         req.params.eventId = event._id;
-        req.body.gameResult = totalDamage;
+        req.body.gameResult = finalDamage;
         
         return await completeEvent(req, res);
     } catch (error) {
