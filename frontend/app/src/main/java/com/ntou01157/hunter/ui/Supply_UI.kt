@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
@@ -88,7 +89,12 @@ private fun formatMs(ms: Long): String {
 }
 
 @Composable
-fun SupplyHandlerDialog(supply: Supply, user: User, onDismiss: () -> Unit) {
+fun SupplyHandlerDialog(
+        supply: Supply,
+        user: User,
+        onDismiss: () -> Unit,
+        navController: NavController // 新增 NavController 參數
+) {
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -153,36 +159,44 @@ fun SupplyHandlerDialog(supply: Supply, user: User, onDismiss: () -> Unit) {
                         } else {
                             Toast.makeText(context, "冷卻中", Toast.LENGTH_SHORT).show()
                         }
-                    } else {
-                        Toast.makeText(context, "領取失敗：${res.reason ?: "未知錯誤"}", Toast.LENGTH_SHORT)
-                                .show()
                     }
                 }
             },
-            hasDailyEvent = hasDailyEvent, // 傳遞每日事件狀態
             onDailyEvent = {
+                // 優化：在導航前先關閉對話框，提供更流暢的用戶體驗
+                onDismiss()
                 scope.launch {
                     try {
+                        // 首先檢查任務狀態
                         val missionCheckRes =
                                 withContext(Dispatchers.IO) {
                                     MissionHandler.checkSpotMission(user.uid, supply.supplyId)
                                 }
 
-                        if (missionCheckRes.eventName == "打扁史萊姆") {
-                            navController.navigate("slimeAttack")
-                        } else if (missionCheckRes.eventName == "神秘商人") {
-                            navController.navigate("merchant")
-                        }
-                        if (missionCheckRes.isMissionCompleted) {
+                        if (missionCheckRes != null && missionCheckRes.isMissionCompleted) {
                             Toast.makeText(context, "恭喜，您已完成一個任務！", Toast.LENGTH_LONG).show()
-                        } else {
+                        } else if (missionCheckRes?.isMissionCompleted == false) {
                             Toast.makeText(context, "任務地點已標記完成！", Toast.LENGTH_LONG).show()
                         }
-                        onDismiss()
+
+                        // 然後根據 dailyEventName 進行導航
+                        when (dailyEventName) {
+                            "打扁史萊姆" -> navController.navigate("slimeAttack")
+                            "神秘商人" -> navController.navigate("merchant")
+                            "石堆事件" -> navController.navigate("stonePile")
+                            "寶箱事件" -> navController.navigate("treasureBox")
+                            "古樹祝福" -> navController.navigate("ancientTree")
+                            "猜字遊戲" -> navController.navigate("wordleGame")
+                            else -> {
+                                Toast.makeText(context, "沒有與此地點相關的任務或任務名稱不符", Toast.LENGTH_LONG)
+                                        .show()
+                            }
+                        }
                     } catch (e: Exception) {
                         Toast.makeText(context, "任務執行失敗: ${e.message}", Toast.LENGTH_SHORT).show()
                     }
                 }
-            }
+            },
+            hasDailyEvent = hasDailyEvent
     )
 }
