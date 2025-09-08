@@ -47,12 +47,11 @@ const completeEvent = async (req, res) => {
             if (gameResult === 'win') {
                 event.status = 'completed';
                 rewardsToDistribute = { 
-                    score: 5, 
                     items: [] 
                 }; 
             } else if (gameResult === 'lose') {
                 event.status = 'claimed';
-                rewardsToDistribute = { score: 0, items: [] };
+                rewardsToDistribute = { items: [] };
             }
         }
         // ===========================================

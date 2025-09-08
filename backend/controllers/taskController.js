@@ -215,9 +215,10 @@ const openTreasureBox = async (req, res) => {
             return res.status(404).json({ success: false, message: `${eventName} 不存在` });
         }
 
-        // 將寶箱的 ID 和對應的 difficulty 傳遞給 completeEvent
+        // 將寶箱的 ID 和對應的 difficulty 、keyType 傳遞給 completeEvent
         req.params.eventId = event._id;
         req.body.selectedOption = difficulty;
+        req.body.keyUsed = keyType; // 傳遞使用的鑰匙類型
         
         return await completeEvent(req, res);
     } catch (error) {

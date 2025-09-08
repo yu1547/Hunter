@@ -144,27 +144,6 @@ fun SupplyHandlerDialog(supply: Supply, user: User, onDismiss: () -> Unit) {
                             cooldownText = formatMs(left)
                         }
                         onDismiss()
-                        // --- 新增：檢查補給站任務邏輯 ---
-                        try {
-                            val missionCheckRes =
-                                    withContext(Dispatchers.IO) {
-                                        // 修正：使用 MissionHandler 類別
-                                        MissionHandler.checkSpotMission(user.uid, supply.supplyId)
-                                    }
-                            // 修正：將 .isCompleted 改為 .isMissionCompleted
-                            if (missionCheckRes != null && missionCheckRes.isMissionCompleted) {
-                                Toast.makeText(context, "恭喜，您已完成一個任務！", Toast.LENGTH_LONG).show()
-                            } else if (missionCheckRes?.isMissionCompleted == false) {
-                                Toast.makeText(context, "任務地點已標記完成！", Toast.LENGTH_LONG).show()
-                            }
-                        } catch (e: Exception) {
-                            // 處理任務檢查失敗的錯誤
-                            // Log.e("MissionCheck", "檢查任務地點時發生錯誤: ${e.message}")
-                            Toast.makeText(context, "任務檢查失敗: ${e.message}", Toast.LENGTH_SHORT)
-                                    .show()
-                        }
-                        // --- 新增邏輯結束 ---
-
                     } else if (res.reason == "COOLDOWN" && res.nextClaimTime != null) {
                         val until = SupplyApi.parseUtcMillis(res.nextClaimTime)
                         if (until != null) {
@@ -183,22 +162,25 @@ fun SupplyHandlerDialog(supply: Supply, user: User, onDismiss: () -> Unit) {
             hasDailyEvent = hasDailyEvent, // 傳遞每日事件狀態
             onDailyEvent = {
                 scope.launch {
-                    val res =
-                            when (dailyEventName) {
-                                "石堆事件" -> SupplyApi.triggerStonePile(user.uid)
-                                "神秘商人" ->
-                                        SupplyApi.trade(
-                                                user.uid,
-                                                "bronzeKey"
-                                        ) // 假設交易類型為 bronzeKey，您可以根據實際需求調整
-                                else -> SupplyApi.ClaimResponse(success = false, reason = "未知的每日事件")
-                            }
+                    try {
+                        val missionCheckRes =
+                                withContext(Dispatchers.IO) {
+                                    MissionHandler.checkSpotMission(user.uid, supply.supplyId)
+                                }
 
-                    if (res.success) {
-                        Toast.makeText(context, "任務完成！", Toast.LENGTH_SHORT).show()
+                        if (missionCheckRes.eventName == "打扁史萊姆") {
+                            navController.navigate("slimeAttack")
+                        } else if (missionCheckRes.eventName == "神秘商人") {
+                            navController.navigate("merchant")
+                        }
+                        if (missionCheckRes.isMissionCompleted) {
+                            Toast.makeText(context, "恭喜，您已完成一個任務！", Toast.LENGTH_LONG).show()
+                        } else {
+                            Toast.makeText(context, "任務地點已標記完成！", Toast.LENGTH_LONG).show()
+                        }
                         onDismiss()
-                    } else {
-                        Toast.makeText(context, "任務失敗：${res.reason}", Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "任務執行失敗: ${e.message}", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
