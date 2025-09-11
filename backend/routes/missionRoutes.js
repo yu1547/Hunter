@@ -8,6 +8,7 @@ const {
   refreshAllMissions,
   createLLMMission,
   checkSpotMission,
+  assignDailyMissions,
 } = require('../controllers/missionController');
 
 // 刷新用戶任務列表 (例如：用戶打開任務面板時調用)
@@ -30,5 +31,8 @@ router.post('/missions/llm/:userId', createLLMMission);
 
 // 檢查地點任務
 router.put('/check-spot/:userId/:spotId', checkSpotMission);
+
+// 指派每日任務給使用者
+router.post('/users/:userId/missions/assign-daily', assignDailyMissions);
 
 module.exports = router;

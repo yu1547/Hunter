@@ -286,25 +286,41 @@ const checkSpotMission = async (req, res) => {
       return res.status(404).json({ message: '找不到使用者' });
     }
 
+
+    // 1. 取得所有每日事件的 ID
+    const dailyEvents = await Event.find({ type: 'daily' });
+    const dailyEventIds = dailyEvents.map(event => event._id.toString());
+
     let missionUpdated = false;
     let triggeredEvent = null;
 
-    // 尋找使用者是否有需要檢查此地點的任務
-    for (const mission of user.missions) {
-      // 確保任務處於進行中狀態，且有需要檢查的地點
-      if (mission.state === 'in_progress' && mission.haveCheckPlaces) {
-        // 尋找匹配的補給站
-        const checkPlace = mission.haveCheckPlaces.find(place => place.spotId.toString() === spotId);
+    
+    // 2. 在 missions 陣列中尋找符合條件的任務
+    const mission = user.missions.find(m => {
+        // 檢查任務是否為每日任務
+        const isDailyMission = dailyEventIds.includes(m.taskId.toString());
 
-        if (checkPlace && !checkPlace.isCheck) {
-          checkPlace.isCheck = true;
-          missionUpdated = true;
-          // Check if this mission is an event
-          const eventDetails = await Event.findById(mission.taskId);
-          if (eventDetails) {
+        // 確保任務處於 'available' 或 'in_progress' 狀態，且有需要檢查的地點
+        return (m.state === 'available' || m.state === 'in_progress') &&
+                m.haveCheckPlaces &&
+                m.haveCheckPlaces.some(place => place.spotId.toString() === spotId && !place.isCheck);
+    });
+
+    if (mission) {
+      const checkPlace = mission.haveCheckPlaces.find(place => place.spotId.toString() === spotId);
+      if (checkPlace) {
+        checkPlace.isCheck = true;
+        missionUpdated = true;
+
+        // 3. 檢查任務是否為每日任務，並將其狀態更新為 'in_progress'
+        const isDailyMission = dailyEventIds.includes(mission.taskId.toString());
+        if (isDailyMission && mission.state === 'available') {
+          mission.state = 'in_progress';
+        }
+
+        const eventDetails = await Event.findById(mission.taskId);
+        if (eventDetails) {
             triggeredEvent = eventDetails;
-            break; // Stop after finding the first matching mission/event
-          }
         }
       }
     }
@@ -361,6 +377,8 @@ const checkAndTriggerEvent = async (userId, event) => {
         let result;
         // 使用一個獨立的物件來管理事件處理器，而不是在 switch case 中硬編碼
         const eventHandlers = {
+            '神秘商人的試煉' : async () => await trade(eventReq, eventRes),
+            '石堆下的碎片': async () => await triggerStonePile(eventReq, eventRes),
             '在小小的 code 裡面抓阿抓阿抓': async () => await startGame(eventReq, eventRes),
             '打扁史萊姆': async () => {
                 // 從 req.body 取得 totalDamage
@@ -490,6 +508,49 @@ const createLLMMission = async (req, res) => {
   }
 };
 
+// 分配每日任務給單一使用者
+const assignDailyMissions = async (req, res) => {
+    const { userId } = req.params;
+    try {
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ message: '找不到使用者' });
+
+        // 取得所有每日事件
+        const dailyEvents = await Event.find({ type: 'daily' });
+        const dailyEventIds = dailyEvents.map(event => event._id.toString());
+        
+        // 檢查使用者今天是否已經被分配過每日任務
+        // 判斷條件：任務的 taskId 是否在 dailyEventIds 列表中，且 refreshedAt 是今天
+        const today = new Date().toISOString().slice(0, 10);
+        const hasDailyMissionsToday = user.missions.some(
+            m => dailyEventIds.includes(m.taskId.toString()) && m.refreshedAt && m.refreshedAt.toISOString().slice(0, 10) === today
+        );
+
+        if (hasDailyMissionsToday) {
+            return res.status(200).json({ message: '今日任務已分配' });
+        }
+
+        // 刪除使用者舊的每日任務，然後加入新的
+        user.missions = user.missions.filter(mission => !dailyEventIds.includes(mission.taskId.toString()));
+
+        const missionsToAdd = dailyEvents.map(event => ({
+            taskId: event._id,
+            state: 'available',
+            refreshedAt: new Date(),
+            // 任務地點直接使用 Event 模型中的固定 spotId
+            haveCheckPlaces: event.spotId ? [{ spotId: event.spotId, isCheck: false }] : []
+        }));
+        
+        user.missions.push(...missionsToAdd);
+        await user.save();
+
+        res.status(200).json({ message: '每日任務分配成功' });
+    } catch (error) {
+        console.error("分配每日任務失敗：", error);
+        res.status(500).json({ message: '每日任務分配失敗', error: error.message });
+    }
+};
+
 module.exports = {
   acceptTask,
   declineTask,
@@ -498,4 +559,5 @@ module.exports = {
   refreshAllMissions,
   createLLMMission,
   checkSpotMission,
+  assignDailyMissions,
 };

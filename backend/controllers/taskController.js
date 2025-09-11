@@ -1,9 +1,9 @@
+const Event = require('../models/eventModel');
 const Task = require('../models/taskModel');
 const mongoose = require('mongoose');
 const { ObjectId } = mongoose.Types;
 const User = require('../models/userModel');
 const Item = require('../models/itemModel');
-const Game = require('../models/eventModel');
 
 // GET 所有任務
 const getAllTasks = async (req, res) => {
@@ -38,51 +38,55 @@ const getTaskById = async (req, res) => {
 
  // 假設你有一個單字庫
 const WORD_LIST = ["APPLE", "POWER", "TIGER", "HOUSE", "CHAIR"];
+const gameStates = {}; // 暫時儲存遊戲狀態的記憶體物件
 
  // 處理 Wordle 遊戲開始的 API
 const startGame = async (req, res) => {
     const { eventId } = req.params;
     const { userId } = req.body;
 
-    try {
-        const event = await Event.findById(eventId);
-        if (!event) {
-            return res.status(404).json({ success: false, message: '找不到事件' });
-        }
-
+    try {        
+        
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ success: false, message: '找不到用戶' });
         }
         
-        // 在startGame時就更新任務狀態，並存入資料庫
+        // 1. 在 user.missions 中找到對應的任務
         const mission = user.missions.find(m => m.taskId.toString() === eventId);
-        if (mission) {
-            mission.state = 'claimed';
-            await user.save();
+        if (!mission) {
+            return res.status(404).json({ success: false, message: '用戶沒有此任務' });
         }
 
-        // 隨機選取一個謎底單字
+        // 2. 檢查任務狀態，只能從 'available' 變為 'in_progress'
+        if (mission.state !== 'available') {
+            return res.status(400).json({ success: false, message: `任務狀態為 ${mission.state}，無法開始遊戲` });
+        }
+
+        // 3. 隨機選取一個謎底單字
         const secretWord = WORD_LIST[Math.floor(Math.random() * WORD_LIST.length)];
     
 
-        // 在資料庫中建立一場新遊戲的紀錄
-        const newGame = new Game({
-            userId: user._id,
-            eventId: eventId, // 儲存 Event ID 來建立關聯
+        // 4. 將遊戲狀態暫時儲存在記憶體中
+        gameStates[userId] = {
+            taskId: eventId,
             secretWord: secretWord,
             guesses: [],
-            status: 'playing',
             attemptsLeft: 6,
-        });
-        await newGame.save();
+            status: 'playing',
+        };
+        
+        // 5. 更新用戶的任務狀態
+        mission.state = 'claimed';
+        await user.save();
 
         res.status(200).json({
             success: true,
             message: "遊戲已開始！",
             gameId: newGame._id,
-            attemptsLeft: newGame.attemptsLeft
+            gameId: userId, // 暫時使用 userId 作為遊戲 ID
         });
+        
     } catch (error) {
         console.error("startGame API 錯誤:", error);
         res.status(500).json({ success: false, message: "伺服器錯誤，請稍後再試。" });
@@ -92,15 +96,25 @@ const startGame = async (req, res) => {
  // 處理玩家提交 Wordle 猜測的 API
 const submitGuess = async (req, res) => {
     const { gameId, guessWord } = req.body;
+    const userId = req.body.userId; // 確保有傳入 userId
 
     try {
-        const game = await Game.findById(gameId);
+        // 1. 確認用戶的遊戲狀態是否存在於記憶體中
+        const game = gameStates[userId];
         if (!game) {
-            return res.status(404).json({ success: false, message: '找不到遊戲' });
+            return res.status(400).json({ success: false, message: '請先開始一場新遊戲' });
         }
 
-        if (game.status !== 'playing') {
-            return res.status(400).json({ success: false, message: '遊戲已經結束' });
+        // 2. 確認用戶的任務狀態
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: '找不到用戶' });
+        }
+
+        const mission = user.missions.find(m => m.taskId.toString() === game.taskId);
+        if (!mission || gameStates[userId].status !== 'playing') {
+            delete gameStates[userId]; // 清除無效的遊戲
+            return res.status(400).json({ success: false, message: '遊戲狀態不正確或已結束' });
         }
 
         // 檢查猜測單字長度
@@ -141,6 +155,7 @@ const submitGuess = async (req, res) => {
         // ------------------------------------------
         // 更新遊戲狀態
         // ------------------------------------------
+        // 3. 更新遊戲狀態（在記憶體中）
         game.guesses.push({ word: guessWord, feedback: feedback });
         game.attemptsLeft -= 1;
 
@@ -150,26 +165,30 @@ const submitGuess = async (req, res) => {
         // 檢查是否勝利
         if (guessWord.toUpperCase() === game.secretWord.toUpperCase()) {
             game.status = 'completed';
+            mission.state = 'completed'; // 更新 user.missions 狀態
             message = '恭喜你！猜對了！';
-            await game.save();
+            await user.save();
+            
             // 遊戲獲勝，交由 completeEvent 處理獎勵發放，傳遞正確的 eventId
             const eventReq = {
-                body: { userId: game.userId, gameResult: 'win' },
+                body: { userId: game.userId, gameResult: game.status },
                 params: { eventId: game.eventId } // 從 game 物件取得關聯的 eventId
             };
             await completeEvent(eventReq, res);
             return;
         } else if (game.attemptsLeft <= 0) {
-            game.status = 'claimed';
+            game.status = 'lose';
+            mission.state = 'claimed'; // 任務狀態設為完成
             message = `猜測次數用完囉！謎底是 ${game.secretWord}`;
             success = false;
-            await game.save();
+            await user.save();
 
             // 呼叫 completeEvent 處理失敗狀態
             const eventReq = {
-                body: { userId: game.userId, gameResult: 'lose' },
+                body: { userId: game.userId, gameResult: game.status },
                 params: { eventId: game.eventId } // 從 game 物件取得關聯的 eventId
             };
+            await completeEvent(eventReq, res);
         } else {
             message = '答案錯誤，請繼續猜測。';
         }
@@ -192,7 +211,7 @@ const submitGuess = async (req, res) => {
 
 // 處理寶箱開啟的 API
 const openTreasureBox = async (req, res) => {
-    const { userId, keyType } = req.body;
+    const { keyType } = req.body;
     
     // 定義鑰匙類型與難度值的對應關係
     const keyToDifficultyMap = {

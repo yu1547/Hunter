@@ -183,7 +183,7 @@ fun SupplyHandlerDialog(
                         when (dailyEventName) {
                             "打扁史萊姆" -> navController.navigate("slimeAttack")
                             "神秘商人" -> navController.navigate("merchant")
-                            "石堆事件" -> navController.navigate("stonePile")
+                            "石堆下的碎片" -> navController.navigate("stonePile")
                             "寶箱事件" -> navController.navigate("treasureBox")
                             "古樹祝福" -> navController.navigate("ancientTree")
                             "猜字遊戲" -> navController.navigate("wordleGame")

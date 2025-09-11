@@ -28,4 +28,5 @@ router.post('/trigger-stone-pile', triggerStonePile);
 // 商人交易相關的 API
 router.post('/trade', trade);
 
+
 module.exports = router;

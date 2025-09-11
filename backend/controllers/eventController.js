@@ -4,23 +4,39 @@ const User = require('../models/userModel');
 const Item = require('../models/itemModel');
 const Spot = require('../models/spotModel');
 const mongoose = require('mongoose');
+const { addItemsToBackpack } = require('../services/backpackService');
+const { decFromBackpack } = require('../services/backpackService');
+const { generateDropItems } = require('../services/dropService');
+const { ObjectId } = mongoose.Types;
 
 // 每日刷新事件位置的邏輯
 const refreshDailyEvents = async (req, res) => {
     try {
+        // 1. 找到所有每日事件
         const dailyEvents = await Event.find({ type: 'daily' });
-        const allSpots = await Spot.find();
 
-        for (const event of dailyEvents) {
-            const randomSpot = allSpots[Math.floor(Math.random() * allSpots.length)];
-            event.spotId = randomSpot._id;
-            await event.save();
-        }
-        res.status(200).json({ message: '每日事件位置已刷新' });
+        // 2. 假設冷卻時間為 24 小時，並更新每個事件的冷卻時間
+        // 這裡設定新的冷卻到期時間為現在時間 + 24 小時
+        const cooldownDuration = 24 * 60 * 60 * 1000; // 毫秒
+        const newCooldownExpiresAt = new Date(Date.now() + cooldownDuration);
+
+        // 使用 Promise.all 優化批量更新，這會比迴圈中的 await 更有效率
+        const updatePromises = dailyEvents.map(event => {
+            // 確保位置是固定的，這裡不修改 event.spotId
+            event.cooldownExpiresAt = newCooldownExpiresAt; // 更新冷卻時間
+            return event.save();
+        });
+
+        await Promise.all(updatePromises);
+
+        res.status(200).json({ message: '每日事件冷卻時間已刷新' });
     } catch (error) {
-        res.status(500).json({ message: '每日事件刷新失敗', error: error.message });
+        console.error('每日事件刷新失敗:', error);
+        res.status(500).json({ message: '每日事件冷卻時間刷新失敗', error: error.message });
     }
 };
+
+
 
 // 完成事件，並發放獎勵
 const completeEvent = async (req, res) => {
@@ -28,6 +44,7 @@ const completeEvent = async (req, res) => {
     const { userId, selectedOption, gameResult, keyUsed } = req.body;
 
     try {
+        // 步驟 1: 根據 eventId 找到完整的 Event 模型資料
         const event = await Event.findById(eventId);
         if (!event) {
             return res.status(404).json({ message: '找不到此事件' });
@@ -38,20 +55,25 @@ const completeEvent = async (req, res) => {
             return res.status(404).json({ message: '找不到使用者' });
         }
 
-        let rewardsToDistribute = { score: 0, items: [] };
+        const mission = user.missions.find(m => m.taskId.toString() === eventId);
+        
+        // -------------------------------------------
+        // 步驟 2: 根據 event.name 來判斷並執行邏輯
+        // -------------------------------------------
+        let rewardsToDistribute = event.rewards;
         
         // ===========================================
         // Wordle 遊戲的特殊處理邏輯
         // ===========================================
         if (event.name === "在小小的 code 裡面抓阿抓阿抓") {
             if (gameResult === 'win') {
-                event.status = 'completed';
-                rewardsToDistribute = { 
-                    items: [] 
-                }; 
+                event.state = 'completed';
+                rewardsToDistribute = event.rewards; 
+                mission.state = 'completed';
             } else if (gameResult === 'lose') {
-                event.status = 'claimed';
-                rewardsToDistribute = { items: [] };
+                event.state = 'claimed';
+                rewardsToDistribute = { items: []};
+                mission.state = 'claimed'; // 任務依然結束
             }
         }
         // ===========================================
@@ -69,7 +91,7 @@ const completeEvent = async (req, res) => {
 
             const dropItems = await generateDropItems(selectedOption);
             rewardsToDistribute.items = dropItems;
-            event.status = 'completed';
+            event.state = 'completed';
         }
 
         // ===========================================
@@ -91,11 +113,15 @@ const completeEvent = async (req, res) => {
                 }
             }
             rewardsToDistribute.items = slimeRewards;
-            event.status = 'completed';
+            event.state = 'completed';
         } 
         // ===========================================
         // 處理通用事件（古樹、神秘商人、石堆等）
         // ===========================================
+        else if (event.name === '石堆下的碎片'){
+            rewardsToDistribute.items = [{ itemId: "6892b1db16a96f6bb0af20c9", quantity: 2 }];
+            event.state = 'completed';
+        }
         else {
             const optionData = event.options.find(opt => opt.name === selectedOption);
             if (!optionData) {
@@ -221,7 +247,7 @@ const triggerStonePile = async (req, res) => {
 
         const user = await User.findById(userId);
         if (!user) {
-            return res.status(404).json({ success: false, message: '找不到使用者。' });
+            return res.status(404).json({ success: false, message: userId+'找不到使用者。' });S
         }
 
         const today = new Date().toISOString().slice(0, 10);
@@ -235,9 +261,9 @@ const triggerStonePile = async (req, res) => {
         user.lastStonePileTriggeredDate = new Date();
         await user.save();
 
-        const event = await Event.findOne({ name: '石堆事件' });
+        const event = await Event.findOne({ name: '石堆下的碎片' });
         if (!event) {
-            return res.status(404).json({ success: false, message: '石堆事件不存在' });
+            return res.status(404).json({ success: false, message: '石堆下的碎片不存在' });
         }
 
         req.params.eventId = event._id;
@@ -246,7 +272,7 @@ const triggerStonePile = async (req, res) => {
         return await completeEvent(req, res);
 
     } catch (error) {
-        console.error("觸發石堆事件失敗：", error);
+        console.error("觸發石堆下的碎片失敗：", error);
         return res.status(500).json({ success: false, message: `伺服器內部錯誤: ${error.message}` });
     }
 };

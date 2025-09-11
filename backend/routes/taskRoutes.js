@@ -17,7 +17,7 @@ router.get('/', getAllTasks);
 router.get('/:id', getTaskById);
 
 // 事件相關路由
-router.post('/start', startGame);
+router.post('/start/:eventId', startGame);
 router.post('/guess', submitGuess);
 router.post('/open-treasure-box', openTreasureBox);
 router.post('/bless-tree', blessTree);

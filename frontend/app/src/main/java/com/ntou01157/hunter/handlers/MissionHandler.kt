@@ -3,6 +3,7 @@ package com.ntou01157.hunter.handlers
 import android.util.Log
 import com.ntou01157.hunter.api.CheckSpotMissionResponse
 import com.ntou01157.hunter.api.RetrofitClient
+import com.ntou01157.hunter.api.SuccessResponse
 import java.io.IOException
 import retrofit2.HttpException
 
@@ -50,6 +51,32 @@ object MissionHandler {
                     message = errorMessage,
                     isMissionCompleted = false
             )
+        }
+    }
+    /**
+     * 向後端發送請求，指派每日任務給使用者。
+     * @param userId 使用者的 ID
+     * @return SuccessResponse 回傳操作結果，包含訊息和成功狀態
+     * @throws Exception 如果 API 請求失敗
+     */
+    suspend fun assignDailyMissions(userId: String): SuccessResponse {
+        return try {
+            val response = apiService.assignDailyMissions(userId)
+            Log.d(TAG, "assignDailyMissions response: ${response.message}")
+            response
+        } catch (e: HttpException) {
+            val errorBody = e.response()?.errorBody()?.string()
+            val errorMessage = "HTTP 錯誤: ${e.code()} - ${errorBody ?: e.message()}"
+            Log.e(TAG, errorMessage)
+            SuccessResponse(success = false, message = errorMessage)
+        } catch (e: IOException) {
+            val errorMessage = "網路錯誤: ${e.message}"
+            Log.e(TAG, errorMessage)
+            SuccessResponse(success = false, message = errorMessage)
+        } catch (e: Exception) {
+            val errorMessage = "未知錯誤: ${e.message}"
+            Log.e(TAG, errorMessage)
+            SuccessResponse(success = false, message = errorMessage)
         }
     }
 }

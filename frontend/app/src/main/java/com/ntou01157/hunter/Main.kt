@@ -1,6 +1,7 @@
 package com.ntou01157.hunter
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
@@ -26,26 +27,25 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
-import com.ntou01157.hunter.mock.FakeUser
-import com.ntou01157.hunter.models.*
-import com.ntou01157.hunter.models.SupplyRepository
-import com.ntou01157.hunter.models.User
-import com.ntou01157.hunter.ui.*
 import com.ntou01157.hunter.api.RetrofitClient // Correct import for RetrofitClient
-import com.ntou01157.hunter.data.RankRepository // Correct import for your RankRepository
-import com.ntou01157.hunter.handlers.SpotLogHandler
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import com.ntou01157.hunter.api.SpotApi
 import com.ntou01157.hunter.api.SupplyApi
-
+import com.ntou01157.hunter.data.RankRepository // Correct import for your RankRepository
+import com.ntou01157.hunter.handlers.MissionHandler
+import com.ntou01157.hunter.handlers.SpotLogHandler
+import com.ntou01157.hunter.mock.FakeUser
+import com.ntou01157.hunter.models.*
+import com.ntou01157.hunter.models.User
+import com.ntou01157.hunter.ui.*
 import com.ntou01157.hunter.ui.event_ui.AncientTreeUI
 import com.ntou01157.hunter.ui.event_ui.MerchantUI
 import com.ntou01157.hunter.ui.event_ui.SlimeAttackUI
 import com.ntou01157.hunter.ui.event_ui.StonePileUI
 import com.ntou01157.hunter.ui.event_ui.TreasureBoxUI
 import com.ntou01157.hunter.ui.event_ui.WordleGameUI
-
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainApplication : android.app.Application() {
 
@@ -58,8 +58,6 @@ class MainApplication : android.app.Application() {
     }
 }
 
-
-
 class Main : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,16 +67,10 @@ class Main : ComponentActivity() {
 
             // NavHost(navController = navController, startDestination = "login") {
             NavHost(navController = navController, startDestination = "login") {
-                composable("login") {
-                    LoginScreen(navController)
-                }
-                composable("main") {
-                    MainScreen(navController)
-                }
-                composable("bag") {
-                    BagScreen(navController = navController)
-                }
-                //收藏冊
+                composable("login") { LoginScreen(navController) }
+                composable("main") { MainScreen(navController) }
+                composable("bag") { BagScreen(navController = navController) }
+                // 收藏冊
                 composable("favorites") {
                     val user = FakeUser // 先用目前的假使用者，後面要改
 
@@ -93,60 +85,44 @@ class Main : ComponentActivity() {
                     }
 
                     FavoritesScreen(
-                        navController = navController,
-                        user = user,
-//                        pages = pages,
-                        pageIndex = pageIndex,
-                        onPageChange = { newIndex ->
-                            pageIndex = newIndex.coerceIn(0, (pages.size - 1).coerceAtLeast(0))
-                        },
-                        onSpotClicked = { spot -> selectedSpot = spot },
-                        selectedSpot = selectedSpot,
-                        onDismissSpotDialog = { selectedSpot = null },
-                        showLockedDialog = showLockedDialog,
-                        onDismissLockedDialog = { showLockedDialog = false }
+                            navController = navController,
+                            user = user,
+                            //                        pages = pages,
+                            pageIndex = pageIndex,
+                            onPageChange = { newIndex ->
+                                pageIndex = newIndex.coerceIn(0, (pages.size - 1).coerceAtLeast(0))
+                            },
+                            onSpotClicked = { spot -> selectedSpot = spot },
+                            selectedSpot = selectedSpot,
+                            onDismissSpotDialog = { selectedSpot = null },
+                            showLockedDialog = showLockedDialog,
+                            onDismissLockedDialog = { showLockedDialog = false }
                     )
                 }
 
-                composable("ranking") {
-                    RankingScreen(navController = navController)
-                }
-                composable("tasklist") {
-                    TaskListScreen(navController)
-                }
+                composable("ranking") { RankingScreen(navController = navController) }
+                composable("tasklist") { TaskListScreen(navController) }
 
-                composable("bugHunt") {
-                    WordleGameUI()
-                }
+                composable("bugHunt") { WordleGameUI() }
                 // 新增：事件 UI 的路由
                 composable("ancientTree") {
                     // 修正：使用正確的 UI 函式名稱
-                    AncientTreeUI(onEventCompleted = {
-                        navController.popBackStack()
-                    })
+                    AncientTreeUI(onEventCompleted = { navController.popBackStack() })
                 }
                 composable("merchant") {
                     // 修正：使用正確的 UI 函式名稱
-                    MerchantUI(onEventCompleted = {
-                        navController.popBackStack()
-                    })
+                    MerchantUI(onEventCompleted = { navController.popBackStack() })
                 }
                 composable("slimeAttack") {
                     // 修正：使用正確的 UI 函式名稱
-                    SlimeAttackUI(onEventCompleted = {
-                        navController.popBackStack()
-                    })
+                    SlimeAttackUI(onEventCompleted = { navController.popBackStack() })
                 }
                 composable("stonePile") {
-                    StonePileUI(onEventCompleted = {
-                        navController.popBackStack()
-                    })
+                    StonePileUI(onEventCompleted = { navController.popBackStack() })
                 }
                 composable("treasureBox") { //
                     // 修正：使用正確的 UI 函式名稱
-                    TreasureBoxUI(onEventCompleted = {
-                        navController.popBackStack()
-                    })
+                    TreasureBoxUI(onEventCompleted = { navController.popBackStack() })
                 }
             }
         }
@@ -158,26 +134,26 @@ class Main : ComponentActivity() {
 fun MainScreen(navController: androidx.navigation.NavHostController) {
     var showDialog by remember { mutableStateOf(false) }
     var showChatDialog by remember { mutableStateOf(false) }
-    val buttonColors = ButtonDefaults.buttonColors(
-        containerColor = Color(0xFFbc8f8f),
-        contentColor = Color.White
-    )
+    val buttonColors =
+            ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFbc8f8f),
+                    contentColor = Color.White
+            )
 
     // 打卡點 導入DB資料
     var spots by remember { mutableStateOf<List<Spot>>(emptyList()) }
 
-    //補給站 導入DB資料
+    // 補給站 導入DB資料
     var supplyStations by remember { mutableStateOf<List<Supply>>(emptyList()) }
-    LaunchedEffect(Unit) {
-        supplyStations = withContext(Dispatchers.IO) { SupplyApi.getAll() }
-    }
+    LaunchedEffect(Unit) { supplyStations = withContext(Dispatchers.IO) { SupplyApi.getAll() } }
     var selectedSupply by remember { mutableStateOf<Supply?>(null) }
     var showSupplyDialog by remember { mutableStateOf(false) }
-    val user: User = FakeUser //後面要改
+    val user: User = FakeUser // 後面要改
     val supplyLog = selectedSupply?.supplyId?.let { user.supplyScanLogs[it] }
 
     val context = LocalContext.current
-    val locationPermissionState = rememberPermissionState(android.Manifest.permission.ACCESS_FINE_LOCATION)
+    val locationPermissionState =
+            rememberPermissionState(android.Manifest.permission.ACCESS_FINE_LOCATION)
     val locationService = remember { LocationService(context) }
     val defaultLatLng = LatLng(25.149995, 121.778730)
     val cameraPositionState = rememberCameraPositionState {
@@ -198,91 +174,108 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
         }
     }
 
+    // 2. 在這裡加入 LaunchedEffect 區塊
+    val coroutineScope = rememberCoroutineScope()
     // 載入所有打卡點
-    LaunchedEffect(Unit) {
-        spots = withContext(Dispatchers.IO) { SpotApi.getAllSpots() }
+    LaunchedEffect(user?.uid) {
+        val userId = user?.uid ?: return@LaunchedEffect
+        // spots = withContext(Dispatchers.IO) { SpotApi.getAllSpots() }
+
+        // 在協程中執行所有非同步任務
+        coroutineScope.launch(Dispatchers.IO) {
+            try {
+                // 1. 載入所有打卡點
+                spots = withContext(Dispatchers.IO) { SpotApi.getAllSpots() }
+
+                // 2. 直接呼叫 MissionHandler 指派每日任務
+                // 這裡會觸發後端的 assignDailyMissions 邏輯，由後端判斷是否需要刷新
+                val missionResponse = MissionHandler.assignDailyMissions(userId)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, missionResponse.message, Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "任務指派失敗: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
         GoogleMap(
-            modifier = Modifier.fillMaxSize(),
-            cameraPositionState = cameraPositionState,
-            uiSettings = MapUiSettings(myLocationButtonEnabled = true),
-            properties = MapProperties(isMyLocationEnabled = true),
-            onMapClick = { selectedSupply = null }
+                modifier = Modifier.fillMaxSize(),
+                cameraPositionState = cameraPositionState,
+                uiSettings = MapUiSettings(myLocationButtonEnabled = true),
+                properties = MapProperties(isMyLocationEnabled = true),
+                onMapClick = { selectedSupply = null }
         ) {
-            userLocation?.let {
-                Marker(
-                    state = MarkerState(position = it),
-                    title = "所在位置"
-                )
-            }
+            userLocation?.let { Marker(state = MarkerState(position = it), title = "所在位置") }
             // 顯示所有打卡點
-            spots.forEach { spot ->
-                spotMarker(spot = spot, userId = user.uid)
-            }
+            spots.forEach { spot -> spotMarker(spot = spot, userId = user.uid) }
 
-            //顯示補給站
+            // 顯示補給站
             supplyStations.forEach { supply ->
-                SupplyMarker(supply = supply, onClick = {
-                    selectedSupply = it
-                    showSupplyDialog = true
-                })
+                SupplyMarker(
+                        supply = supply,
+                        onClick = {
+                            selectedSupply = it
+                            showSupplyDialog = true
+                        }
+                )
             }
         }
 
         if (showSupplyDialog && selectedSupply != null) {
             SupplyHandlerDialog(
-                supply = selectedSupply!!,
-                user = user,
-                onDismiss = { showSupplyDialog = false }
+                    supply = selectedSupply!!,
+                    user = user,
+                    onDismiss = { showSupplyDialog = false }
             )
         }
         IconButton(
-            onClick = { showDialog = true },
-            modifier = Modifier.align(Alignment.TopStart).padding(start = 16.dp, top = 50.dp)
-        ) {
-            Icon(Icons.Default.Settings, contentDescription = "設定", tint = Color.Black)
-        }
+                onClick = { showDialog = true },
+                modifier = Modifier.align(Alignment.TopStart).padding(start = 16.dp, top = 50.dp)
+        ) { Icon(Icons.Default.Settings, contentDescription = "設定", tint = Color.Black) }
 
         if (showDialog) {
             Dialog(onDismissRequest = { showDialog = false }) {
                 Surface(
-                    shape = RoundedCornerShape(24.dp),
-                    color = Color(0xFFF6EDF7),
-                    tonalElevation = 4.dp,
-                    modifier = Modifier.width(280.dp).wrapContentHeight()
+                        shape = RoundedCornerShape(24.dp),
+                        color = Color(0xFFF6EDF7),
+                        tonalElevation = 4.dp,
+                        modifier = Modifier.width(280.dp).wrapContentHeight()
                 ) {
                     SettingDialog(
-                        user = FakeUser,//後面要改
-                        onDismiss = { showDialog = false },
-                        onNameChange = {newName -> },
-                        onLogout = {}
+                            user = FakeUser, // 後面要改
+                            onDismiss = { showDialog = false },
+                            onNameChange = { newName -> },
+                            onLogout = {}
                     )
                 }
             }
         }
 
         Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Bottom
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Bottom
         ) {
             Spacer(modifier = Modifier.weight(1f))
             Button(
-                onClick = { navController.navigate("bag") },
-                colors = buttonColors,
-                modifier = Modifier.align(Alignment.CenterHorizontally).size(120.dp).padding(bottom = 60.dp)
-            ) {
-                Text("背包", fontSize = 20.sp)
-            }
+                    onClick = { navController.navigate("bag") },
+                    colors = buttonColors,
+                    modifier =
+                            Modifier.align(Alignment.CenterHorizontally)
+                                    .size(120.dp)
+                                    .padding(bottom = 60.dp)
+            ) { Text("背包", fontSize = 20.sp) }
         }
 
-
         Column(
-            modifier = Modifier.align(Alignment.CenterEnd).padding(end = 10.dp, bottom = 320.dp),
-            verticalArrangement = Arrangement.spacedBy(30.dp),
-            horizontalAlignment = Alignment.End
+                modifier =
+                        Modifier.align(Alignment.CenterEnd).padding(end = 10.dp, bottom = 320.dp),
+                verticalArrangement = Arrangement.spacedBy(30.dp),
+                horizontalAlignment = Alignment.End
         ) {
             Button(onClick = { navController.navigate("favorites") }, colors = buttonColors) {
                 Text("收藏冊")
@@ -293,48 +286,35 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             Button(onClick = { navController.navigate("tasklist") }, colors = buttonColors) {
                 Text("任務版")
             }
-            Button(
-                onClick = { navController.navigate("bugHunt") }, colors = buttonColors){
+            Button(onClick = { navController.navigate("bugHunt") }, colors = buttonColors) {
                 Text("啟動 BugHunt 任務")
             }
-            Button(
-                onClick = { navController.navigate("ancientTree") }, colors = buttonColors) {
+            Button(onClick = { navController.navigate("ancientTree") }, colors = buttonColors) {
                 Text("古樹")
             }
-            Button(
-                onClick = { navController.navigate("merchant") }, colors = buttonColors) {
+            Button(onClick = { navController.navigate("merchant") }, colors = buttonColors) {
                 Text("神秘商人")
             }
-            Button(
-                onClick = { navController.navigate("slimeAttack") }, colors = buttonColors) {
+            Button(onClick = { navController.navigate("slimeAttack") }, colors = buttonColors) {
                 Text("史萊姆戰鬥")
             }
-            Button(
-                onClick = { navController.navigate("stonePile") }, colors = buttonColors) {
+            Button(onClick = { navController.navigate("stonePile") }, colors = buttonColors) {
                 Text("石堆")
             }
-            Button(
-                onClick = { navController.navigate("treasureBox") }, colors = buttonColors) {
+            Button(onClick = { navController.navigate("treasureBox") }, colors = buttonColors) {
                 Text("寶箱")
             }
-            Button(
-                onClick = { showChatDialog = true }, colors = buttonColors) {
-                Text("客服")
-            }
+            Button(onClick = { showChatDialog = true }, colors = buttonColors) { Text("客服") }
 
             // 客服聊天
             if (showChatDialog) {
                 Dialog(onDismissRequest = { showChatDialog = false }) {
                     Surface(
-                        shape = RoundedCornerShape(24.dp),
-                        color = Color.White,
-                        tonalElevation = 4.dp,
-                        modifier = Modifier.width(350.dp).height(650.dp)
-                    ) {
-                        ChatScreen(
-                            onClose = { showChatDialog = false }
-                        )
-                    }
+                            shape = RoundedCornerShape(24.dp),
+                            color = Color.White,
+                            tonalElevation = 4.dp,
+                            modifier = Modifier.width(350.dp).height(650.dp)
+                    ) { ChatScreen(onClose = { showChatDialog = false }) }
                 }
             }
         }
