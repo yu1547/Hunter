@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.ntou01157.hunter.R
@@ -206,16 +207,55 @@ fun FavoritesScreen(
 
             // 地標解鎖彈窗
             selectedSpot?.let {
-                AlertDialog(
-                    onDismissRequest = onDismissSpotDialog,
-                    confirmButton = {
-                        TextButton(onClick = onDismissSpotDialog) {
-                            Text("關閉")
+                Dialog(onDismissRequest = onDismissSpotDialog) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.favorite_dialog),
+                            contentDescription = "收藏彈窗背景",
+                            modifier = Modifier
+                                .fillMaxSize()
+                        )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 56.dp, top = 176.dp, end = 0.dp), // 文字向左
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            Text(
+                                text = it.spotName,
+                                style = MaterialTheme.typography.titleLarge,
+                                color = Color.Black
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text(
+                                text = "內容說明。",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.Black
+                            )
                         }
-                    },
-                    title = { Text(it.spotName) },
-                    text = { Text("內容說明。") }
-                )
+                        // 按鈕獨立出來
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 60.dp)
+                                .align(Alignment.BottomCenter),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Button(
+                                onClick = onDismissSpotDialog,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFFB49865),
+                                    contentColor = Color.White
+                                )
+                            ) {
+                                Text("關閉")
+                            }
+                        }
+                    }
+                }
             }
 
             // 地標鎖定提示彈窗
