@@ -33,6 +33,8 @@ import retrofit2.HttpException
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.times
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.TextFieldDefaults
 
 
 @Composable
@@ -221,36 +223,21 @@ fun ChatScreen(
                         .fillMaxWidth()
                         .height(110.dp)
                 )
-                // TextField 佔滿寬度，送出按鈕獨立右下
-                TextField(
+                // TextField 佔滿寬度，送出按鈕獨立右下 -> 改為 BasicTextField 使文字可垂直置中
+                BasicTextField(
                     value = input,
                     onValueChange = { input = it },
                     modifier = Modifier
-                        .align(Alignment.CenterStart) // 讓整個輸入框在容器中垂直置中
+                        .align(Alignment.CenterStart)
                         .fillMaxWidth()
                         .height(90.dp)
-                        .padding(start = 10.dp, end = 100.dp), // 移除原本 top = 24.dp 以便真正置中
-                    placeholder = {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.CenterStart // 垂直置中 + 靠左
-                        ) {
-                            Text(
-                                "請輸入訊息...",
-                                fontSize = 13.sp
-                            )
-                        }
-                    },
+                        .padding(start = 10.dp, end = 100.dp),
                     enabled = !isLoading,
-                    singleLine = false,
-                    maxLines = 4,
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        disabledContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent
+                    singleLine = true,
+                    maxLines = 1,
+                    textStyle = LocalTextStyle.current.copy(
+                        fontSize = 15.sp, // 原 13.sp
+                        color = MaterialTheme.colorScheme.onSurface
                     ),
                     keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Send),
                     keyboardActions = KeyboardActions(
@@ -268,7 +255,24 @@ fun ChatScreen(
                                 )
                             }
                         }
-                    )
+                    ),
+                    decorationBox = { innerTextField ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(90.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            if (input.text.isEmpty()) {
+                                Text(
+                                    "請輸入訊息...",
+                                    fontSize = 15.sp, // 原 13.sp
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                )
+                            }
+                            innerTextField()
+                        }
+                    }
                 )
                 // 送出按鈕獨立在右
                 Box(
