@@ -48,7 +48,7 @@ class BagActivity : ComponentActivity() {
 @Composable
 fun BagScreen(navController: NavHostController) {
 //    var userIdState by remember { mutableStateOf<String?>(null) }
-    var userIdState by remember { mutableStateOf<String?>("68886402bc049f83948150e8") }//測試用
+    var userIdState by remember { mutableStateOf<String?>("68846d797609912e5e6ba9af") }//測試用
     val coroutineScope = rememberCoroutineScope()
 
 //    LaunchedEffect(Unit) {

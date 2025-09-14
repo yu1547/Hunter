@@ -9,18 +9,14 @@ const { getMongoClient } = require('../config/db');
 // 要更新的用戶 ID (請替換為實際的用戶 _id 字串)
 const userIdToUpdate = '68846d797609912e5e6ba9af'; 
 
-// 新的道具列表 (請根據您的 item schema 修改)
-// 這裡假設 item 的 ID 也是 ObjectId
-const newItems = [
-  // { "itemId": new ObjectId("6880f3f7d80b975b33f23e2e"), "quantity": 10 },
-  // { "itemId": new ObjectId("6880f3f7d80b975b33f23e2f"), "quantity": 5 },
-];
+// 新的道具列表將從資料庫動態獲取
 // --------------------
 
 // 資料庫名稱
 const dbName = 'Hunter';
 // 集合名稱
-const collectionName = 'users';
+const usersCollectionName = 'users';
+const itemsCollectionName = 'items';
 
 async function updateUserItems() {
   let client;
@@ -33,15 +29,31 @@ async function updateUserItems() {
 
     // 選擇資料庫和集合
     const db = client.db(dbName);
-    const collection = db.collection(collectionName);
+    const usersCollection = db.collection(usersCollectionName);
+    const itemsCollection = db.collection(itemsCollectionName);
+
+    // 1. 從 'items' 集合中獲取所有道具
+    console.log('正在從 items 集合中獲取所有道具...');
+    const allItems = await itemsCollection.find({}).toArray();
+    if (!allItems || allItems.length === 0) {
+      console.log('在 items 集合中找不到任何道具，無法更新用戶背包。');
+      return;
+    }
+    console.log(`找到了 ${allItems.length} 個道具。`);
+
+    // 2. 為每個道具創建新的背包物品列表，並設定合理的數量
+    const newBackpackItems = allItems.map(item => ({
+      itemId: item._id,
+      quantity: 20 // 為每個道具設定合理的數量，例如 20
+    }));
 
     // 將用戶 ID 字串轉換為 ObjectId
     const userObjectId = new ObjectId(userIdToUpdate);
 
     // 更新指定用戶的道具列表
-    const result = await collection.updateOne(
+    const result = await usersCollection.updateOne(
       { _id: userObjectId },
-      { $set: { backpackItems: newItems } }
+      { $set: { backpackItems: newBackpackItems } }
     );
 
     if (result.matchedCount === 0) {

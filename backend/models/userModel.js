@@ -1,25 +1,12 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
-// // 定義補給站領取紀錄schema
-// const supplyLogSchema = new Schema({
-//   spotId: {
-//     type: String, // 字串存 supplyId(key)
-//     required: true
-//   },
-//   nextClaimTime: {
-//     type: Date,
-//     required: true
-//   }
-// }, { _id: false }); // 不要自動生成 _id
-
 // 定義使用者模型結構
 const userSchema = new Schema({
-  // uid 由 MongoDB 自動生成的 _id 提供
   backpackItems: [{
     _id: false, //不會自動生成 _id
     itemId: {
-      type: mongoose.Schema.Types.ObjectId,//改成mongoDB的ObjectId
+      type: mongoose.Schema.Types.ObjectId,
       required: true
     },
     quantity: {
@@ -47,7 +34,7 @@ const userSchema = new Schema({
       type: Date,
       default: null
     },
-    refreshedAt: { // 拒絕任務後，可刷新的時間
+    refreshedAt: { 
       type: Date,
       default: null
     },
@@ -71,21 +58,29 @@ const userSchema = new Schema({
   settings: {
     music: {
       type: Boolean,
-      default: true  // 預設開啟音效
+      default: true
     },
     notification: {
       type: Boolean,
-      default: true  // 預設開啟推播通知
+      default: true
     },
     language: {
       type: String,
-      default: 'zh-TW'  // 預設語言
+      default: 'zh-TW'
     }
   },
-  // 可加入其他用戶屬性，如用戶名稱、等級等
   username: {
     type: String,
     default: "Hunter"
+  },
+  gender: {
+    type: String,
+    enum: ['男', '女', '不透露'],
+    default: '不透露'
+  },
+  age: {
+    type: String,  // 如果你希望用數字存，可以改成 Number
+    default: "18"
   },
   createdAt: {
     type: Date,
@@ -98,7 +93,7 @@ const userSchema = new Schema({
   },
   supplyScanLogs: {
     type: Map,
-    of: Date,   // 值直接是 nextClaimTime
+    of: Date,
     default: {}
   },
   buff: {
