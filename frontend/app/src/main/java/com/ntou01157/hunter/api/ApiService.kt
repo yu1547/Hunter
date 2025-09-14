@@ -182,7 +182,7 @@ interface ApiService {
     // 指派每日任務給使用者
     @POST("api/missions/users/{userId}/missions/assign-daily")
     suspend fun assignDailyMissions(@Path("userId") userId: String): SuccessResponse
-    
+}
 
 
 // 請求 Body 的資料類別

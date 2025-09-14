@@ -229,6 +229,7 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             SupplyHandlerDialog(
                     supply = selectedSupply!!,
                     user = user,
+                    navController = navController,
                     onDismiss = { showSupplyDialog = false }
             )
         }
