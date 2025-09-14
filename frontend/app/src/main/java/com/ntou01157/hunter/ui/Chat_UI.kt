@@ -226,19 +226,18 @@ fun ChatScreen(
                     value = input,
                     onValueChange = { input = it },
                     modifier = Modifier
+                        .align(Alignment.CenterStart) // 讓整個輸入框在容器中垂直置中
                         .fillMaxWidth()
                         .height(90.dp)
-                        .padding(start = 10.dp, end = 100.dp, top = 24.dp),
+                        .padding(start = 10.dp, end = 100.dp), // 移除原本 top = 24.dp 以便真正置中
                     placeholder = {
                         Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .height(90.dp)
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.CenterStart // 垂直置中 + 靠左
                         ) {
                             Text(
                                 "請輸入訊息...",
-                                fontSize = 13.sp,
-                                modifier = Modifier.align(Alignment.CenterStart)
+                                fontSize = 13.sp
                             )
                         }
                     },
