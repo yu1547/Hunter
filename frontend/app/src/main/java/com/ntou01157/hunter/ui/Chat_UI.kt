@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
@@ -85,52 +86,47 @@ fun ChatScreen(
             scrollState.animateScrollTo(scrollState.maxValue)
         }
     }
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.csr_dialog),
-                contentDescription = "客服視窗背景",
-                modifier = Modifier
-                    .width(1200.dp)
-                    .height(600.dp)
-            )
-        }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 72.dp),
-            contentAlignment = Alignment.TopCenter
-        ) {
-            Text(
-                text = "獵人智能客服",
-                fontSize = 22.sp,
-                color = Color.Black
-            )
-        }
-        // 其他
+
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.csr_dialog),
+            contentDescription = "客服視窗背景",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.FillBounds
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(32.dp)
+                .padding(top = 32.dp, start = 32.dp, end = 32.dp) // 移除底部 padding
         ) {
-            Spacer(modifier = Modifier.height(34.dp)) // 頂部留空
-            // 關閉按鈕右上角
             Box(
                 modifier = Modifier
                     .fillMaxWidth(),
-                contentAlignment = Alignment.TopEnd
+                contentAlignment = Alignment.Center
             ) {
-                IconButton(onClick = {
-                    Log.d("ChatScreen", "關閉按鈕被點擊")
-                    deleteHistoryAndClose()
-                }) {
-                    Image(
-                        painter = painterResource(id = R.drawable.csr_close_button),
-                        contentDescription = "關閉客服視窗",
-                        modifier = Modifier.size(25.dp)
-                    )
+                Text(
+                    text = "獵人智能客服",
+                    fontSize = 22.sp,
+                    color = Color.Black
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.TopEnd
+                ) {
+                    IconButton(onClick = {
+                        Log.d("ChatScreen", "關閉按鈕被點擊")
+                        deleteHistoryAndClose()
+                    }) {
+                        Image(
+                            painter = painterResource(id = R.drawable.csr_close_button),
+                            contentDescription = "關閉客服視窗",
+                            modifier = Modifier.size(25.dp)
+                        )
+                    }
                 }
             }
 
@@ -300,7 +296,7 @@ fun ChatScreen(
                 }
             }
         }
-
+    }
 }
 
 private fun sendMessage(
