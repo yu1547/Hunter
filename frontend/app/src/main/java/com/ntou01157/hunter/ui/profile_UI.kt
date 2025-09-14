@@ -144,7 +144,7 @@ fun ProfileScreen(
         ) {
             // 背景鋪滿
             Image(
-                painter = painterResource(id = R.drawable.person),
+                painter = painterResource(id = R.drawable.profile_background_light),
                 contentDescription = "背景",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
@@ -238,15 +238,15 @@ fun ProfileScreen(
                 }
             }
 
-            // 左上角 Home icon
-            IconButton(
-                onClick = { navController.navigate("main") },
-                modifier = Modifier.padding(top = 25.dp, start = 10.dp)
+            Box(
+                modifier = Modifier
+                    .padding(top = 25.dp, start = 16.dp)
+                    .clickable { navController.navigate("main") }
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.home_icon),
                     contentDescription = "回首頁",
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.size(60.dp)
                 )
             }
 

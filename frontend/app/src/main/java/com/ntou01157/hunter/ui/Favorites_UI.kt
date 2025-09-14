@@ -76,15 +76,15 @@ fun FavoritesScreen(
                     .background(Color(0xFFF2EFDE))
                     .padding(horizontal = 16.dp)
             ) {
-                // 回首頁按鈕
-                IconButton(
-                    onClick = { navController.navigate("main") },
-                    modifier = Modifier.padding(top = 30.dp, bottom = 4.dp)
+                Box(
+                    modifier = Modifier
+                        .padding(top = 25.dp, start = 16.dp)
+                        .clickable { navController.navigate("main") }
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.ic_home),
+                        painter = painterResource(id = R.drawable.home_icon),
                         contentDescription = "回首頁",
-                        modifier = Modifier.size(45.dp)
+                        modifier = Modifier.size(60.dp)
                     )
                 }
 

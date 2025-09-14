@@ -144,14 +144,15 @@ fun TaskListScreen(navController: NavController) {
                     .padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
-                    onClick = { navController.navigate("main") },
-                    modifier = Modifier.padding(top = 25.dp, bottom = 4.dp)
+                Box(
+                    modifier = Modifier
+                        .padding(top = 25.dp, start = 16.dp)
+                        .clickable { navController.navigate("main") }
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.ic_home),
+                        painter = painterResource(id = R.drawable.home_icon),
                         contentDescription = "回首頁",
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(60.dp)
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
