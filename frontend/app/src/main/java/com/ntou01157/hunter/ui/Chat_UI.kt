@@ -31,6 +31,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.unit.times
 
 
 @Composable
@@ -100,11 +102,14 @@ fun ChatScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 32.dp, start = 32.dp, end = 32.dp) // 移除底部 padding
+                .padding(top = 5.dp, start = 30.dp, end = 30.dp)
         ) {
+            val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+            val screenWidth = LocalConfiguration.current.screenWidthDp.dp
             Box(
                 modifier = Modifier
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .padding(top = 0.0001f * screenHeight), // 調整比例，往上移動
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -114,7 +119,11 @@ fun ChatScreen(
                 )
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .padding(
+                            top = 0.0001f * screenHeight,
+                            end = screenWidth * 0.00001f // 依比例再往右移動
+                        ),
                     contentAlignment = Alignment.TopEnd
                 ) {
                     IconButton(onClick = {
@@ -124,7 +133,7 @@ fun ChatScreen(
                         Image(
                             painter = painterResource(id = R.drawable.csr_close_button),
                             contentDescription = "關閉客服視窗",
-                            modifier = Modifier.size(25.dp)
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                 }
