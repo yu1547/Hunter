@@ -22,7 +22,7 @@ import android.util.Log
 fun MerchantUI(onEventCompleted: (message: String) -> Unit) {
     // 將 API 服務和 userId 的定義移至 Composable 外部，以保持一致性
     val eventApiService = RetrofitClient.apiService
-    val userId = "6880f31469ff254ed2fb0cc1"
+    val userId = "68a48da731f22c76b7a5f52c"
     val coroutineScope = rememberCoroutineScope()
     // 修正 1: 將 allItems 的類型從 UserItemModel 改為 UserItem，與 API 回傳類型一致
     val allItems = remember { mutableStateListOf<UserItem>() }

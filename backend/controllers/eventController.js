@@ -290,6 +290,25 @@ const getEventById = async (req, res) => {
     }
 };
 
+const getStonePileStatus = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: '找不到使用者。' });
+        }
+
+        const today = new Date().toISOString().slice(0, 10);
+        const hasTriggeredToday = user.lastStonePileTriggeredDate && user.lastStonePileTriggeredDate.toISOString().slice(0, 10) === today;
+
+        return res.status(200).json({ hasTriggeredToday });
+    } catch (error) {
+        console.error("獲取石堆狀態失敗：", error);
+        return res.status(500).json({ success: false, message: '伺服器內部錯誤' });
+    }
+};
+
 module.exports = {
     getDailyEventBySpot,
     trade,
@@ -297,4 +316,5 @@ module.exports = {
     completeEvent,
     refreshDailyEvents,
     getEventById,
+    getStonePileStatus,
 };

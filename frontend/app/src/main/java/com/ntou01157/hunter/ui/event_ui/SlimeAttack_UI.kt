@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun SlimeAttackUI(onEventCompleted: (message: String) -> Unit) {
     val eventApiService = RetrofitClient.apiService
-    val userId = "6880f31469ff254ed2fb0cc1"
+    val userId = "68a48da731f22c76b7a5f52c"
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 

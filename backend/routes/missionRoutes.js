@@ -33,6 +33,6 @@ router.post('/missions/llm/:userId', createLLMMission);
 router.put('/check-spot/:userId/:spotId', checkSpotMission);
 
 // 指派每日任務給使用者
-router.post('/users/:userId/missions/assign-daily', assignDailyMissions);
+router.post('/assign-daily/:userId', assignDailyMissions);
 
 module.exports = router;

@@ -8,6 +8,7 @@ const {
     completeEvent,
     refreshDailyEvents,
     getEventById,
+    getStonePileStatus,
 } = require('../controllers/eventController');
 
 // 每日自動刷新事件位置的 API，通常由排程任務 (cron job) 調用
@@ -28,5 +29,7 @@ router.post('/trigger-stone-pile', triggerStonePile);
 // 商人交易相關的 API
 router.post('/trade', trade);
 
+
+router.get('/stone-pile-status/:userId', getStonePileStatus);
 
 module.exports = router;

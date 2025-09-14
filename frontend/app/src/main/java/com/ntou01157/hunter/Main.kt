@@ -177,8 +177,7 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
     // 2. 在這裡加入 LaunchedEffect 區塊
     val coroutineScope = rememberCoroutineScope()
     // 載入所有打卡點
-    LaunchedEffect(user?.uid) {
-        val userId = user?.uid ?: return@LaunchedEffect
+    LaunchedEffect(user.uid) {
         // spots = withContext(Dispatchers.IO) { SpotApi.getAllSpots() }
 
         // 在協程中執行所有非同步任務
@@ -189,7 +188,7 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
 
                 // 2. 直接呼叫 MissionHandler 指派每日任務
                 // 這裡會觸發後端的 assignDailyMissions 邏輯，由後端判斷是否需要刷新
-                val missionResponse = MissionHandler.assignDailyMissions(userId)
+                val missionResponse = MissionHandler.assignDailyMissions(user.uid)
                 withContext(Dispatchers.Main) {
                     Toast.makeText(context, missionResponse.message, Toast.LENGTH_SHORT).show()
                 }
