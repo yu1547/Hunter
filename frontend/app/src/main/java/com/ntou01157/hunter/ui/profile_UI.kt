@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Logout
+import androidx.compose.ui.graphics.graphicsLayer
 import android.content.Context
 import androidx.lifecycle.viewModelScope
 import androidx.compose.ui.unit.dp
@@ -150,93 +151,115 @@ fun ProfileScreen(
                 modifier = Modifier.fillMaxSize()
             )
 
-            // Profile 區塊 → 螢幕正中央
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
+            Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = 25.dp)
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                // 頭像
-                if(!isEditing) {
-                    Box(
-                        modifier = Modifier
-                            .size(120.dp)
-                            .clip(CircleShape)
-                            .background(Color.LightGray)
-                            .clickable(enabled = !isAvatarUploading) { launcher.launch("image/*") },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        val photoUrl = userState?.photoURL.orEmpty()
-                        when {
-                            selectedImageUri != null -> Image(
-                                painter = rememberAsyncImagePainter(selectedImageUri),
-                                contentDescription = "選擇的頭像",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
+                // 背景圖
+                Image(
+                    painter = painterResource(id = R.drawable.profile_frame),
+                    contentDescription = "Profile 背景",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer(
+                            scaleX = 1.1f,   // ✅ 水平放大
+                            scaleY = 1.1f    // ✅ 垂直放大
+                        ),
+                    contentScale = ContentScale.Fit
+                )
 
-                            photoUrl.isNotBlank() -> Image(
-                                painter = rememberAsyncImagePainter(photoUrl),
-                                contentDescription = "已設定的頭像",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        }
 
-                        if (isAvatarUploading) {
-                            Box(
-                                Modifier
-                                    .matchParentSize()
-                                    .background(Color.Black.copy(alpha = 0.25f))
-                            )
-                            CircularProgressIndicator()
+
+                // Profile 區塊
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = 25.dp)
+                ) {
+                    // 頭像
+                    if(!isEditing) {
+                        Box(
+                            modifier = Modifier
+                                .size(120.dp)
+                                .clip(CircleShape)
+                                .background(Color.LightGray)
+                                .clickable(enabled = !isAvatarUploading) { launcher.launch("image/*") },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val photoUrl = userState?.photoURL.orEmpty()
+                            when {
+                                selectedImageUri != null -> Image(
+                                    painter = rememberAsyncImagePainter(selectedImageUri),
+                                    contentDescription = "選擇的頭像",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+
+                                photoUrl.isNotBlank() -> Image(
+                                    painter = rememberAsyncImagePainter(photoUrl),
+                                    contentDescription = "已設定的頭像",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+
+                            if (isAvatarUploading) {
+                                Box(
+                                    Modifier
+                                        .matchParentSize()
+                                        .background(Color.Black.copy(alpha = 0.25f))
+                                )
+                                CircularProgressIndicator()
+                            }
                         }
                     }
-                }
 
-                Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(16.dp))
 
-                // 使用者資訊 / 編輯模式
-                val u = userState
-                if (u == null) {
-                    Text("載入中...", style = MaterialTheme.typography.bodyLarge)
-                } else {
-                    if (isEditing) {
-                        OutlinedTextField(
-                            value = editedUsername,
-                            onValueChange = { v -> editedUsername = v },
-                            label = { Text("暱稱") },
-                            modifier = Modifier
-                                .width(screenWidth * 0.65f)   // ✅ 寬度 50%
-                                .height(screenHeight * 0.1f) // ✅ 高度 6%
-                                .padding(vertical = 8.dp)
-                        )
-                        DropdownField(
-                            label = "性別",
-                            options = listOf("男", "女", "不透露"),
-                            value = if (editedGender.isBlank()) "不透露" else editedGender,
-                            onValueChange = { v -> editedGender = v },
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
-                        )
-                        DropdownField(
-                            label = "年齡",
-                            options = (1..50).map { it.toString() },
-                            value = if (editedAge.isBlank()) "1" else editedAge,
-                            onValueChange = { v -> editedAge = v },
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
-                        )
-
+                    // 使用者資訊 / 編輯模式
+                    val u = userState
+                    if (u == null) {
+                        Text("載入中...", style = MaterialTheme.typography.bodyLarge)
                     } else {
-                        Column(horizontalAlignment = Alignment.Start) {
-                            Text("暱稱：${u.username}", style = MaterialTheme.typography.bodyLarge)
-                            Text("性別：${u.gender}", style = MaterialTheme.typography.bodyLarge)
-                            Text("年齡：${u.age}", style = MaterialTheme.typography.bodyLarge)
+                        if (isEditing) {
+                            OutlinedTextField(
+                                value = editedUsername,
+                                onValueChange = { v -> editedUsername = v },
+                                label = { Text("暱稱") },
+                                modifier = Modifier
+                                    .width(screenWidth * 0.65f)
+                                    .height(screenHeight * 0.1f)
+                                    .padding(vertical = 8.dp)
+                            )
+                            DropdownField(
+                                label = "性別",
+                                options = listOf("男", "女", "不透露"),
+                                value = if (editedGender.isBlank()) "不透露" else editedGender,
+                                onValueChange = { v -> editedGender = v },
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                            )
+                            DropdownField(
+                                label = "年齡",
+                                options = (1..50).map { it.toString() },
+                                value = if (editedAge.isBlank()) "1" else editedAge,
+                                onValueChange = { v -> editedAge = v },
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                            )
+
+                        } else {
+                            Column(horizontalAlignment = Alignment.Start) {
+                                Text("暱稱：${u.username}", style = MaterialTheme.typography.bodyLarge)
+                                Text("性別：${u.gender}", style = MaterialTheme.typography.bodyLarge)
+                                Text("年齡：${u.age}", style = MaterialTheme.typography.bodyLarge)
+                            }
                         }
                     }
                 }
             }
+
 
             Box(
                 modifier = Modifier
