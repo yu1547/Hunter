@@ -141,9 +141,8 @@ fun ProfileScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
         ) {
-            // 背景鋪滿
+            // 背景滿版，不受 innerPadding 影響
             Image(
                 painter = painterResource(id = R.drawable.profile_background_light),
                 contentDescription = "背景",
@@ -151,170 +150,174 @@ fun ProfileScreen(
                 modifier = Modifier.fillMaxSize()
             )
 
+            // 前景內容才套用 innerPadding
             Box(
                 modifier = Modifier
-                    .fillMaxSize(),
-                contentAlignment = Alignment.Center
+                    .fillMaxSize()
+                    .padding(innerPadding)
             ) {
-                // 背景圖
-                Image(
-                    painter = painterResource(id = R.drawable.profile_frame),
-                    contentDescription = "Profile 背景",
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .graphicsLayer(
-                            scaleX = 1.1f,   // ✅ 水平放大
-                            scaleY = 1.1f    // ✅ 垂直放大
-                        ),
-                    contentScale = ContentScale.Fit
-                )
-
-
-
-                // Profile 區塊
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = 25.dp)
+                        .fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    // 頭像
-                    if(!isEditing) {
-                        Box(
-                            modifier = Modifier
-                                .size(120.dp)
-                                .clip(CircleShape)
-                                .background(Color.LightGray)
-                                .clickable(enabled = !isAvatarUploading) { launcher.launch("image/*") },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            val photoUrl = userState?.photoURL.orEmpty()
-                            when {
-                                selectedImageUri != null -> Image(
-                                    painter = rememberAsyncImagePainter(selectedImageUri),
-                                    contentDescription = "選擇的頭像",
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
-                                )
+                    // 背景圖
+                    Image(
+                        painter = painterResource(id = R.drawable.profile_frame),
+                        contentDescription = "Profile 背景",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .graphicsLayer(
+                                scaleX = 1.1f,
+                                scaleY = 1.1f
+                            ),
+                        contentScale = ContentScale.Fit
+                    )
 
-                                photoUrl.isNotBlank() -> Image(
-                                    painter = rememberAsyncImagePainter(photoUrl),
-                                    contentDescription = "已設定的頭像",
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
-                                )
-                            }
+                    // Profile 區塊
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(bottom = 25.dp)
+                    ) {
+                        // 頭像
+                        if(!isEditing) {
+                            Box(
+                                modifier = Modifier
+                                    .size(120.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.LightGray)
+                                    .clickable(enabled = !isAvatarUploading) { launcher.launch("image/*") },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                val photoUrl = userState?.photoURL.orEmpty()
+                                when {
+                                    selectedImageUri != null -> Image(
+                                        painter = rememberAsyncImagePainter(selectedImageUri),
+                                        contentDescription = "選擇的頭像",
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
 
-                            if (isAvatarUploading) {
-                                Box(
-                                    Modifier
-                                        .matchParentSize()
-                                        .background(Color.Black.copy(alpha = 0.25f))
-                                )
-                                CircularProgressIndicator()
+                                    photoUrl.isNotBlank() -> Image(
+                                        painter = rememberAsyncImagePainter(photoUrl),
+                                        contentDescription = "已設定的頭像",
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
+
+                                if (isAvatarUploading) {
+                                    Box(
+                                        Modifier
+                                            .matchParentSize()
+                                            .background(Color.Black.copy(alpha = 0.25f))
+                                    )
+                                    CircularProgressIndicator()
+                                }
                             }
                         }
-                    }
 
-                    Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(16.dp))
 
-                    // 使用者資訊 / 編輯模式
-                    val u = userState
-                    if (u == null) {
-                        Text("載入中...", style = MaterialTheme.typography.bodyLarge)
-                    } else {
-                        if (isEditing) {
-                            OutlinedTextField(
-                                value = editedUsername,
-                                onValueChange = { v -> editedUsername = v },
-                                label = { Text("暱稱") },
-                                modifier = Modifier
-                                    .width(screenWidth * 0.65f)
-                                    .height(screenHeight * 0.1f)
-                                    .padding(vertical = 8.dp)
-                            )
-                            DropdownField(
-                                label = "性別",
-                                options = listOf("男", "女", "不透露"),
-                                value = if (editedGender.isBlank()) "不透露" else editedGender,
-                                onValueChange = { v -> editedGender = v },
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
-                            )
-                            DropdownField(
-                                label = "年齡",
-                                options = (1..50).map { it.toString() },
-                                value = if (editedAge.isBlank()) "1" else editedAge,
-                                onValueChange = { v -> editedAge = v },
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
-                            )
-
+                        // 使用者資訊 / 編輯模式
+                        val u = userState
+                        if (u == null) {
+                            Text("載入中...", style = MaterialTheme.typography.bodyLarge)
                         } else {
-                            Column(horizontalAlignment = Alignment.Start) {
-                                Text("暱稱：${u.username}", style = MaterialTheme.typography.bodyLarge)
-                                Text("性別：${u.gender}", style = MaterialTheme.typography.bodyLarge)
-                                Text("年齡：${u.age}", style = MaterialTheme.typography.bodyLarge)
+                            if (isEditing) {
+                                OutlinedTextField(
+                                    value = editedUsername,
+                                    onValueChange = { v -> editedUsername = v },
+                                    label = { Text("暱稱") },
+                                    modifier = Modifier
+                                        .width(screenWidth * 0.65f)
+                                        .height(screenHeight * 0.1f)
+                                        .padding(vertical = 8.dp)
+                                )
+                                DropdownField(
+                                    label = "性別",
+                                    options = listOf("男", "女", "不透露"),
+                                    value = if (editedGender.isBlank()) "不透露" else editedGender,
+                                    onValueChange = { v -> editedGender = v },
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                                )
+                                DropdownField(
+                                    label = "年齡",
+                                    options = (1..50).map { it.toString() },
+                                    value = if (editedAge.isBlank()) "1" else editedAge,
+                                    onValueChange = { v -> editedAge = v },
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                                )
+
+                            } else {
+                                Column(horizontalAlignment = Alignment.Start) {
+                                    Text("暱稱：${u.username}", style = MaterialTheme.typography.bodyLarge)
+                                    Text("性別：${u.gender}", style = MaterialTheme.typography.bodyLarge)
+                                    Text("年齡：${u.age}", style = MaterialTheme.typography.bodyLarge)
+                                }
                             }
                         }
                     }
                 }
-            }
 
-
-            Box(
-                modifier = Modifier
-                    .padding(top = 25.dp, start = 16.dp)
-                    .clickable { navController.navigate("main") }
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.home_icon),
-                    contentDescription = "回首頁",
-                    modifier = Modifier.size(60.dp)
-                )
-            }
-
-            IconButton(
-                onClick = {
-                    if (isEditing) {
-                        val u = userState ?: return@IconButton
-                        val id = u.id ?: return@IconButton
-                        profileViewModel.updateUserProfile(
-                            userId = id,
-                            username = editedUsername,
-                            gender = editedGender,
-                            age = editedAge
-                        )
-                        isEditing = false
-                    } else {
-                        isEditing = true
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxHeight(0.7f)
-                    .offset(x = screenWidth * 11 / 14)
-            ) {
-                Icon(
-                    imageVector = if (isEditing) Icons.Default.Save else Icons.Default.Settings,
-                    contentDescription = if (isEditing) "儲存" else "設定",
-                    modifier = Modifier.size(40.dp),
-                    tint = Color.Black
-                )
-            }
-
-            // 全螢幕 Loading 遮罩
-            if (isAvatarUploading) {
-                val blocker = remember { MutableInteractionSource() }
                 Box(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.40f))
-                        .clickable(
-                            indication = null,
-                            interactionSource = blocker
-                        ) { },
-                    contentAlignment = Alignment.Center
+                        .padding(top = 25.dp, start = 16.dp)
+                        .clickable { navController.navigate("main") }
                 ) {
-                    CircularProgressIndicator()
+                    Image(
+                        painter = painterResource(id = R.drawable.home_icon),
+                        contentDescription = "回首頁",
+                        modifier = Modifier.size(60.dp)
+                    )
+                }
+
+                IconButton(
+                    onClick = {
+                        if (isEditing) {
+                            val u = userState ?: return@IconButton
+                            val id = u.id ?: return@IconButton
+                            profileViewModel.updateUserProfile(
+                                userId = id,
+                                username = editedUsername,
+                                gender = editedGender,
+                                age = editedAge
+                            )
+                            isEditing = false
+                        } else {
+                            isEditing = true
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxHeight(0.7f)
+                        .offset(x = screenWidth * 11 / 14)
+                ) {
+                    Icon(
+                        imageVector = if (isEditing) Icons.Default.Save else Icons.Default.Settings,
+                        contentDescription = if (isEditing) "儲存" else "設定",
+                        modifier = Modifier.size(40.dp),
+                        tint = Color.Black
+                    )
+                }
+
+                // 全螢幕 Loading 遮罩
+                if (isAvatarUploading) {
+                    val blocker = remember { MutableInteractionSource() }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.40f))
+                            .clickable(
+                                indication = null,
+                                interactionSource = blocker
+                            ) { },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
                 }
             }
         }
@@ -324,10 +327,9 @@ fun ProfileScreen(
         ) {
             val configuration = LocalConfiguration.current
             val screenHeight = configuration.screenHeightDp.dp
-
             Surface(
                 modifier = Modifier
-                    .width(screenWidth * 0.7f) // ✅ 卡片寬度 70%
+                    .width(screenWidth * 0.7f)
                     .align(Alignment.BottomCenter)
                     .offset(y = -screenHeight * 0.2f),
                 shape = RoundedCornerShape(16.dp),
