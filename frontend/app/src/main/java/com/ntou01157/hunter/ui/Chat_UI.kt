@@ -1,6 +1,7 @@
 package com.ntou01157.hunter.ui
 
 import android.util.Log
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -12,11 +13,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
+import com.ntou01157.hunter.R
 import com.ntou01157.hunter.api.RetrofitClient
 import com.ntou01157.hunter.api.ChatRequest
 import com.ntou01157.hunter.api.ChatHistoryItem
@@ -25,6 +29,8 @@ import com.ntou01157.hunter.models.History
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
+import androidx.compose.ui.tooling.preview.Preview
+
 
 @Composable
 fun ChatScreen(
@@ -40,6 +46,11 @@ fun ChatScreen(
     var userIdState by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
+        // 測試用，正式請用 API 取得，並註解掉這行!!!!
+        userIdState = "68846d797609912e5e6ba9af"
+
+        // 若要恢復原本 API 取得，請註解掉上面這行，並還原下方 try-catch 區塊 !!!!!!!
+        /*
         try {
             val email = FirebaseAuth.getInstance().currentUser?.email
                 ?: run {
@@ -52,6 +63,7 @@ fun ChatScreen(
         } catch (e: Exception) {
             Log.e("ChatScreen", "以 email 取得 userId 失敗：${e.message}", e)
         }
+        */
     }
 
     fun deleteHistoryAndClose() {
@@ -73,28 +85,52 @@ fun ChatScreen(
             scrollState.animateScrollTo(scrollState.maxValue)
         }
     }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.csr_dialog),
+                contentDescription = "客服視窗背景",
+                modifier = Modifier
+                    .width(1200.dp)
+                    .height(600.dp)
+            )
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 72.dp),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            Text(
+                text = "獵人智能客服",
+                fontSize = 22.sp,
+                color = Color.Black
+            )
+        }
+        // 其他
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
+                .padding(32.dp)
         ) {
-            // 標題區域
-            Row(
+            Spacer(modifier = Modifier.height(34.dp)) // 頂部留空
+            // 關閉按鈕右上角
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.TopEnd
             ) {
-                Text("客服中心", fontSize = 20.sp)
-                TextButton(onClick = { deleteHistoryAndClose() }) {
-                    Text("關閉")
+                IconButton(onClick = {
+                    Log.d("ChatScreen", "關閉按鈕被點擊")
+                    deleteHistoryAndClose()
+                }) {
+                    Image(
+                        painter = painterResource(id = R.drawable.csr_close_button),
+                        contentDescription = "關閉客服視窗",
+                        modifier = Modifier.size(25.dp)
+                    )
                 }
             }
 
@@ -105,8 +141,7 @@ fun ChatScreen(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(12.dp))
-                    .padding(8.dp)
+                    .padding(5.dp)
             ) {
                 Column(
                     modifier = Modifier
@@ -165,22 +200,54 @@ fun ChatScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(2.dp))
 
             // 輸入區域
-            Row(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .height(110.dp)
+                    .padding(bottom = 5.dp)
             ) {
+                Image(
+                    painter = painterResource(id = R.drawable.csr_user_input),
+                    contentDescription = "輸入訊息背景",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(110.dp)
+                )
+                // TextField 佔滿寬度，送出按鈕獨立右下
                 TextField(
                     value = input,
                     onValueChange = { input = it },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text("請輸入訊息...") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(90.dp)
+                        .padding(start = 10.dp, end = 100.dp, top = 24.dp),
+                    placeholder = {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .height(90.dp)
+                        ) {
+                            Text(
+                                "請輸入訊息...",
+                                fontSize = 13.sp,
+                                modifier = Modifier.align(Alignment.CenterStart)
+                            )
+                        }
+                    },
                     enabled = !isLoading,
-                    singleLine = true,
+                    singleLine = false,
+                    maxLines = 4,
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        disabledContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent
+                    ),
                     keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Send),
                     keyboardActions = KeyboardActions(
                         onSend = {
@@ -199,29 +266,41 @@ fun ChatScreen(
                         }
                     )
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(
-                    onClick = {
-                        val uid = userIdState ?: return@Button
-                        if (input.text.isNotBlank() && !isLoading) {
-                            sendMessage(
-                                input,
-                                messages,
-                                uid,
-                                coroutineScope,
-                                onResult = { newMessages -> messages = newMessages },
-                                onLoading = { loading -> isLoading = loading },
-                                onInputClear = { input = TextFieldValue("") }
-                            )
-                        }
-                    },
-                    enabled = !isLoading
+                // 送出按鈕獨立在右
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(end = 5.dp, bottom = 27.dp),
+                    contentAlignment = Alignment.BottomEnd
                 ) {
-                    Text("送出")
+                    IconButton(
+                        onClick = {
+                            Log.d("ChatScreen", "送出訊息按鈕被點擊")
+                            val uid = userIdState ?: return@IconButton
+                            if (input.text.isNotBlank() && !isLoading) {
+                                sendMessage(
+                                    input,
+                                    messages,
+                                    uid,
+                                    coroutineScope,
+                                    onResult = { newMessages -> messages = newMessages },
+                                    onLoading = { loading -> isLoading = loading },
+                                    onInputClear = { input = TextFieldValue("") }
+                                )
+                            }
+                        },
+                        enabled = !isLoading
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.csr_upload_button),
+                            contentDescription = "送出訊息",
+                            modifier = Modifier.size(30.dp)
+                        )
+                    }
                 }
             }
         }
-    }
+
 }
 
 private fun sendMessage(
@@ -301,4 +380,11 @@ private fun sendMessage(
             onLoading(false)
         }
     }
+}
+
+
+@Preview(showBackground = true, widthDp = 720, heightDp = 1280)
+@Composable
+fun ChatScreenPreview() {
+    ChatScreen(onClose = {})
 }
