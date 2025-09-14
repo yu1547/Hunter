@@ -222,6 +222,7 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
     )
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0),
         bottomBar = {
             NavigationBar {
                 val currentRoute = navController.currentBackStackEntry?.destination?.route
@@ -248,9 +249,10 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             }
         }
     ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+        val bottomPadding = innerPadding.calculateBottomPadding()
+        Box(modifier = Modifier.fillMaxSize().padding(bottom = bottomPadding)) {
             GoogleMap(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.matchParentSize(),
                 cameraPositionState = cameraPositionState,
                 uiSettings = MapUiSettings(myLocationButtonEnabled = true),
                 properties = MapProperties(isMyLocationEnabled = true),
