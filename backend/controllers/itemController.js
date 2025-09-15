@@ -17,7 +17,6 @@ const getAllItems = async (req, res) => {
 const getItemById = async (req, res) => {
     try {
         const id = req.params.id;
-
         // 檢查 id 是否為有效的 ObjectId
         if (!ObjectId.isValid(id)) {
             return res.status(400).json({ message: '無效的 ID 格式' });

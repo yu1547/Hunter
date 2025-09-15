@@ -1,266 +1,480 @@
 package com.ntou01157.hunter.ui
 
+import kotlinx.coroutines.delay
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.shadow
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.ntou01157.hunter.R
-
-import androidx.compose.runtime.* // 導入必要的 compose runtime 函式
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext // 新增 LocalContext 導入
-import androidx.lifecycle.viewmodel.compose.viewModel // 導入 ViewModel 相關函式
 import coil.compose.AsyncImage
-import com.ntou01157.hunter.MainApplication // 導入您的 Application 類
-import com.ntou01157.hunter.utils.NetworkResult // 導入 NetworkResult
-import com.ntou01157.hunter.models.model_api.RankItem // 確保導入正確的 RankItem
+import com.google.firebase.auth.FirebaseAuth
+import com.ntou01157.hunter.MainApplication
+import com.ntou01157.hunter.R
+import com.ntou01157.hunter.api.RetrofitClient
+import com.ntou01157.hunter.models.model_api.RankCreateRequest
+import com.ntou01157.hunter.models.model_api.RankItem
 import com.ntou01157.hunter.models.model_api.UserRank
-
-
-
+import com.ntou01157.hunter.utils.NetworkResult
 
 @Composable
 fun RankingScreen(navController: NavController) {
-    val userId = "user789"
-    //初始化使用者的資料
-
     val application = LocalContext.current.applicationContext as MainApplication
-    val rankingViewModel: RankingViewModel = viewModel(
-        factory = RankingViewModelFactory(application)
-    )
+    val vm: RankingViewModel = viewModel(factory = RankingViewModelFactory(application))
 
-    LaunchedEffect(userId) {
-        rankingViewModel.fetchRankData(userId)
+    var userId by remember { mutableStateOf<String?>(null) }
+    var resolving by remember { mutableStateOf(true) }
+    var resolveErr by remember { mutableStateOf<String?>(null) }
+
+    // 1) 用 email 找使用者 → 確保有 rank → 再拉排行榜
+    LaunchedEffect(Unit) {
+        try {
+            resolving = true
+            val email = FirebaseAuth.getInstance().currentUser?.email
+                ?: error("尚未登入，無法取得 Email")
+
+            val user = RetrofitClient.apiService.getUserByEmail(email)
+            userId = user.id
+
+            // 確保 ranks 有這個人（沒有就建立 score=0）
+            val created = ensureRankForUser(
+                userId   = user.id,
+                username = if (!user.username.isNullOrBlank()) user.username!! else "玩家",
+                photoUrl = user.photoURL
+            )
+
+            // 若剛新建，給後端一點時間寫入（或你可改成後端直接回最新資料）
+            if (created) delay(300)
+
+            // 抓排行榜
+            vm.fetchRankData(user.id)
+        } catch (e: Exception) {
+            resolveErr = e.message
+            Log.e("Ranking", "resolve user failed", e)
+        } finally {
+            resolving = false
+        }
     }
 
-    val rankDataState by rankingViewModel.rankData.collectAsState()
+    val state by vm.rankData.collectAsState()
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF2E3E3))
     ) {
-        // 根據數據狀態顯示不同的 UI
-        when (rankDataState) {
-            is NetworkResult.Loading -> {
+        when {
+            resolving -> {
                 Column(
-                    modifier = Modifier.fillMaxSize(),
+                    Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     CircularProgressIndicator(color = Color(0xFFbc8f8f))
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text("載入排行榜中...", fontSize = 18.sp, color = Color.Gray)
+                    Spacer(Modifier.height(12.dp))
+                    Text("載入中…", color = Color.Gray)
                 }
             }
-            is NetworkResult.Success -> {
-                val rankResponse = (rankDataState as NetworkResult.Success).data
-                if (rankResponse != null) {
-                    val rankList = rankResponse.rankList
-                    val currentUser = rankResponse.userRank
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(top = 64.dp, bottom = 96.dp, start = 16.dp, end = 16.dp)
-                            .background(Color(0xFFDDDDDD), shape = RoundedCornerShape(12.dp))
-                            .padding(12.dp)
-                    ) {
-                        Text(
-                            text = "頂級獵人排行榜",
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF8B4513),
-                            modifier = Modifier.padding(bottom = 12.dp).align(Alignment.CenterHorizontally)
-                        )
-
-                        // 檢查 rankList 是否為空
-                        if (rankList.isNotEmpty()) {
-                            // 使用 LazyColumn 提高長列表性能
-                            // 如果排行榜項目不多，直接使用 Column 也可以
-                            rankList.forEachIndexed { index, item ->
-                                // 直接傳遞 RankItem，並計算排名
-                                RankingListItem(rank = index + 1, rankItem = item)
-                                Spacer(modifier = Modifier.height(8.dp))
-                            }
-                        } else {
-                            Text(
-                                text = "目前排行榜沒有數據。",
-                                modifier = Modifier
-                                    .align(Alignment.CenterHorizontally)
-                                    .padding(top = 20.dp),
-                                color = Color.Gray
-                            )
-                        }
-                    }
-
-                    // 顯示當前使用者排名 (如果存在)
-                    currentUser?.let { userRank ->
-                        // 將 RankingUserItem 直接放在 Box 中並使用 alignment 定位
-                        RankingUserItem(
-                            userRank = userRank,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.BottomCenter) // 讓它位於 Box 的底部中央
-                                .padding(horizontal = 16.dp, vertical = 16.dp) // 調整 padding
-                        )
-                    }
-                } else {
-                    // 數據為空，但狀態是成功（例如，後端返回空列表），這是一種特殊情況
-                    Text(
-                        text = "未找到排行榜數據。",
-                        modifier = Modifier.align(Alignment.Center),
-                        color = Color.Gray
-                    )
-                }
-            }
-            is NetworkResult.Error -> {
-                val errorMessage = (rankDataState as NetworkResult.Error).message
+            resolveErr != null -> {
                 Column(
-                    modifier = Modifier.fillMaxSize(),
+                    Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("載入排行榜失敗: $errorMessage", color = Color.Red, fontSize = 18.sp)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = { rankingViewModel.fetchRankData(userId) }) {
-                        Text("重試")
+                    Text("取得使用者失敗：$resolveErr", color = Color.Red)
+                }
+            }
+            else -> {
+                when (state) {
+                    is NetworkResult.Loading -> {
+                        Column(
+                            Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            CircularProgressIndicator(color = Color(0xFFbc8f8f))
+                            Spacer(Modifier.height(8.dp))
+                            Text("載入排行榜中…", color = Color.Gray)
+                        }
+                    }
+                    is NetworkResult.Error -> {
+                        val msg = (state as NetworkResult.Error).message
+                        Column(
+                            Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text("載入失敗：$msg", color = Color.Red)
+                            Spacer(Modifier.height(8.dp))
+                            Button(onClick = { userId?.let { vm.fetchRankData(it) } }) {
+                                Text("重試")
+                            }
+                        }
+                    }
+                    is NetworkResult.Success -> {
+                        val data = (state as NetworkResult.Success<com.ntou01157.hunter.models.model_api.RankResponse?>).data
+                        if (data == null) {
+                            Text("未找到排行榜數據。", color = Color.Gray, modifier = Modifier.align(Alignment.Center))
+                        } else {
+                            RankingBoard(
+                                rankList = data.rankList,
+                                me = data.userRank,
+                                onBack = { navController.navigate("main") }
+                            )
+                        }
                     }
                 }
             }
         }
 
-        // 回首頁按鈕，位置保持不變
-        IconButton(
-            onClick = { navController.navigate("main") },
+        Box(
             modifier = Modifier
-                .align(Alignment.TopStart) // 固定在左上角
                 .padding(top = 25.dp, start = 16.dp)
+                .clickable { navController.navigate("main") }
         ) {
             Image(
-                painter = painterResource(id = R.drawable.ic_home),
+                painter = painterResource(id = R.drawable.home_icon),
                 contentDescription = "回首頁",
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier.size(60.dp)
             )
+        }
+
+    }
+}
+// ---------- UI：排行榜清單 + 我的排名 ----------
+@Composable
+private fun RankingBoard(
+    rankList: List<RankItem>,
+    me: UserRank?,
+    onBack: () -> Unit
+) {
+    val listToShow = remember(rankList) { rankList.filter { it.score > 0 } }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
+        // 背景圖
+        Image(
+            painter = painterResource(id = R.drawable.ranklist_background_light),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.matchParentSize()
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(start = 20.dp, end = 20.dp, top = 250.dp, bottom = 95.dp)
+                .background(Color.White.copy(alpha = 0.7f), RoundedCornerShape(16.dp)) // 半透明白色
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp, vertical = 16.dp)
+        ) {
+
+
+            Spacer(Modifier.height(30.dp))
+
+            // --- 前三名特殊區塊 ---
+            if (listToShow.isNotEmpty()) {
+                val top3 = listToShow.take(3)
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp) // 總高度框架
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        // 第3名（最矮）
+                        if (top3.size > 2) TopRankItem(rank = 3, item = top3[2], height = 50.dp)
+                        // 第1名（最高）
+                        TopRankItem(rank = 1, item = top3[0], height = 90.dp)
+                        // 第2名（中間）
+                        if (top3.size > 1) TopRankItem(rank = 2, item = top3[1], height = 70.dp)
+                    }
+
+                    // 黑線直接貼在最底部
+                    Divider(
+                        color = Color.Black.copy(alpha = 0.6f),
+                        thickness = 1.dp,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(horizontal = 30.dp)
+                    )
+
+                }
+            }
+
+
+
+            Spacer(Modifier.height(8.dp))
+
+            // 其餘排名
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                itemsIndexed(listToShow.drop(3)) { index, item ->
+                    RankingItemRow(rank = index + 4, item = item)
+                }
+            }
+
+            // 我的排名卡
+            me?.let { mine ->
+                val rankLabel = if (mine.rank == null || mine.score == 0) "(未上榜)" else "${mine.rank}"
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Avatar(url = mine.userImg, size = 48.dp)
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(mine.username, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            Text("積分：${mine.score}", fontSize = 14.sp, color = Color.DarkGray)
+                        }
+                        Text(text = rankLabel, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
         }
     }
 }
 
-// 用於排行榜列表項目的 Composable (只有排名和 RankItem 數據)
+// --- 前三名特殊樣式 ---
 @Composable
-fun RankingListItem(rank: Int, rankItem: RankItem) {
+private fun TopRankItem(rank: Int, item: RankItem, height: Dp) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Bottom
+    ) {
+        // 頭像加陰影
+        Box(
+            modifier = Modifier
+                .size(72.dp) // 比 Avatar 稍大一點
+                .shadow(8.dp, CircleShape, clip = false) // 加陰影
+                .clip(CircleShape)                       // 圓形裁切
+        ) {
+            Avatar(url = item.userImg, size = 70.dp)
+        }
+
+        Spacer(Modifier.height(4.dp))
+
+        // 玩家名稱 (放在頭像下面，獎牌不會壓到)
+        Text(
+            text = item.username,
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp,
+            maxLines = 1
+        )
+
+        Spacer(Modifier.height(18.dp))
+
+        // 階梯 + 分數 + 獎牌
+        Box(
+            modifier = Modifier
+                .width(80.dp)
+                .height(height),
+            contentAlignment = Alignment.Center
+        ) {
+            // 階梯背景
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Color(0xFFD9C6A5),
+                        RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                // 分數
+                Spacer(Modifier.height(20.dp))
+                Text(
+                    text = item.score.toString(),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            // 疊加獎牌（位置偏上，不會蓋名字）
+            val medalModifier = Modifier
+                .size(55.dp)
+                .align(Alignment.TopCenter)
+                .offset(y = (-25).dp)
+
+            when (rank) {
+                1 -> Image(
+                    painter = painterResource(id = R.drawable.ranklist_medal_1),
+                    contentDescription = "金牌",
+                    modifier = medalModifier
+                )
+                2 -> Image(
+                    painter = painterResource(id = R.drawable.ranklist_medal_2),
+                    contentDescription = "銀牌",
+                    modifier = medalModifier
+                )
+                3 -> Image(
+                    painter = painterResource(id = R.drawable.ranklist_medal_3),
+                    contentDescription = "銅牌",
+                    modifier = medalModifier
+                )
+            }
+        }
+    }
+}
+
+
+// ---------- UI：排行榜單列 ----------
+@Composable
+private fun RankingItemRow(rank: Int, item: RankItem) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White, RoundedCornerShape(12.dp))
-            .padding(12.dp),
+            .height(IntrinsicSize.Min),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = "$rank",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.width(32.dp),
-            color = Color(0xFF4B0082)
-        )
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        // *** START: 修改這裡的頭像顯示邏輯 ***
-        // 暫時用一個純色圓圈作為佔位符
-        if (!rankItem.userImg.isNullOrEmpty()) {
-            AsyncImage(
-                model = rankItem.userImg,
-                contentDescription = "${rankItem.username}'s avatar",
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape) // Clip to circle shape
-            )
-        } else {
-            // Fallback to a plain gray circle if no avatar URL is provided
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(Color.Gray, shape = CircleShape)
+        Box(
+            modifier = Modifier
+                .width(36.dp)
+                .fillMaxHeight(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = rank.toString(),
+                fontSize = 28.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF222222)
             )
         }
-        // *** END: 修改這裡的頭像顯示邏輯 ***
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(Modifier.width(8.dp))
 
-        Column {
-            Text(text = rankItem.username, fontSize = 18.sp, fontWeight = FontWeight.Medium)
-            Text(text = "積分：${rankItem.score}", fontSize = 14.sp, color = Color.Gray)
+        // 右側白色卡片：頭像 + 名稱 + 積分
+        Card(
+            modifier = Modifier.width(300.dp),
+            shape = RoundedCornerShape(10.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Avatar(url = item.userImg, size = 44.dp)
+                Spacer(Modifier.width(12.dp))
+                Column {
+                    Text(item.username, fontSize = 18.sp, fontWeight = FontWeight.Medium)
+                    Text("積分：${item.score}", fontSize = 14.sp, color = Color.Gray)
+                }
+            }
         }
-
-        Spacer(modifier = Modifier.weight(1f))
     }
 }
 
+// ---------- 共用：頭像（photoURL 空字串/Null → 顯示灰色圓框；有圖裁切填滿） ----------
 @Composable
-fun RankingUserItem(userRank: UserRank, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(12.dp), // 給底部卡片一個圓角
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF0F5)) // 更顯眼的顏色
-    ) {
-        Row(
+private fun Avatar(url: String?, size: Dp) {
+    val hasImage = !url.isNullOrBlank()
+    if (hasImage) {
+        AsyncImage(
+            model = url,
+            contentDescription = "avatar",
+            contentScale = ContentScale.Crop,   // 讓圖片符合圓框大小
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "${userRank.rank}",
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Black,
-                color = Color(0xFFB22222),
-                modifier = Modifier.width(40.dp)
+                .size(size)
+                .clip(CircleShape)
+        )
+    } else {
+        Box(
+            modifier = Modifier
+                .size(size)
+                .clip(CircleShape)
+                .background(Color(0xFFD9D9D9))
+        )
+    }
+}
+
+private suspend fun ensureRankForUser(
+    userId: String,
+    username: String,
+    photoUrl: String?
+): Boolean {
+    return try {
+        val exists = try {
+            val r = RetrofitClient.apiService.getRankByUserId(userId)
+            r.userRank?.userId == userId || r.rankList.any { it.userId == userId }
+        } catch (_: Exception) {
+            false
+        }
+
+        if (!exists) {
+            RetrofitClient.apiService.createRank(
+                RankCreateRequest(
+                    userId = userId,
+                    username = username,
+                    userImg  = photoUrl ?: "",
+                    score    = 0
+                )
             )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            // *** START: 修改這裡的頭像顯示邏輯 ***
-            // 暫時用一個純色圓圈作為佔位符
-            if (!userRank.userImg.isNullOrEmpty()) {
-                AsyncImage(
-                    model = userRank.userImg,
-                    contentDescription = "${userRank.username}'s avatar",
-                    modifier = Modifier
-                        .size(56.dp) // Current user's avatar can be slightly larger
-                        .clip(CircleShape) // Clip to circle shape
+            true  // 剛建立
+        } else {
+            false // 已存在
+        }
+    } catch (e: Exception) {
+        Log.e("Ranking", "ensureRankForUser failed: ${e.message}", e)
+        try {
+            RetrofitClient.apiService.createRank(
+                RankCreateRequest(
+                    userId = userId,
+                    username = username,
+                    userImg  = photoUrl ?: "",
+                    score    = 0
                 )
-            } else {
-                // Fallback to a plain gray circle if no avatar URL is provided
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .background(Color.Gray, shape = CircleShape)
-                )
-            }
-            // *** END: 修改這裡的頭像顯示邏輯 ***
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column {
-                Text(text = userRank.username, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-                Text(text = "我的積分：${userRank.score}", fontSize = 16.sp, color = Color.DarkGray)
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            Text(text = " (你)", fontSize = 16.sp, color = Color.Black, fontWeight = FontWeight.SemiBold)
+            )
+            true
+        } catch (e2: Exception) {
+            Log.e("Ranking", "ensureRank create failed: ${e2.message}", e2)
+            false
         }
     }
 }

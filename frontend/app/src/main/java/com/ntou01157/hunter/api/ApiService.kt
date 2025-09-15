@@ -5,16 +5,22 @@ import com.ntou01157.hunter.models.model_api.EventModel
 import com.ntou01157.hunter.models.model_api.EventResponse
 import com.ntou01157.hunter.models.model_api.Item
 import com.ntou01157.hunter.models.model_api.RankResponse
-import com.ntou01157.hunter.models.model_api.Settings
-import com.ntou01157.hunter.models.model_api.Task
 import com.ntou01157.hunter.models.model_api.User
+import com.ntou01157.hunter.models.model_api.Task
+import com.ntou01157.hunter.models.model_api.EventModel
+import com.ntou01157.hunter.models.model_api.EventResponse
 import com.ntou01157.hunter.models.model_api.UserItem
+import com.ntou01157.hunter.models.model_api.Settings
+import com.ntou01157.hunter.models.model_api.RankCreateRequest
+import com.ntou01157.hunter.models.PhotoUrlBody
+
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
@@ -41,7 +47,6 @@ data class TradeResponse(val success: Boolean, val message: String)
 
 // 為了 AncientTree_UI
 data class BlessTreeRequest(val userId: String, val itemToOffer: String)
-
 data class BlessTreeResponse(val success: Boolean, val message: String)
 
 // 為了 SlimeAttack_UI
@@ -82,13 +87,41 @@ interface ApiService {
         @POST("api/users/{id}/craft")
         suspend fun craftItem(@Path("id") id: String, @Body body: CraftRequestBody): User
 
-        // --- Task endpoints ---
-        @GET("api/tasks/{id}") suspend fun getTask(@Path("id") id: String): Task
+        @GET("api/users/email/{email}")
+        suspend fun getUserByEmail(@Path("email") email: String): User
 
-        @GET(
-                "api/rank/{userId}"
-        ) // Changed "api/ranks" to "api/rank" for consistency with backend routes
+        @PUT("api/users/{id}")
+        suspend fun updateUser(@Path("id") id: String, @Body updatedUser: User): User
+
+        @PUT("api/users/{id}")
+        suspend fun updateUser(@Path("id") id: String, @Body updatedData: Map<String, String>): User
+
+        @PATCH("/api/users/{id}/photo")
+        suspend fun updatePhotoUrl(
+                @Path("id") userId: String,
+                @Body body: PhotoUrlBody
+        ): Response<Unit>
+
+        
+        // --- Task endpoints ---
+        @GET("api/tasks/{id}")
+        suspend fun getTask(@Path("id") id: String): Task
+
+        @GET("api/rank/{userId}") // Changed "api/ranks" to "api/rank" for consistency with backend routes
         suspend fun getRank(@Path("userId") userId: String): Response<RankResponse>
+
+        // ✅ 取得排行榜（帶目前使用者 userId）
+        @GET("api/ranks/{userId}")
+        suspend fun getRankByUserId(@Path("userId") userId: String): RankResponse
+
+        // ✅ 建立排名資料（當 userRank 不存在時用）
+        @POST("api/ranks")
+        suspend fun createRank(@Body body: RankCreateRequest): Response<Unit>
+        
+        
+        // --- Mission endpoints ---
+        @POST("api/users/{userId}/missions/refresh")
+        suspend fun refreshAllMissions(@Path("userId") userId: String): User
 
         // --- Mission endpoints ---
         @POST("api/users/{userId}/missions/refresh")
@@ -182,17 +215,19 @@ interface ApiService {
         @PUT("api/settings/{id}")
         suspend fun updateSettings(@Path("id") id: String, @Body settings: Settings)
 
-        // --- Chat endpoints ---
-        @POST("api/chat/{userId}")
-        suspend fun chatWithLLM(
-                @Path("userId") userId: String,
-                @Body body: ChatRequest
-        ): ChatResponse
-
         // 指派每日任務給使用者
         @POST("api/users/{userId}/missions/assign-daily")
         suspend fun assignDailyMissions(@Path("userId") userId: String): SuccessResponse
+
+        // --- Chat endpoints ---
+        @POST("api/chat/{userId}")
+        suspend fun chatWithLLM(@Path("userId") userId: String, @Body body: ChatRequest): ChatResponse
+
+        // 刪除對話紀錄
+        @DELETE("api/chat/{userId}")
+        suspend fun deleteChatHistory(@Path("userId") userId: String)
 }
+
 
 // 請求 Body 的資料類別
 data class CraftRequestBody(val itemId: String)
@@ -205,6 +240,19 @@ data class CreateLLMMissionRequest(val userLocation: Location)
 data class UserResponse(
         @SerializedName("user") val user: User,
         @SerializedName("message") val message: String?
+)
+
+// 定義請求的資料結構
+data class TriggerEventRequest(
+        val userId: String,
+        val userLatitude: Double,
+        val userLongitude: Double
+)
+
+data class CompleteEventRequest(
+        val userId: String,
+        val selectedOption: String?,
+        val gameResult: Int?
 )
 
 // 定義請求的資料結構
@@ -235,13 +283,12 @@ object RetrofitClient {
                 // 增加日誌攔截器以查看網路請求和回應的詳細資訊
                 val logging =
                         HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
-                val client =
-                        OkHttpClient.Builder()
-                                .addInterceptor(logging)
-                                .connectTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
-                                .readTimeout(600, java.util.concurrent.TimeUnit.SECONDS)
-                                .writeTimeout(600, java.util.concurrent.TimeUnit.SECONDS)
-                                .build()
+                val client = OkHttpClient.Builder()
+                .addInterceptor(logging)
+                .connectTimeout(1200, java.util.concurrent.TimeUnit.SECONDS)
+                .readTimeout(1200, java.util.concurrent.TimeUnit.SECONDS)
+                .writeTimeout(1200, java.util.concurrent.TimeUnit.SECONDS)
+                .build()
 
                 Retrofit.Builder()
                         .baseUrl(BASE_URL)

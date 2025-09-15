@@ -4,6 +4,7 @@ import com.ntou01157.hunter.models.Mission
 import com.ntou01157.hunter.models.Settings
 import com.ntou01157.hunter.models.User
 import com.google.firebase.Timestamp
+import com.ntou01157.hunter.models.Buff
 
 fun getTestUser(): User {
     return User(
@@ -33,6 +34,6 @@ fun getTestUser(): User {
             notification = true,
             language = "zh-TW"
         ),
-        buff = emptyMap()
+        buff = null
     )
 }

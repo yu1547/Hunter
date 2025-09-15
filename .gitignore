@@ -4,6 +4,8 @@ Thumbs.db
 cache/
 __pycache__/
 *.pyc
+.idea/
+google-services.json
 
 # == Node backend ==
 /backend/node_modules/
@@ -12,7 +14,6 @@ __pycache__/
 
 # == Android frontend ==
 /frontend/.gradle/
-/frontend/.idea/
 /frontend/build/
 /frontend/local.properties
 /frontend/*.iml

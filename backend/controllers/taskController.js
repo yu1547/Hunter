@@ -312,7 +312,6 @@ const completeSlimeAttack = async (req, res) => {
     }
 };
 
-
 module.exports = {
     getAllTasks,
     getTaskById,

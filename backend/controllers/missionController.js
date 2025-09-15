@@ -8,6 +8,7 @@ const { generateDropItems } = require('../services/dropService'); // 引入 gene
 const { addItemsToBackpack } = require('../services/backpackService'); // 引入 backpackService
 const axios = require('axios'); // 用於呼叫 Flask
 const mongoose = require('mongoose');
+const { calculateDrops } = require('../logic/dropLogic');
 
 // =====================================================================
 // API 路由處理函式

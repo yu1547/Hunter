@@ -20,7 +20,7 @@ data class User (
     val spotsScanLogs: Map<String, Boolean> = emptyMap(),
     val supplyScanLogs: MutableMap<String, Timestamp> = mutableMapOf(),
     val settings: Settings = Settings(language = "zh-TW"),
-    val buff: Map<String, Int> = emptyMap(),
+    val buff: List<Buff>?,
 ): Serializable
 
 data class BackpackItem(

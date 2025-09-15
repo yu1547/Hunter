@@ -20,9 +20,12 @@ import com.ntou01157.hunter.api.SupplyApi
 import com.ntou01157.hunter.handlers.MissionHandler // 確保已正確導入
 import com.ntou01157.hunter.models.Supply
 import com.ntou01157.hunter.models.User
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import android.widget.Toast
+import com.ntou01157.hunter.api.SupplyApi
+import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 // 補給站地圖上的圖標
@@ -30,14 +33,14 @@ import kotlinx.coroutines.withContext
 @Composable
 fun SupplyMarker(supply: Supply, onClick: (Supply) -> Unit) {
     Marker(
-            state = MarkerState(position = LatLng(supply.latitude, supply.longitude)),
-            // 顯示文字："-補給站-補給站的name"
-            title = "-補給站-${supply.name}",
-            snippet = supply.supplyId,
-            onClick = {
-                onClick(supply)
-                true
-            }
+        state = MarkerState(position = LatLng(supply.latitude, supply.longitude)),
+        // 顯示文字："-補給站-補給站的name"
+        title = "-補給站-${supply.name}",
+        snippet = supply.supplyId,
+        onClick = {
+            onClick(supply)
+            true
+        }
     )
 }
 
@@ -102,20 +105,8 @@ fun SupplyHandlerDialog(
     var cooldownUntil by remember { mutableStateOf<Long?>(null) }
     var cooldownText by remember { mutableStateOf("") }
     val isCooldown = cooldownUntil?.let { System.currentTimeMillis() < it } ?: false
-
-    // 新增狀態來追蹤每日事件
     var dailyEventName by remember { mutableStateOf<String?>(null) }
     val hasDailyEvent = dailyEventName != null
-
-    // 每次對話框開啟時，檢查是否有每日事件
-    LaunchedEffect(supply) {
-        val res = withContext(Dispatchers.IO) { SupplyApi.getDailyEventForSpot(supply.supplyId) }
-        if (res.success && res.hasEvent) {
-            dailyEventName = res.eventName
-        } else {
-            dailyEventName = null
-        }
-    }
 
     // 每秒更新倒數
     LaunchedEffect(cooldownUntil) {
