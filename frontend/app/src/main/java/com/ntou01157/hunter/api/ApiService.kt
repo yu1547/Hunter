@@ -7,8 +7,6 @@ import com.ntou01157.hunter.models.model_api.Item
 import com.ntou01157.hunter.models.model_api.RankResponse
 import com.ntou01157.hunter.models.model_api.User
 import com.ntou01157.hunter.models.model_api.Task
-import com.ntou01157.hunter.models.model_api.EventModel
-import com.ntou01157.hunter.models.model_api.EventResponse
 import com.ntou01157.hunter.models.model_api.UserItem
 import com.ntou01157.hunter.models.model_api.Settings
 import com.ntou01157.hunter.models.model_api.RankCreateRequest
@@ -25,6 +23,7 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
+import retrofit2.http.PATCH
 
 // 為了 BugHuntUI
 data class CompleteBugHuntRequestBody(val userId: String, val solution: String)
@@ -119,10 +118,6 @@ interface ApiService {
         suspend fun createRank(@Body body: RankCreateRequest): Response<Unit>
         
         
-        // --- Mission endpoints ---
-        @POST("api/users/{userId}/missions/refresh")
-        suspend fun refreshAllMissions(@Path("userId") userId: String): User
-
         // --- Mission endpoints ---
         @POST("api/users/{userId}/missions/refresh")
         suspend fun refreshAllMissions(@Path("userId") userId: String): User
@@ -240,19 +235,6 @@ data class CreateLLMMissionRequest(val userLocation: Location)
 data class UserResponse(
         @SerializedName("user") val user: User,
         @SerializedName("message") val message: String?
-)
-
-// 定義請求的資料結構
-data class TriggerEventRequest(
-        val userId: String,
-        val userLatitude: Double,
-        val userLongitude: Double
-)
-
-data class CompleteEventRequest(
-        val userId: String,
-        val selectedOption: String?,
-        val gameResult: Int?
 )
 
 // 定義請求的資料結構

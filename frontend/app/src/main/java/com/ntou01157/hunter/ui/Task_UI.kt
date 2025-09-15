@@ -205,48 +205,55 @@ fun TaskListScreen(navController: NavController) {
                     Text("無使用者 ID，請重新登入", color = Color.Red, modifier = Modifier.align(Alignment.Center))
                 }
                 else -> {
-                    // 真的在顯示任務列表
-                    when {
-                        isLoading -> {
-                            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                        }
-                    }
-
-                    if (llmTasks.count { it.state != "claimed" } < 3) {
-                        item {
-                            Button(
-                                onClick = {
-                                    coroutineScope.launch {
-                                        isLoading = true
-                                        try {
-                                            // 傳入指定的經緯度，日後要改成動態獲取使用者位置
-                                            val newTasks = TaskRepository.createLLMMission(userId, 25.017, 121.542)
-                                            userTaskList.clear()
-                                            userTaskList.addAll(newTasks)
-                                            showMessageDialog = "已生成新的探索任務！"
-                                        } catch (e: Exception) {
-                                            errorMessage = "生成任務失敗: ${e.message}"
-                                        } finally {
-                                            isLoading = false
+                    // 顯示任務列表 + 產生 LLM 任務按鈕 (修正原本未定義 llmTasks、item 範圍錯誤與語法錯誤)
+                    if (isLoading) {
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    } else {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp)
+                        ) {
+                            // 計算尚未領取/未拒絕的任務數量 (排除已領取與已拒絕)
+                            val activeCount = userTaskList.count { it.state != "claimed" && it.state != "declined" }
+                            if (activeCount < 3) {
+                                Button(
+                                    onClick = {
+                                        coroutineScope.launch {
+                                            val uid = userId
+                                            if (uid == null) {
+                                                showMessageDialog = "尚未取得使用者 ID"
+                                                return@launch
+                                            }
+                                            isLoading = true
+                                            errorMessage = null
+                                            try {
+                                                // TODO: 將經緯度改為實際使用者位置
+                                                val newTasks = TaskRepository.createLLMMission(uid, 25.017, 121.542)
+                                                userTaskList.clear()
+                                                userTaskList.addAll(newTasks)
+                                                showMessageDialog = "已生成新的探索任務！"
+                                            } catch (e: Exception) {
+                                                errorMessage = "生成任務失敗：${e.message}"
+                                            } finally {
+                                                isLoading = false
+                                            }
                                         }
-                                    }
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 8.dp)
-                            ) {
-                                Text(errorMessage!!, color = Color.Red)
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) { Text("生成探索任務") }
                                 Spacer(Modifier.height(12.dp))
-                                Button(onClick = { userId?.let { refreshTasks(it) } }) {
-                                    Text("重試")
-                                }
                             }
-                        }
-                        else -> {
+
+                            if (errorMessage != null) {
+                                Text(errorMessage ?: "", color = Color.Red)
+                                Spacer(Modifier.height(8.dp))
+                                Button(onClick = { userId?.let { refreshTasks(it) } }) { Text("重試") }
+                                Spacer(Modifier.height(12.dp))
+                            }
+
                             LazyColumn(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(16.dp),
+                                modifier = Modifier.fillMaxSize(),
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 items(userTaskList) { userTask ->

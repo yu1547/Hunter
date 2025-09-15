@@ -47,17 +47,11 @@ import com.ntou01157.hunter.temp.*
 import com.ntou01157.hunter.models.SupplyRepository
 import com.ntou01157.hunter.models.User
 import com.ntou01157.hunter.ui.*
-import com.ntou01157.hunter.api.RetrofitClient
-import com.ntou01157.hunter.data.RankRepository
-import com.ntou01157.hunter.handlers.SpotLogHandler
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-import com.ntou01157.hunter.api.SpotApi
-import com.ntou01157.hunter.api.SupplyApi
 import com.ntou01157.hunter.ui.event_ui.AncientTreeUI
 import com.ntou01157.hunter.ui.event_ui.MerchantUI
 import com.ntou01157.hunter.ui.event_ui.SlimeAttackUI
@@ -298,13 +292,13 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                 }
             }
 
-            if (showSupplyDialog && selectedSupply != null) {
-                SupplyHandlerDialog(
-                    supply = selectedSupply!!,
-                    user = user,
-                    onDismiss = { showSupplyDialog = false }
-                )
-            }
+//            if (showSupplyDialog && selectedSupply != null) {
+//                SupplyHandlerDialog(
+//                    supply = selectedSupply!!,
+//                    user = user,
+//                    onDismiss = { showSupplyDialog = false }
+//                )
+//            }
 
             // 右側活動類按鈕
             Column(
