@@ -9,35 +9,26 @@ data class EventModel(
     val name: String,
     val description: String,
     val type: String,
-    val mechanics: EventMechanics,
-    val location: EventLocation? = null,
+    val spotId: String? = null,
+    val options: List<Option>? = null,
+    val rewards: Reward? = null,
+    val consume: Reward? = null,
     val lastTriggered: String? = null,
 )
 
-data class EventMechanics(
-    // 直接使用 RewardsModel
-    val rewards: RewardsModel,
-    val additionalInfo: AdditionalInfo?
+data class Option(
+    val text: String,
+    val rewards: Reward,
+    val consume: Reward? = null
 )
 
-data class EventLocation(
-    val lat: Double,
-    val lng: Double
+data class Reward(
+    val points: Int? = 0,
+    val items: List<RewardItemDetail>? = null,
+    val title: String? = null
 )
 
-data class AdditionalInfo(
-    val lastLocationUpdate: String? = null,
-    val attackMultiplier: Int? = null,
-    val exchangeOptions: List<ExchangeOption>? = null
-)
-
-data class ExchangeOption(
-    val option: String,
-    val requiredItems: List<RequiredItem>,
-    val rewardItems: List<RewardItem>
-)
-
-data class RequiredItem(
+data class RewardItemDetail(
     val itemId: String,
     val quantity: Int
 )

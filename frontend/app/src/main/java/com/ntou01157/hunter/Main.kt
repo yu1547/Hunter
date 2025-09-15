@@ -1,6 +1,7 @@
 package com.ntou01157.hunter
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -30,6 +31,12 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
+import com.ntou01157.hunter.api.RetrofitClient // Correct import for RetrofitClient
+import com.ntou01157.hunter.api.SpotApi
+import com.ntou01157.hunter.api.SupplyApi
+import com.ntou01157.hunter.data.RankRepository // Correct import for your RankRepository
+import com.ntou01157.hunter.handlers.MissionHandler
+import com.ntou01157.hunter.handlers.SpotLogHandler
 import com.ntou01157.hunter.mock.FakeUser
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.util.Log
@@ -46,6 +53,7 @@ import com.ntou01157.hunter.handlers.SpotLogHandler
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import com.ntou01157.hunter.api.SpotApi
@@ -83,6 +91,7 @@ class Main : ComponentActivity() {
 
 
 
+            // NavHost(navController = navController, startDestination = "login") {
             NavHost(navController = navController, startDestination = "login") {
                 composable("login") { LoginScreen(navController) }
                 composable("main") { MainScreen(navController) }
@@ -205,7 +214,8 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
     val user: User = FakeUser
 
     val context = LocalContext.current
-    val locationPermissionState = rememberPermissionState(android.Manifest.permission.ACCESS_FINE_LOCATION)
+    val locationPermissionState =
+            rememberPermissionState(android.Manifest.permission.ACCESS_FINE_LOCATION)
     val locationService = remember { LocationService(context) }
     val defaultLatLng = LatLng(25.149995, 121.778730)
     val cameraPositionState = rememberCameraPositionState {

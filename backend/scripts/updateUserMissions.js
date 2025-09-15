@@ -8,16 +8,13 @@ const { getMongoClient } = require('../config/db');
 // --- 請在此處設定 ---
 // 要更新的用戶 ID
 const userIdToUpdate = '68846d797609912e5e6ba9af'; 
-
-// 新的任務列表
-// 根據 userModel.js 的 missions schema 結構來建立
-const newMissions = [];
 // --------------------
 
 // 資料庫名稱
 const dbName = 'Hunter';
 // 集合名稱
-const collectionName = 'users';
+const userCollectionName = 'users';
+const eventCollectionName = 'events';
 
 async function updateUserQuests() {
   let client;
@@ -30,13 +27,31 @@ async function updateUserQuests() {
 
     // 選擇資料庫和集合
     const db = client.db(dbName);
-    const collection = db.collection(collectionName);
+    const userCollection = db.collection(userCollectionName);
+    const eventCollection = db.collection(eventCollectionName);
+
+    // 取得所有 events
+    const events = await eventCollection.find({}, { projection: { _id: 1, spotId: 1 } }).toArray();
+
+    // 依 userModel.js 的 missions schema 格式建立 mission 物件
+    const newMissions = events.map(event => ({
+      taskId: event._id,
+      state: 'available',
+      acceptedAt: null,
+      expiresAt: null,
+      refreshedAt: null,
+      haveCheckPlaces: event.spotId ? [{
+        spotId: event.spotId,
+        isCheck: false
+      }] : [],
+      isLLM: false
+    }));
 
     // 將用戶 ID 字串轉換為 ObjectId
     const userObjectId = new ObjectId(userIdToUpdate);
 
     // 更新指定用戶的當前任務列表
-    const result = await collection.updateOne(
+    const result = await userCollection.updateOne(
       { _id: userObjectId },
       { $set: { missions: newMissions } }
     );

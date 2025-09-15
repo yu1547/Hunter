@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -96,7 +97,7 @@ fun BagScreen(navController: NavHostController) {
         isLoading.value = true
         hasError.value = false
         try {
-            Log.d("BagScreen", "開始獲取用戶物品，用戶ID: $userId")
+            Log.d("BagScreen", "開始獲取用戶物品，用戶ID: ${userId}")
             val items = fetchUserItems(userId)
             allItems.clear()
             allItems.addAll(items)
@@ -113,11 +114,12 @@ fun BagScreen(navController: NavHostController) {
         }
     }
 
-    val filteredItems = when (filterState) {
-        1 -> allItems.filter { it.item.itemType == 0 && it.count.value > 0 }
-        2 -> allItems.filter { it.item.itemType == 1 && it.count.value > 0 }
-        else -> allItems.filter { it.count.value > 0 }
-    }
+    val filteredItems =
+            when (filterState) {
+                1 -> allItems.filter { it.item.itemType == 0 && it.count.value > 0 }
+                2 -> allItems.filter { it.item.itemType == 1 && it.count.value > 0 }
+                else -> allItems.filter { it.count.value > 0 }
+            }
 
     // 如果選中的是素材，找出可合成的結果物品
     val resultItem = remember(selectedItem) {
@@ -149,11 +151,11 @@ fun BagScreen(navController: NavHostController) {
             Spacer(modifier = Modifier.height(4.dp))
 
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFFEFEFEF))
-                    .padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                    modifier =
+                            Modifier.fillMaxWidth()
+                                    .background(Color(0xFFEFEFEF))
+                                    .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 Text("(全部)", modifier = Modifier.clickable { filterState = 0 },
                     color = if (filterState == 0) Color.Black else Color.Gray)
@@ -311,6 +313,42 @@ fun BagScreen(navController: NavHostController) {
                                         )
                                         Text("x1")
                                     }
+
+                                    // 顯示其他需要的素材
+                                    allItems
+                                            .filter {
+                                                it.item.itemType == 0 &&
+                                                        it.item.resultId ==
+                                                                resultItem.item.itemId &&
+                                                        it.item.itemId != selectedItem?.item?.itemId
+                                            }
+                                            .forEach { material ->
+                                                Column(
+                                                        horizontalAlignment =
+                                                                Alignment.CenterHorizontally
+                                                ) {
+                                                    // val materialImageResId =
+                                                    // getDrawableId(material.item.itemPic)
+                                                    // if (materialImageResId ==
+                                                    // R.drawable.ic_placeholder) {
+                                                    //     Log.e("BagScreen", "Invalid imageResId
+                                                    // for other material: ${material.item.itemName}
+                                                    // (pic: ${material.item.itemPic})")
+                                                    // }
+                                                    Image(
+                                                            painter =
+                                                                    painterResource(
+                                                                            id =
+                                                                                    R.drawable
+                                                                                            .default_itempic
+                                                                    ), // 之後要記得改成materialImageResId，而且要把上面註解取消
+                                                            contentDescription =
+                                                                    material.item.itemName,
+                                                            modifier = Modifier.size(50.dp)
+                                                    )
+                                                    Text("x1")
+                                                }
+                                            }
                                 }
                             }
                         }
@@ -496,4 +534,3 @@ fun BagScreen(navController: NavHostController) {
         }
     }
 }
-

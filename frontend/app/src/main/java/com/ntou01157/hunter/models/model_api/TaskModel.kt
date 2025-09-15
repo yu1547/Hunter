@@ -6,7 +6,7 @@ data class Task (
     @SerializedName("_id") val taskId: String,
     @SerializedName("taskName") val taskName: String,
     @SerializedName("taskDescription") val taskDescription: String?,
-    @SerializedName("taskDifficulty") val taskDifficulty: String,
+    @SerializedName("taskDifficulty") val taskDifficulty: String?,
     @SerializedName("taskTarget") val taskTarget: String,
     @SerializedName("checkPlaces") val checkPlaces: List<CheckPlaces> = emptyList(),
     @SerializedName("taskDuration") val taskDuration: Long?, // 單位：秒

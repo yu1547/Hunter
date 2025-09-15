@@ -1,6 +1,18 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
+// // 定義補給站領取紀錄schema
+// const supplyLogSchema = new Schema({
+//   spotId: {
+//     type: String, // 字串存 supplyId(key)
+//     required: true
+//   },
+//   nextClaimTime: {
+//     type: Date,
+//     required: true
+//   }
+// }, { _id: false }); // 不要自動生成 _id
+
 // 定義使用者模型結構
 const userSchema = new Schema({
   backpackItems: [{

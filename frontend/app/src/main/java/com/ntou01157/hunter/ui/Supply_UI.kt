@@ -1,18 +1,23 @@
 package com.ntou01157.hunter.ui
 
 import android.annotation.SuppressLint
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
+import com.ntou01157.hunter.api.SupplyApi
+import com.ntou01157.hunter.handlers.MissionHandler // 確保已正確導入
 import com.ntou01157.hunter.models.Supply
 import com.ntou01157.hunter.models.User
 import kotlinx.coroutines.delay
@@ -26,10 +31,7 @@ import kotlinx.coroutines.withContext
 // 補給站地圖上的圖標
 @SuppressLint("UnrememberedMutableState")
 @Composable
-fun SupplyMarker(
-    supply: Supply,
-    onClick: (Supply) -> Unit
-) {
+fun SupplyMarker(supply: Supply, onClick: (Supply) -> Unit) {
     Marker(
         state = MarkerState(position = LatLng(supply.latitude, supply.longitude)),
         // 顯示文字："-補給站-補給站的name"
@@ -45,32 +47,39 @@ fun SupplyMarker(
 // 對話框
 @Composable
 fun SupplyDialog(
-    supply: Supply,
-    onDismiss: () -> Unit,
-    onCollect: () -> Unit,
-    isCooldown: Boolean,
-    cooldownText: String
+        supply: Supply,
+        onDismiss: () -> Unit,
+        onCollect: () -> Unit,
+        onDailyEvent: () -> Unit, // 新增：每日事件按鈕的點擊事件
+        isCooldown: Boolean,
+        cooldownText: String,
+        hasDailyEvent: Boolean, // 新增：是否顯示每日事件按鈕的狀態
 ) {
     AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {},
-        title = {
-            Box(modifier = Modifier.fillMaxWidth()) {
-                Text("-補給站-${supply.name}", modifier = Modifier.align(Alignment.Center))
-                IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.TopEnd)) {
-                    Icon(Icons.Default.Close, contentDescription = "關閉")
+            onDismissRequest = onDismiss,
+            confirmButton = {},
+            title = {
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Text("-補給站-${supply.name}", modifier = Modifier.align(Alignment.Center))
+                    IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.TopEnd)) {
+                        Icon(Icons.Default.Close, contentDescription = "關閉")
+                    }
                 }
-            }
-        },
-        text = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Button(onClick = onCollect) { Text("領取資源") }
+            },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Button(onClick = onCollect) { Text("領取資源") }
                     if (isCooldown) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("冷卻中，剩餘 $cooldownText")
                     }
+                    // 如果有每日事件，顯示這個按鈕
+                    if (hasDailyEvent) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(onClick = onDailyEvent) { Text("執行任務") }
+                    }
+                }
             }
-        }
     )
 }
 
@@ -84,9 +93,10 @@ private fun formatMs(ms: Long): String {
 
 @Composable
 fun SupplyHandlerDialog(
-    supply: Supply,
-    user: User,
-    onDismiss: () -> Unit
+        supply: Supply,
+        user: User,
+        onDismiss: () -> Unit,
+        navController: NavController // 新增 NavController 參數
 ) {
 
     val context = LocalContext.current
@@ -95,6 +105,8 @@ fun SupplyHandlerDialog(
     var cooldownUntil by remember { mutableStateOf<Long?>(null) }
     var cooldownText by remember { mutableStateOf("") }
     val isCooldown = cooldownUntil?.let { System.currentTimeMillis() < it } ?: false
+    var dailyEventName by remember { mutableStateOf<String?>(null) }
+    val hasDailyEvent = dailyEventName != null
 
     // 每秒更新倒數
     LaunchedEffect(cooldownUntil) {
@@ -110,41 +122,72 @@ fun SupplyHandlerDialog(
     }
 
     SupplyDialog(
-        supply = supply,
-        isCooldown = isCooldown,
-        cooldownText = cooldownText,
-        onDismiss = onDismiss,
-        onCollect = {
-            // 呼叫後端 /api/supplies/{userId}/{supplyId}/claim（移出主執行緒）
-            scope.launch {
-                val res = withContext(Dispatchers.IO) {
-                    SupplyApi.claim(user.uid, supply.supplyId)
-                }
-                if (res.success) {
-                    Toast.makeText(context, "領取成功", Toast.LENGTH_SHORT).show()
-                    // 成功後後端也會回傳下一次可領取時間，啟動冷卻顯示
-                    val until = SupplyApi.parseUtcMillis(res.nextClaimTime)
-                    if (until != null) {
-                        cooldownUntil = until
-                        val left = (until - System.currentTimeMillis()).coerceAtLeast(0)
-                        cooldownText = formatMs(left)
+            supply = supply,
+            isCooldown = isCooldown,
+            cooldownText = cooldownText,
+            onDismiss = onDismiss,
+            onCollect = {
+                scope.launch {
+                    val res =
+                            withContext(Dispatchers.IO) {
+                                SupplyApi.claim(user.uid, supply.supplyId)
+                            }
+                    if (res.success) {
+                        Toast.makeText(context, "領取成功", Toast.LENGTH_SHORT).show()
+                        val until = SupplyApi.parseUtcMillis(res.nextClaimTime)
+                        if (until != null) {
+                            cooldownUntil = until
+                            val left = (until - System.currentTimeMillis()).coerceAtLeast(0)
+                            cooldownText = formatMs(left)
+                        }
+                        onDismiss()
+                    } else if (res.reason == "COOLDOWN" && res.nextClaimTime != null) {
+                        val until = SupplyApi.parseUtcMillis(res.nextClaimTime)
+                        if (until != null) {
+                            cooldownUntil = until
+                            val left = (until - System.currentTimeMillis()).coerceAtLeast(0)
+                            cooldownText = formatMs(left)
+                        } else {
+                            Toast.makeText(context, "冷卻中", Toast.LENGTH_SHORT).show()
+                        }
                     }
-                    onDismiss()
-                } else if (res.reason == "COOLDOWN" && res.nextClaimTime != null) {
-                    val until = SupplyApi.parseUtcMillis(res.nextClaimTime)
-                    if (until != null) {
-                        cooldownUntil = until
-                        val left = (until - System.currentTimeMillis()).coerceAtLeast(0)
-                        cooldownText = formatMs(left)
-                    } else {
-                        Toast.makeText(context, "冷卻中", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    Toast.makeText(context, "領取失敗：${res.reason ?: "未知錯誤"}", Toast.LENGTH_SHORT).show()
                 }
-            }
-        }
+            },
+            onDailyEvent = {
+                // 優化：在導航前先關閉對話框，提供更流暢的用戶體驗
+                onDismiss()
+                scope.launch {
+                    try {
+                        // 首先檢查任務狀態
+                        val missionCheckRes =
+                                withContext(Dispatchers.IO) {
+                                    MissionHandler.checkSpotMission(user.uid, supply.supplyId)
+                                }
 
+                        if (missionCheckRes != null && missionCheckRes.isMissionCompleted) {
+                            Toast.makeText(context, "恭喜，您已完成一個任務！", Toast.LENGTH_LONG).show()
+                        } else if (missionCheckRes?.isMissionCompleted == false) {
+                            Toast.makeText(context, "任務地點已標記完成！", Toast.LENGTH_LONG).show()
+                        }
 
+                        // 然後根據 dailyEventName 進行導航
+                        when (dailyEventName) {
+                            "打扁史萊姆" -> navController.navigate("slimeAttack")
+                            "神秘商人" -> navController.navigate("merchant")
+                            "石堆下的碎片" -> navController.navigate("stonePile")
+                            "寶箱事件" -> navController.navigate("treasureBox")
+                            "古樹祝福" -> navController.navigate("ancientTree")
+                            "猜字遊戲" -> navController.navigate("wordleGame")
+                            else -> {
+                                Toast.makeText(context, "沒有與此地點相關的任務或任務名稱不符", Toast.LENGTH_LONG)
+                                        .show()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "任務執行失敗: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            },
+            hasDailyEvent = hasDailyEvent
     )
 }

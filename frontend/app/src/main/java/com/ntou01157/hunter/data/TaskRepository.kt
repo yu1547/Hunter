@@ -17,8 +17,24 @@ object TaskRepository {
             val user = apiService.refreshAllMissions(userId)
             val taskDetailsList = user.missions.mapNotNull { mission ->
                 try {
-                    // 從後端獲取每個任務的詳細資訊
-                    val taskInfo = apiService.getTask(mission.taskId)
+                    val taskInfo: Task = if (mission.isLLM) {
+                        // 這是 LLM 任務，從 task endpoint 獲取
+                        apiService.getTask(mission.taskId)
+                    } else {
+                        // 這是一般任務(事件)，從 event endpoint 獲取
+                        val event = apiService.getEventById(mission.taskId)
+                        // 將 EventModel 轉換為 Task 模型
+                        Task(
+                            taskId = event.id,
+                            taskName = event.name,
+                            taskDescription = event.description,
+                            taskTarget = event.type, // 使用 event type 作為 target
+                            taskDifficulty = "easy",
+                            taskDuration = null, // 事件沒有持續時間
+                            rewardScore = event.rewards?.points ?: 0,
+                            isLLM = false
+                        )
+                    }
                     UserTask(task = taskInfo, state = mission.state)
                 } catch (e: Exception) {
                     Log.e("TaskRepo", "獲取任務 ${mission.taskId} 詳細資訊失敗", e)

@@ -210,10 +210,30 @@ fun TaskListScreen(navController: NavController) {
                         isLoading -> {
                             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                         }
-                        errorMessage != null && userTaskList.isEmpty() -> {
-                            Column(
-                                modifier = Modifier.align(Alignment.Center),
-                                horizontalAlignment = Alignment.CenterHorizontally
+                    }
+
+                    if (llmTasks.count { it.state != "claimed" } < 3) {
+                        item {
+                            Button(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        isLoading = true
+                                        try {
+                                            // 傳入指定的經緯度，日後要改成動態獲取使用者位置
+                                            val newTasks = TaskRepository.createLLMMission(userId, 25.017, 121.542)
+                                            userTaskList.clear()
+                                            userTaskList.addAll(newTasks)
+                                            showMessageDialog = "已生成新的探索任務！"
+                                        } catch (e: Exception) {
+                                            errorMessage = "生成任務失敗: ${e.message}"
+                                        } finally {
+                                            isLoading = false
+                                        }
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp)
                             ) {
                                 Text(errorMessage!!, color = Color.Red)
                                 Spacer(Modifier.height(12.dp))
@@ -408,10 +428,12 @@ fun TaskDialog(
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("目標：${task.taskTarget}")
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("難度：${task.taskDifficulty}")
-                Spacer(modifier = Modifier.height(8.dp))
-                task.taskDuration?.let { Text("時間：${formatMillis(it * 1000)}") } // 後端是秒，formatMillis 需要毫秒
-                Spacer(modifier = Modifier.height(8.dp))
+                if (task.isLLM) {
+                    Text("難度：${task.taskDifficulty}")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    task.taskDuration?.let { Text("時間：${formatMillis(it * 1000)}") } // taskDuration 是秒，formatMillis 需要毫秒
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
                 Text("獎勵分數：${task.rewardScore}")
             }
         },

@@ -23,7 +23,7 @@ import android.util.Log
 fun AncientTreeUI(onEventCompleted: (message: String) -> Unit) {
     // 將 API 服務和 userId 的定義移至 Composable 外部，保持一致性
     val eventApiService = RetrofitClient.apiService
-    val userId = "6880f31469ff254ed2fb0cc1"
+    val userId = "68a48da731f22c76b7a5f52c"
 
     val coroutineScope = rememberCoroutineScope()
     // 修正1: 宣告 allItems 時，使用正確的資料模型 UserItem
