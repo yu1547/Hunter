@@ -12,12 +12,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.ntou01157.hunter.R
 import com.ntou01157.hunter.handlers.SpotLogHandler
 import com.ntou01157.hunter.models.*
 import com.ntou01157.hunter.models.User
+import androidx.compose.ui.platform.LocalConfiguration
 
 @Composable
 fun FavoritesScreen(
@@ -56,6 +58,9 @@ fun FavoritesScreen(
     // 取得當前頁地標
     val items = pages.getOrNull(pageIndex).orEmpty()
 
+    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+
     // 外層 Box，負責 loading 狀態顯示
     Box(
         modifier = Modifier.fillMaxSize()
@@ -74,7 +79,7 @@ fun FavoritesScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color(0xFFF2EFDE))
-                    .padding(horizontal = 16.dp)
+                    .padding(horizontal = screenWidth * 0.02f) // 2% 螢幕寬度
             ) {
                 Box(
                     modifier = Modifier
@@ -88,91 +93,96 @@ fun FavoritesScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(40.dp))
+                Spacer(modifier = Modifier.height(screenHeight * 0.05f))
 
                 // 地標顯示區域
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f), // 地標區域填滿剩餘空間
-                    contentAlignment = Alignment.Center // 讓地標區域內容在整個 Box 置中
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Column(
+                    Box(
                         modifier = Modifier
-                            .width(900.dp) // 調整地標區域寬度
-                            .fillMaxHeight(1.0f) // 填滿父容器高度
-                            .padding(5.dp), // 外圍留白
-                        verticalArrangement = Arrangement.spacedBy(70.dp) // 每一列之間的間距
+                            .fillMaxWidth(0.8f) // 整體放大
+                            .fillMaxHeight(0.9f) // 整體放大
+                            .align(Alignment.Center)
                     ) {
-                        for (row in 0..1) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(), // 每列填滿寬度
-                                horizontalArrangement = Arrangement.spacedBy(10.dp) // 每個地標之間的間距
-                            ) {
-                                for (col in 0..1) {
-                                    val index = row * 2 + col
-                                    if (index < items.size) {
-                                        val landmark = items[index]
-                                        val isUnlocked = scanLog[landmark.spotName.lowercase()] == true
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(screenWidth * 0.01f), // 間距再小一點
+                            verticalArrangement = Arrangement.spacedBy(screenHeight * 0.15f) // 間距再小一點
+                        ) {
+                            for (row in 0..1) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(screenWidth * 0.03f) // 間距再小一點
+                                ) {
+                                    for (col in 0..1) {
+                                        val index = row * 2 + col
+                                        if (index < items.size) {
+                                            val landmark = items[index]
+                                            val isUnlocked = scanLog[landmark.spotName.lowercase()] == true
 
-                                        Box(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .aspectRatio(1.0f)
-                                                .clickable { onSpotClicked(landmark) },
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            // polaroid和地標照片包在一起
                                             Box(
                                                 modifier = Modifier
-                                                    .width(130.dp)
-                                                    .aspectRatio(527f / 866f), // polaroid比例
-                                                contentAlignment = Alignment.TopCenter
+                                                    .weight(1f)
+                                                    .aspectRatio(1.0f)
+                                                    .clickable { onSpotClicked(landmark) },
+                                                contentAlignment = Alignment.Center
                                             ) {
-                                                Image(
-                                                    painter = painterResource(id = R.drawable.polaroid),
-                                                    contentDescription = "polaroid",
-                                                    modifier = Modifier.fillMaxSize()
-                                                )
-                                                if (isUnlocked) {
-                                                    Image(
-                                                        painter = painterResource(id = getSpotImageResId(landmark.spotName)),
-                                                        contentDescription = landmark.spotName,
-                                                        modifier = Modifier
-                                                            .size(120.dp)
-                                                            .align(Alignment.TopCenter)
-                                                            .offset(y = 45.dp) //數值越小，下移越少
-                                                    )
-                                                }else{
-                                                    // 灰底，置中顯示
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .size(90.dp, 118.dp)
-                                                            .align(Alignment.Center)
-                                                            .background(Color(0xFFCCCCCC).copy(alpha = 0.7f))
-                                                    )
-                                                }
-                                                // 文字覆蓋在 polaroid 下方白色區域
+                                                // polaroid和地標照片包在一起
                                                 Box(
                                                     modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .align(Alignment.BottomCenter)
-                                                        .padding(bottom = 15.dp), // 微調文字在 polaroid上的位置
-                                                    contentAlignment = Alignment.Center
+                                                        .fillMaxSize() // 填滿父層，polaroid緊貼邊框
+                                                        .aspectRatio(527f / 866f),
+                                                    contentAlignment = Alignment.TopCenter
                                                 ) {
-                                                    Text(
-                                                        text = landmark.ChName,
-                                                        color = if (isUnlocked) Color.Black else Color.Gray,
-                                                        fontSize = 16.sp,
-                                                        maxLines = 1,
-                                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                                        modifier = Modifier.padding(horizontal = 8.dp)
+                                                    Image(
+                                                        painter = painterResource(id = R.drawable.polaroid),
+                                                        contentDescription = "polaroid",
+                                                        modifier = Modifier.fillMaxSize()
                                                     )
+                                                    if (isUnlocked) {
+                                                        Image(
+                                                            painter = painterResource(id = getSpotImageResId(landmark.spotName)),
+                                                            contentDescription = landmark.spotName,
+                                                            modifier = Modifier
+                                                                .fillMaxWidth(0.7f)
+                                                                .align(Alignment.TopCenter)
+                                                                .offset(y = screenHeight * 0.07f) // 地標照片下移(數字越大)
+                                                        )
+                                                    } else {
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .fillMaxWidth(0.7f) // 灰底
+                                                                .fillMaxHeight(0.57f)
+                                                                .align(Alignment.Center)
+                                                                .background(Color(0xFFCCCCCC).copy(alpha = 0.7f))
+                                                        )
+                                                    }
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .align(Alignment.BottomCenter)
+                                                            .padding(bottom = screenHeight * 0.018f), // 文字上移
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        Text(
+                                                            text = landmark.ChName,
+                                                            color = if (isUnlocked) Color.Black else Color.Gray,
+                                                            fontSize = (screenWidth.value * 0.05f).sp, // 文字放大
+                                                            maxLines = 1,
+                                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                                            modifier = Modifier.padding(horizontal = screenWidth * 0.01f)
+                                                        )
+                                                    }
                                                 }
                                             }
+                                        } else {
+                                            Spacer(modifier = Modifier.weight(1f)) // 空格填滿
                                         }
-                                    } else {
-                                        Spacer(modifier = Modifier.weight(1f)) // 空格填滿
                                     }
                                 }
                             }
@@ -184,7 +194,7 @@ fun FavoritesScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 16.dp),
+                        .padding(vertical = screenHeight * 0.02f),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     Button(
@@ -206,16 +216,65 @@ fun FavoritesScreen(
 
             // 地標解鎖彈窗
             selectedSpot?.let {
-                AlertDialog(
-                    onDismissRequest = onDismissSpotDialog,
-                    confirmButton = {
-                        TextButton(onClick = onDismissSpotDialog) {
-                            Text("關閉")
+                Dialog(onDismissRequest = onDismissSpotDialog) {
+                    val dialogWidth = screenWidth * 0.85f
+                    val dialogHeight = screenHeight * 0.55f
+                    Box(
+                        modifier = Modifier
+                            .width(dialogWidth)
+                            .height(dialogHeight)
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.favorite_dialog),
+                            contentDescription = "收藏彈窗背景",
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    start = dialogWidth * 0.18f, // 文字再往右
+                                    top = dialogHeight * 0.18f,
+                                    end = dialogWidth * 0.08f
+                                ),
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            Text(
+                                text = it.spotName,
+                                style = MaterialTheme.typography.titleLarge,
+                                color = Color.Black,
+                                fontSize = (screenWidth.value * 0.06f).sp // 標題依比例放大
+                            )
+                            Spacer(modifier = Modifier.height(dialogHeight * 0.03f))
+                            Text(
+                                text = "內容說明。",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.Black,
+                                fontSize = (screenWidth.value * 0.045f).sp // 內容依比例放大
+                            )
                         }
-                    },
-                    title = { Text(it.spotName) },
-                    text = { Text("內容說明。") }
-                )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = dialogHeight * 0.001f) // 關閉按鈕再往下
+                                .align(Alignment.BottomCenter),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Button(
+                                onClick = onDismissSpotDialog,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFFB49865),
+                                    contentColor = Color.White
+                                ),
+                                modifier = Modifier
+                                    .width(dialogWidth * 0.3f)
+                                    .height(dialogHeight * 0.13f)
+                            ) {
+                                Text("關閉", fontSize = (screenWidth.value * 0.045f).sp)
+                            }
+                        }
+                    }
+                }
             }
 
             // 地標鎖定提示彈窗
