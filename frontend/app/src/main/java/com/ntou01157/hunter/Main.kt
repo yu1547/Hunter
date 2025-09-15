@@ -31,6 +31,7 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 import com.ntou01157.hunter.mock.FakeUser
+import androidx.lifecycle.viewmodel.compose.viewModel
 import android.util.Log
 import com.ntou01157.hunter.models.model_api.User as ApiUser
 import com.ntou01157.hunter.models.User as UiUser
@@ -71,6 +72,16 @@ class Main : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
             val context = LocalContext.current
+            val profileViewModel: ProfileViewModel = viewModel()
+
+            val onLogout: () -> Unit = {
+                FirebaseAuth.getInstance().signOut()
+                navController.navigate("login") {
+                    popUpTo("login") { inclusive = true }
+                }
+            }
+
+
 
             NavHost(navController = navController, startDestination = "login") {
                 composable("login") { LoginScreen(navController) }
@@ -157,6 +168,13 @@ class Main : ComponentActivity() {
                 composable("treasureBox") {
                     TreasureBoxUI(onEventCompleted = { navController.popBackStack() })
                 }
+                /*composable("settings") {
+                    SettingsScreen(
+                        navController = navController,
+                        profileViewModel = profileViewModel,
+                        onLogout = onLogout
+                    )
+                }*/
             }
         }
     }

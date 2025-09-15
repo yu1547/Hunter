@@ -48,7 +48,7 @@ class BagActivity : ComponentActivity() {
 @Composable
 fun BagScreen(navController: NavHostController) {
 //    var userIdState by remember { mutableStateOf<String?>(null) }
-    var userIdState by remember { mutableStateOf<String?>("68886402bc049f83948150e8") }//測試用
+    var userIdState by remember { mutableStateOf<String?>("68846d797609912e5e6ba9af") }//測試用
     val coroutineScope = rememberCoroutineScope()
 
 //    LaunchedEffect(Unit) {
@@ -134,14 +134,15 @@ fun BagScreen(navController: NavHostController) {
                 .padding(horizontal = 16.dp)
                 .padding(paddingValues)
         ) {
-            IconButton(
-                onClick = { navController.navigate("main") },
-                modifier = Modifier.padding(top = 25.dp, bottom = 4.dp)
+            Box(
+                modifier = Modifier
+                    .padding(top = 25.dp, start = 16.dp)
+                    .clickable { navController.navigate("main") }
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.home_icon),
                     contentDescription = "回首頁",
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(60.dp)
                 )
             }
 
