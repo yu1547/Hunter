@@ -183,7 +183,7 @@ fun spotMarker(
                     Text("取消")
                 }
             },
-            title = { Text(spot.spotName) },
+            title = { Text(spot.ChName) },
             text = {
                 Column(
                     modifier = Modifier.fillMaxWidth(),

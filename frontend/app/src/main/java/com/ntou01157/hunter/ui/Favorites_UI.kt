@@ -190,8 +190,8 @@ fun FavoritesScreen(
                     Text("關閉")
                 }
             },
-            title = { Text(it.spotName) },
-            text = { Text("內容說明。") }
+            title = { Text(it.ChName) },
+            text = { Text(it.description.ifBlank { "暫無介紹" }) }
         )
     }
 

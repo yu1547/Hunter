@@ -19,6 +19,10 @@ const spotSchema = new Schema({
   latitude: {
     type: Number,
     required: true
+  },
+  description: {
+    type: String,
+    default: ''   // 內容說明（可留空）
   }
 });
 
