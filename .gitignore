@@ -21,3 +21,4 @@ __pycache__/
 # == macOS or OS-related ==
 *.log
 .DS_Store
+frontend/app/google-services.json
