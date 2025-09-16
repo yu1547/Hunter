@@ -101,6 +101,13 @@ const completeTask = async (req, res) => {
       return res.status(400).json({ message: '任務狀態為 ${mission.state}，無法完成' });
     }
 
+    // 需所有 haveCheckPlaces 全部 isCheck = true 才能完成 (若沒有地點則直接允許)
+    const places = Array.isArray(mission.haveCheckPlaces) ? mission.haveCheckPlaces : [];
+    const allChecked = places.length === 0 || places.every(p => p.isCheck === true);
+    if (!allChecked) {
+      return res.status(400).json({ message: '任務尚未完成所有地點檢查' });
+    }
+
     mission.state = 'completed';
     await user.save();
     res.status(200).json(user);
