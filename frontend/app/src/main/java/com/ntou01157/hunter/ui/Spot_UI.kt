@@ -119,76 +119,73 @@ fun spotMarker(
     // 點擊地標後的對話框
     if (showDialog) {
         AlertDialog(
-                onDismissRequest = { showDialog = false },
-                confirmButton = {
-                    androidx.compose.foundation.layout.Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        TextButton(
-                                onClick = {
-                                    showDialog = false
-                                    // TODO: 打卡流程
-                                    // 例如：onCheckIn(spot) 或呼叫 ViewModel 發送請求
-                                    // → 已接上：檢查相機權限前，先以「當下定位」做 30m 距離驗證，通過才開相機
-                                    scope.launch {
-                                        val loc = locationService.getCurrentLocation()
-                                        if (loc == null) {
-                                            Toast.makeText(ctx, "無法取得定位", Toast.LENGTH_SHORT).show()
-                                            return@launch
-                                        }
-                                        val currentLatLng = LatLng(loc.latitude, loc.longitude)
-                                        val spotLatLng = LatLng(spot.latitude, spot.longitude)
-                                        // 確認距離
-                                        val distance =
-                                                GeoVerifier.distanceMeters(
-                                                        currentLatLng,
-                                                        spotLatLng
-                                                )
-                                        Log.i(
-                                                "GeoCheck",
-                                                "距離=%.2f m, 閾值=%.1f m, user=(%.6f,%.6f), spot=(%.6f,%.6f)".format(
-                                                        distance,
-                                                        GeoVerifier.DEFAULT_THRESHOLD_METERS,
-                                                        currentLatLng.latitude,
-                                                        currentLatLng.longitude,
-                                                        spotLatLng.latitude,
-                                                        spotLatLng.longitude
-                                                )
-                                        )
-                                        val inRange =
-                                                distance <= GeoVerifier.DEFAULT_THRESHOLD_METERS
+            onDismissRequest = { showDialog = false },
+            confirmButton = {
+                androidx.compose.foundation.layout.Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
 
-                                        if (!inRange) {
-                                            Toast.makeText(
-                                                            ctx,
-                                                            "不在打卡範圍內（需 ≤ 30 公尺）",
-                                                            Toast.LENGTH_SHORT
-                                                    )
-                                                    .show()
-                                            return@launch
-                                        }
+                    TextButton(onClick = {
+                        showDialog = false
+                        // TODO: 打卡流程
+                        // 例如：onCheckIn(spot) 或呼叫 ViewModel 發送請求
+                        // → 已接上：檢查相機權限前，先以「當下定位」做 30m 距離驗證，通過才開相機
+                        scope.launch {
+                            val loc = locationService.getCurrentLocation()
+                            if (loc == null) {
+                                Toast.makeText(ctx, "無法取得定位", Toast.LENGTH_SHORT).show()
+                                return@launch
+                            }
+                            val currentLatLng = LatLng(loc.latitude, loc.longitude)
+                            val spotLatLng = LatLng(spot.latitude, spot.longitude)
+                            //確認距離
+                            val distance = GeoVerifier.distanceMeters(currentLatLng, spotLatLng)
+                            Log.i(
+                                "GeoCheck",
+                                "距離=%.2f m, 閾值=%.1f m, user=(%.6f,%.6f), spot=(%.6f,%.6f)".format(
+                                   distance,
+                                   GeoVerifier.DEFAULT_THRESHOLD_METERS,
+                                   currentLatLng.latitude, currentLatLng.longitude,
+                                   spotLatLng.latitude, spotLatLng.longitude
+                               )
+                            )
+                            val inRange = distance <= GeoVerifier.DEFAULT_THRESHOLD_METERS
 
-                                        val hasCam =
-                                                ContextCompat.checkSelfPermission(
-                                                        ctx,
-                                                        Manifest.permission.CAMERA
-                                                ) == PackageManager.PERMISSION_GRANTED
-                                        if (hasCam) {
-                                            cameraLauncher.launch(null)
-                                        } else {
-                                            permissionLauncher.launch(Manifest.permission.CAMERA)
-                                        }
-                                    }
-                                }
-                        ) { Text("打卡") }
+                            if (!inRange) {
+                                Toast.makeText(ctx, "不在打卡範圍內（需 ≤ 30 公尺）", Toast.LENGTH_SHORT).show()
+                                return@launch
+                            }
 
-                        TextButton(
-                                onClick = {
-                                    showDialog = false
-                                    selectedEvent = dailyEvents.random()
-                                    showEventDialog = true
-                                }
-                        ) { Text("領取隨機事件") }
+                            val hasCam = ContextCompat.checkSelfPermission(
+                                ctx,
+                                Manifest.permission.CAMERA
+                            ) == PackageManager.PERMISSION_GRANTED
+                            if (hasCam) {
+                                cameraLauncher.launch(null)
+                            } else {
+                                permissionLauncher.launch(Manifest.permission.CAMERA)
+                            }
+                        }
+                    }) { Text("打卡") }
+                }
+            },
+
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("取消")
+                }
+            },
+            title = { Text(spot.ChName) },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    //顯示圖片
+                    val context = LocalContext.current
+                    val resName = remember(spot.spotName) {
+                        // 將「(地標)」「空白」「非 a-z0-9_」轉成底線
+                        spot.spotName.lowercase().replace(Regex("[^a-z0-9_]+"), "_").trim('_')
                     }
                 },
                 dismissButton = { TextButton(onClick = { showDialog = false }) { Text("取消") } },
@@ -234,18 +231,5 @@ fun spotMarker(
                     }
                 }
         )
-    }
-    // 顯示隨機事件的對話框
-    selectedEvent?.let { event ->
-        if (showEventDialog) {
-            DailyEventDialog(
-                    event = event,
-                    onOptionSelected = { option ->
-                        // 這邊可以處理玩家點擊某個事件選項後的邏輯，目前先以print表示
-                        println("玩家選擇了：$option")
-                    },
-                    onDismiss = { showEventDialog = false }
-            )
-        }
     }
 }
