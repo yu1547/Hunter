@@ -114,7 +114,7 @@ const claimReward = async (req, res) => {
     if (!mission) return res.status(404).json({ message: '用戶沒有此任務' });
 
     if (mission.state !== 'completed') {
-      return res.status(400).json({ message: '任務狀態為 ${mission.state}，無法領取獎勵' });
+      return res.status(400).json({ message: `任務狀態為 ${mission.state}，無法領取獎勵` });
     }
 
     const taskDetails = await Task.findById(taskId);
@@ -126,36 +126,44 @@ const claimReward = async (req, res) => {
 
     mission.state = 'claimed';
 
-    // 檢查是否有 expiresAt 欄位
-    if (mission.expiresAt){
-      // 檢查是否超時
-      const isOvertime = mission.expiresAt && new Date() > mission.expiresAt;
+    let scoreToAdd = 0;
+    let isOvertime = false;
 
-      // 發放獎勵道具
-      if (taskDetails.rewardItems && taskDetails.rewardItems.length > 0) {
+    if (taskDetails) {
+      // 檢查是否超時
+      if (mission.expiresAt) {
+        isOvertime = new Date() > mission.expiresAt;
+      }
+      // 道具獎勵
+      if (Array.isArray(taskDetails.rewardItems) && taskDetails.rewardItems.length > 0) {
         await addItemsToBackpack(user, taskDetails.rewardItems);
       }
-
-      // 如果沒有超時，發放積分
+      // 積分獎勵 (未超時才給)
       if (!isOvertime && taskDetails.rewardScore > 0) {
-        const scoreToAdd = taskDetails.rewardScore;
+        scoreToAdd = taskDetails.rewardScore;
+      }
+    } else if (eventDetails) {
+      // 事件積分獎勵
+      if (eventDetails.rewards && eventDetails.rewards.points) {
+        scoreToAdd = eventDetails.rewards.points;
       }
     }
-    else if (eventDetails) {
-      const scoreToAdd = eventDetails.rewards.points;
-    }
 
-
-      // 更新 Rank 集合中的分數
+    if (scoreToAdd > 0) {
       await Rank.findOneAndUpdate(
         { userId: user._id },
         { $inc: { score: scoreToAdd } },
-        { upsert: true, new: true } // 如果找不到用戶，就創建一個新的
+        { upsert: true, new: true }
       );
-    
+    }
+
     await user.save();
 
-    res.status(200).json({ user, message: isOvertime ? "任務超時，已領取道具獎勵，但無積分獎勵" : "獎勵已領取" });
+    const message = (mission.expiresAt && isOvertime)
+      ? '任務超時，已領取道具獎勵，但無積分獎勵'
+      : '獎勵已領取';
+
+    res.status(200).json({ user, message });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
