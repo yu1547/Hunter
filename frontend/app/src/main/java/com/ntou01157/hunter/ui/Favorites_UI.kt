@@ -275,27 +275,27 @@ fun FavoritesScreen(
                         }
                     }
                 }
-            },
-            title = { Text(it.ChName) },
-            text = { Text(it.description.ifBlank { "暫無介紹" }) }
-        )
+            }
+//            title = { Text(it.ChName) },
+//            text = { Text(it.description.ifBlank { "暫無介紹" }) }
+//        )
     }
 
-            // 地標鎖定提示彈窗
-            if (showLockedDialog) {
-                AlertDialog(
-                    onDismissRequest = onDismissLockedDialog,
-                    confirmButton = {
-                        TextButton(onClick = onDismissLockedDialog) {
-                            Text("確定")
-                        }
-                    },
-                    text = { Text("此地標尚未解鎖，請先前往現場打卡！") }
-                )
-            }
+        // 地標鎖定提示彈窗
+        if (showLockedDialog) {
+            AlertDialog(
+                onDismissRequest = onDismissLockedDialog,
+                confirmButton = {
+                    TextButton(onClick = onDismissLockedDialog) {
+                        Text("確定")
+                    }
+                },
+                text = { Text("此地標尚未解鎖，請先前往現場打卡！") }
+            )
         }
     }
 }
+
 
 
 @Composable

@@ -48,24 +48,24 @@ class BagActivity : ComponentActivity() {
 
 @Composable
 fun BagScreen(navController: NavHostController) {
-//    var userIdState by remember { mutableStateOf<String?>(null) }
-    var userIdState by remember { mutableStateOf<String?>("68846d797609912e5e6ba9af") }//測試用
+    var userIdState by remember { mutableStateOf<String?>(null) }
+    // var userIdState by remember { mutableStateOf<String?>("68846d797609912e5e6ba9af") }//測試用
     val coroutineScope = rememberCoroutineScope()
 
-//    LaunchedEffect(Unit) {
-//        try {
-//            val email = FirebaseAuth.getInstance().currentUser?.email
-//                ?: run {
-//                    Log.e("BagScreen", "尚未登入，無法取得 email")
-//                    return@LaunchedEffect
-//                }
-//            val user = RetrofitClient.apiService.getUserByEmail(email) // 回傳單一 User（若你是 List 就改 firstOrNull）
-//            userIdState = user.id
-//            Log.d("BagScreen", "取得 userId=${userIdState}")
-//        } catch (e: Exception) {
-//            Log.e("BagScreen", "以 email 取得 userId 失敗：${e.message}", e)
-//        }
-//    }
+    LaunchedEffect(Unit) {
+        try {
+            val email = FirebaseAuth.getInstance().currentUser?.email
+                ?: run {
+                    Log.e("BagScreen", "尚未登入，無法取得 email")
+                    return@LaunchedEffect
+                }
+            val user = RetrofitClient.apiService.getUserByEmail(email) // 回傳單一 User（若你是 List 就改 firstOrNull）
+            userIdState = user.id
+            Log.d("BagScreen", "取得 userId=${userIdState}")
+        } catch (e: Exception) {
+            Log.e("BagScreen", "以 email 取得 userId 失敗：${e.message}", e)
+        }
+    }
 
     // 物品列表與 UI 狀態
     val allItems = remember { mutableStateListOf<UserItem>() }

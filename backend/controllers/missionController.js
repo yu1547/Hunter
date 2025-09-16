@@ -1,6 +1,5 @@
 const User = require('../models/userModel');
 const Task = require('../models/taskModel');
-const Item = require('../models/itemModel');
 const Spot = require('../models/spotModel'); // 需有 Spot model
 const Event = require('../models/eventModel'); // 引入 Event model
 const Rank = require('../models/rankModel'); // 引入 Rank model
@@ -8,7 +7,6 @@ const { generateDropItems } = require('../services/dropService'); // 引入 gene
 const { addItemsToBackpack } = require('../services/backpackService'); // 引入 backpackService
 const axios = require('axios'); // 用於呼叫 Flask
 const mongoose = require('mongoose');
-const { calculateDrops } = require('../logic/dropLogic');
 
 // 新增：確保 missions 一定是陣列，避免 forEach 讀取 null
 function ensureMissionsArray(user) {
@@ -36,11 +34,16 @@ const acceptTask = async (req, res) => {
     }
 
     const taskDetails = await Task.findById(taskId);
-    if (!taskDetails) return res.status(404).json({ message: '找不到任務詳細資訊' });
+    const eventDetails = await Event.findById(taskId);
+    if (!taskDetails && !eventDetails) {
+      return res.status(404).json({ message: '找不到任務或事件詳細資訊' });
+    }
 
     mission.state = 'in_progress';
     mission.acceptedAt = new Date();
-    if (taskDetails.taskDuration) {
+
+    // FIX: 避免 taskDetails 為 null 時取用 taskDuration
+    if (taskDetails && taskDetails.taskDuration) {
       mission.expiresAt = new Date(mission.acceptedAt.getTime() + taskDetails.taskDuration * 1000);
     }
 
@@ -89,8 +92,20 @@ const completeTask = async (req, res) => {
     const mission = user.missions.find(m => m.taskId.toString() === taskId);
     if (!mission) return res.status(404).json({ message: '用戶沒有此任務' });
 
+    // 僅允許 LLM 任務完成
+    if (!mission.isLLM) {
+      return res.status(400).json({ message: '僅能完成 LLM 任務' });
+    }
+
     if (mission.state !== 'in_progress') {
       return res.status(400).json({ message: '任務狀態為 ${mission.state}，無法完成' });
+    }
+
+    // 需所有 haveCheckPlaces 全部 isCheck = true 才能完成 (若沒有地點則直接允許)
+    const places = Array.isArray(mission.haveCheckPlaces) ? mission.haveCheckPlaces : [];
+    const allChecked = places.length === 0 || places.every(p => p.isCheck === true);
+    if (!allChecked) {
+      return res.status(400).json({ message: '任務尚未完成所有地點檢查' });
     }
 
     mission.state = 'completed';
@@ -203,16 +218,44 @@ const refreshNormalMissions = async (user) => {
 
   if (totalNewTasksNeeded > 0) {
     const currentUserTaskIds = user.missions.map(m => m.taskId);
-    // 從 Event model 獲取新任務，且 type 不為 'daily'
-    const newEvents = await Event.aggregate([
-      {
-        $match: {
-          _id: { $nin: currentUserTaskIds }, // 過濾掉已經存在的任務
-          type: { $ne: 'daily' } // 確保 type 不是 'daily'
+
+    // ===== 新增：檢查是否有寶藏圖 buff，若有優先加入「偶遇銅寶箱」事件 =====
+    const hasTreasureMapBuff = Array.isArray(user.buff) && user.buff.some(b => {
+      if (b && typeof b === 'object') return b.name === 'treasure_map_once';
+      return false;
+    });
+
+    let newEvents = [];
+    if (hasTreasureMapBuff) {
+      const treasureEvent = await Event.findOne({
+        name: '偶遇銅寶箱',
+        type: { $ne: 'daily' },
+        _id: { $nin: currentUserTaskIds }
+      });
+      if (treasureEvent) {
+        newEvents.push(treasureEvent);
+        // 使用後移除該 buff
+        if (Array.isArray(user.buff)) {
+          user.buff = user.buff.filter(b => !(b && b.name === 'treasure_map_once'));
         }
-      },
-      { $sample: { size: totalNewTasksNeeded } } // 隨機選取 N 個事件
-    ]);
+      }
+    }
+
+    const remainingNeeded = totalNewTasksNeeded - newEvents.length;
+    if (remainingNeeded > 0) {
+      // 從 Event model 獲取其他新任務，且 type 不為 'daily'
+      const randomEvents = await Event.aggregate([
+        {
+          $match: {
+            _id: { $nin: currentUserTaskIds },
+            type: { $ne: 'daily' }
+          }
+        },
+        { $sample: { size: remainingNeeded } }
+      ]);
+      newEvents = newEvents.concat(randomEvents);
+    }
+    // ===== 寶藏圖 buff 優先邏輯結束 =====
 
     if (newEvents.length > 0) {
       let newEventIndex = 0;
