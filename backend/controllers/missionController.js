@@ -10,6 +10,12 @@ const axios = require('axios'); // 用於呼叫 Flask
 const mongoose = require('mongoose');
 const { calculateDrops } = require('../logic/dropLogic');
 
+// 新增：確保 missions 一定是陣列，避免 forEach 讀取 null
+function ensureMissionsArray(user) {
+  if (!user.missions) user.missions = [];
+  if (!Array.isArray(user.missions)) user.missions = Array.from(user.missions || []);
+}
+
 // =====================================================================
 // API 路由處理函式
 // =====================================================================
@@ -20,6 +26,7 @@ const acceptTask = async (req, res) => {
   try {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: '找不到用戶' });
+    ensureMissionsArray(user);
 
     const mission = user.missions.find(m => m.taskId.toString() === taskId);
     if (!mission) return res.status(404).json({ message: '用戶沒有此任務' });
@@ -51,6 +58,7 @@ const declineTask = async (req, res) => {
   try {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: '找不到用戶' });
+    ensureMissionsArray(user);
 
     const mission = user.missions.find(m => m.taskId.toString() === taskId);
     if (!mission) return res.status(404).json({ message: '用戶沒有此任務' });
@@ -76,6 +84,7 @@ const completeTask = async (req, res) => {
   try {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: '找不到用戶' });
+    ensureMissionsArray(user);
 
     const mission = user.missions.find(m => m.taskId.toString() === taskId);
     if (!mission) return res.status(404).json({ message: '用戶沒有此任務' });
@@ -99,6 +108,7 @@ const claimReward = async (req, res) => {
   try {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: '找不到用戶' });
+    ensureMissionsArray(user);
 
     const mission = user.missions.find(m => m.taskId.toString() === taskId);
     if (!mission) return res.status(404).json({ message: '用戶沒有此任務' });
@@ -114,24 +124,25 @@ const claimReward = async (req, res) => {
       return res.status(404).json({ message: '找不到任務或事件詳細資訊' });
     }
 
+    mission.state = 'claimed';
 
     // 檢查是否有 expiresAt 欄位
     if (mission.expiresAt){
-        // 檢查是否超時
-        const isOvertime = mission.expiresAt && new Date() > mission.expiresAt;
+      // 檢查是否超時
+      const isOvertime = mission.expiresAt && new Date() > mission.expiresAt;
 
-        // 發放獎勵道具
-        if (taskDetails.rewardItems && taskDetails.rewardItems.length > 0) {
-          await addItemsToBackpack(user, taskDetails.rewardItems);
-        }
+      // 發放獎勵道具
+      if (taskDetails.rewardItems && taskDetails.rewardItems.length > 0) {
+        await addItemsToBackpack(user, taskDetails.rewardItems);
+      }
 
-        // 如果沒有超時，發放積分
-        if (!isOvertime && taskDetails.rewardScore > 0) {
-          const scoreToAdd = taskDetails.rewardScore;
-        }
+      // 如果沒有超時，發放積分
+      if (!isOvertime && taskDetails.rewardScore > 0) {
+        const scoreToAdd = taskDetails.rewardScore;
+      }
     }
     else if (eventDetails) {
-          const scoreToAdd = eventDetails.rewards.points;
+      const scoreToAdd = eventDetails.rewards.points;
     }
 
 
@@ -141,8 +152,6 @@ const claimReward = async (req, res) => {
         { $inc: { score: scoreToAdd } },
         { upsert: true, new: true } // 如果找不到用戶，就創建一個新的
       );
-
-    mission.state = 'claimed';
     
     await user.save();
 
@@ -286,6 +295,7 @@ const checkSpotMission = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: '找不到使用者' });
     }
+    ensureMissionsArray(user);
 
 
     // 1. 取得所有每日事件的 ID

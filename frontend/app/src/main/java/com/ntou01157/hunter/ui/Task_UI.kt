@@ -26,6 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.util.Log
+import retrofit2.HttpException // 新增：用來判斷並解析 HTTP 錯誤
 
 @Composable
 fun TaskListScreen(navController: NavController) {
@@ -86,14 +87,22 @@ fun TaskListScreen(navController: NavController) {
             try {
                 Log.d("TaskListScreen", "開始載入任務，用戶ID: $uid")
                 val tasks = TaskRepository.refreshAndGetTasks(uid)
+                Log.d("TaskListScreen", "任務數量=${tasks.size}")
                 userTaskList.clear()
                 userTaskList.addAll(tasks)
                 if (tasks.isEmpty()) {
                     errorMessage = "目前沒有任務"
                 }
             } catch (e: Exception) {
-                errorMessage = "無法載入任務：${e.message}"
-                Log.e("TaskListScreen", "載入任務失敗", e)
+                val detail = if (e is HttpException) {
+                    val code = e.code()
+                    val rawBody = try { e.response()?.errorBody()?.string() } catch (ee: Exception) { null }
+                    "HTTP $code ${rawBody ?: "(無錯誤內容)"}"
+                } else {
+                    e.message ?: e.toString()
+                }
+                errorMessage = "無法載入任務：$detail"
+                Log.e("TaskListScreen", "載入任務失敗 userId=$uid detail=$detail", e)
             } finally {
                 isLoading = false
             }
@@ -214,9 +223,9 @@ fun TaskListScreen(navController: NavController) {
                                 .fillMaxSize()
                                 .padding(16.dp)
                         ) {
-                            // 計算尚未領取/未拒絕的任務數量 (排除已領取與已拒絕)
-                            val activeCount = userTaskList.count { it.state != "claimed" && it.state != "declined" }
-                            if (activeCount < 3) {
+                            // 只計算 isLLM 任務數量，若不足 3 顯示按鈕
+                            val llmCount = userTaskList.count { it.task.isLLM && it.state != "claimed" }
+                            if (llmCount < 3) {
                                 Button(
                                     onClick = {
                                         coroutineScope.launch {
@@ -320,7 +329,6 @@ fun TaskListScreen(navController: NavController) {
                                 "claim" -> {
                                     TaskRepository.claimReward(uid, taskId)
                                     message = "獎勵已領取！"
-                                    // 領取後許多後端會更新數量或分數，這裡用整體刷新最保險
                                     refreshTasks(uid)
                                     success = true
                                 }
@@ -349,37 +357,37 @@ fun TaskListScreen(navController: NavController) {
             )
         }
 
-            // 路線規劃按鈕不使用 align，改用 Column + Spacer 讓按鈕在右下角
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.Bottom,
-                horizontalAlignment = Alignment.End
-            ) {
-                Button(
-                    onClick = {
-                        coroutineScope.launch {
-                            routeLLMText = requestRouteLLMDescription(startLocation, endLocation)
-                            showRouteDialog = true
-                        }
-                    }
-                ) {
-                    Text("接受路線規劃")
-                }
-            }
+            // // 路線規劃按鈕不使用 align，改用 Column + Spacer 讓按鈕在右下角
+            // Column(
+            //     modifier = Modifier
+            //         .fillMaxSize()
+            //         .padding(24.dp),
+            //     verticalArrangement = Arrangement.Bottom,
+            //     horizontalAlignment = Alignment.End
+            // ) {
+            //     Button(
+            //         onClick = {
+            //             coroutineScope.launch {
+            //                 routeLLMText = requestRouteLLMDescription(startLocation, endLocation)
+            //                 showRouteDialog = true
+            //             }
+            //         }
+            //     ) {
+            //         Text("接受路線規劃")
+            //     }
+            // }
 
-            // 顯示 LLM 貼心提示 Dialog
-            if (showRouteDialog) {
-                AlertDialog(
-                    onDismissRequest = { showRouteDialog = false },
-                    title = { Text("貼心提示") },
-                    text = { Text(routeLLMText) },
-                    confirmButton = {
-                        TextButton(onClick = { showRouteDialog = false }) { Text("確定") }
-                    }
-                )
-            }
+            // // 顯示 LLM 貼心提示 Dialog
+            // if (showRouteDialog) {
+            //     AlertDialog(
+            //         onDismissRequest = { showRouteDialog = false },
+            //         title = { Text("貼心提示") },
+            //         text = { Text(routeLLMText) },
+            //         confirmButton = {
+            //             TextButton(onClick = { showRouteDialog = false }) { Text("確定") }
+            //         }
+            //     )
+            // }
         }
     }
 
