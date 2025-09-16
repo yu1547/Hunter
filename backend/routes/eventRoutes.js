@@ -1,32 +1,35 @@
 // routes/eventRoutes.js
 const express = require('express');
 const router = express.Router();
-const temp_eventController = require('../controllers/temp_eventController');
 const {
-  trade,
-  getStonePileStatus,
-  triggerStonePile,
+    getDailyEventBySpot,
+    trade,
+    triggerStonePile,
+    completeEvent,
+    refreshDailyEvents,
+    getEventById,
+    getStonePileStatus,
 } = require('../controllers/eventController');
 
 // 每日自動刷新事件位置的 API，通常由排程任務 (cron job) 調用
-router.post('/daily-refresh', temp_eventController.refreshDailyEvents);
-
-// 獲取所有事件的詳細資訊
-router.get('/all', temp_eventController.getAllEvents);
-
-// 觸發特定事件，並返回事件資料
-router.post('/trigger/:eventId', temp_eventController.triggerEvent);
+router.post('/daily-refresh', refreshDailyEvents);
 
 // 完成事件，並發放獎勵
-router.post('/complete/:eventId', temp_eventController.completeEvent);
+router.post('/complete/:eventId', completeEvent);
 
+// 新增的共用 API，用於查詢特定地點是否有每日事件
+router.get('/daily-event/:spotId', getDailyEventBySpot);
 
+// 獲取單個事件的詳細資訊
+router.get('/:eventId', getEventById);
 
 // 石堆事件相關的 API
-router.get('/stone-pile-status/:userId', getStonePileStatus);
 router.post('/trigger-stone-pile', triggerStonePile);
 
-// 交易相關的 API
+// 商人交易相關的 API
 router.post('/trade', trade);
+
+
+router.get('/stone-pile-status/:userId', getStonePileStatus);
 
 module.exports = router;

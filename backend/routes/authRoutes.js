@@ -27,7 +27,7 @@ router.post("/google", async (req, res) => {
                 createdAt: new Date(),
                 lastLogin: new Date(),
                 backpackItems: [],
-                missions: null,
+                missions: [],
                 spotsScanLogs: {},
                 supplyScanLogs: {},
                 settings: [],

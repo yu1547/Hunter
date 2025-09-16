@@ -14,12 +14,14 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -47,7 +49,7 @@ class BagActivity : ComponentActivity() {
 @Composable
 fun BagScreen(navController: NavHostController) {
 //    var userIdState by remember { mutableStateOf<String?>(null) }
-    var userIdState by remember { mutableStateOf<String?>("68886402bc049f83948150e8") }//測試用
+    var userIdState by remember { mutableStateOf<String?>("68846d797609912e5e6ba9af") }//測試用
     val coroutineScope = rememberCoroutineScope()
 
 //    LaunchedEffect(Unit) {
@@ -95,7 +97,7 @@ fun BagScreen(navController: NavHostController) {
         isLoading.value = true
         hasError.value = false
         try {
-            Log.d("BagScreen", "開始獲取用戶物品，用戶ID: $userId")
+            Log.d("BagScreen", "開始獲取用戶物品，用戶ID: ${userId}")
             val items = fetchUserItems(userId)
             allItems.clear()
             allItems.addAll(items)
@@ -112,11 +114,12 @@ fun BagScreen(navController: NavHostController) {
         }
     }
 
-    val filteredItems = when (filterState) {
-        1 -> allItems.filter { it.item.itemType == 0 && it.count.value > 0 }
-        2 -> allItems.filter { it.item.itemType == 1 && it.count.value > 0 }
-        else -> allItems.filter { it.count.value > 0 }
-    }
+    val filteredItems =
+            when (filterState) {
+                1 -> allItems.filter { it.item.itemType == 0 && it.count.value > 0 }
+                2 -> allItems.filter { it.item.itemType == 1 && it.count.value > 0 }
+                else -> allItems.filter { it.count.value > 0 }
+            }
 
     // 如果選中的是素材，找出可合成的結果物品
     val resultItem = remember(selectedItem) {
@@ -133,25 +136,26 @@ fun BagScreen(navController: NavHostController) {
                 .padding(horizontal = 16.dp)
                 .padding(paddingValues)
         ) {
-            IconButton(
-                onClick = { navController.navigate("main") },
-                modifier = Modifier.padding(top = 25.dp, bottom = 4.dp)
+            Box(
+                modifier = Modifier
+                    .padding(top = 25.dp, start = 16.dp)
+                    .clickable { navController.navigate("main") }
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.ic_home),
+                    painter = painterResource(id = R.drawable.home_icon),
                     contentDescription = "回首頁",
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(60.dp)
                 )
             }
 
             Spacer(modifier = Modifier.height(4.dp))
 
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFFEFEFEF))
-                    .padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                    modifier =
+                            Modifier.fillMaxWidth()
+                                    .background(Color(0xFFEFEFEF))
+                                    .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 Text("(全部)", modifier = Modifier.clickable { filterState = 0 },
                     color = if (filterState == 0) Color.Black else Color.Gray)
@@ -229,10 +233,21 @@ fun BagScreen(navController: NavHostController) {
                                             .clickable { selectedItem = userItem },
                                         contentAlignment = Alignment.BottomEnd
                                     ) {
+                                        val context = LocalContext.current
+                                        val resId = remember(userItem.item.itemPic) {
+                                            context.resources.getIdentifier(userItem.item.itemPic, "drawable", context.packageName)
+                                        }
+
+                                        val painter = if (resId != 0) {
+                                            painterResource(id = resId)  // 找得到就用對應圖片
+                                        } else {
+                                            painterResource(id = R.drawable.default_itempic) // 找不到用預設
+                                        }
+
                                         Image(
-                                            painter = painterResource(id = R.drawable.default_itempic),
-                                            contentDescription = userItem.item.itemName,
-                                            modifier = Modifier.fillMaxSize()
+                                            painter = painter,
+                                            contentDescription = userItem.item.itemPic,
+                                            modifier = Modifier.size(80.dp)
                                         )
                                         Text(
                                             "${userItem.count.value}",
@@ -294,10 +309,46 @@ fun BagScreen(navController: NavHostController) {
                                         Image(
                                             painter = painterResource(id = R.drawable.default_itempic),
                                             contentDescription = material.item.itemName,
-                                            modifier = Modifier.size(50.dp)
+                                            modifier = Modifier.size(80.dp)
                                         )
                                         Text("x1")
                                     }
+
+                                    // 顯示其他需要的素材
+                                    allItems
+                                            .filter {
+                                                it.item.itemType == 0 &&
+                                                        it.item.resultId ==
+                                                                resultItem.item.itemId &&
+                                                        it.item.itemId != selectedItem?.item?.itemId
+                                            }
+                                            .forEach { material ->
+                                                Column(
+                                                        horizontalAlignment =
+                                                                Alignment.CenterHorizontally
+                                                ) {
+                                                    // val materialImageResId =
+                                                    // getDrawableId(material.item.itemPic)
+                                                    // if (materialImageResId ==
+                                                    // R.drawable.ic_placeholder) {
+                                                    //     Log.e("BagScreen", "Invalid imageResId
+                                                    // for other material: ${material.item.itemName}
+                                                    // (pic: ${material.item.itemPic})")
+                                                    // }
+                                                    Image(
+                                                            painter =
+                                                                    painterResource(
+                                                                            id =
+                                                                                    R.drawable
+                                                                                            .default_itempic
+                                                                    ), // 之後要記得改成materialImageResId，而且要把上面註解取消
+                                                            contentDescription =
+                                                                    material.item.itemName,
+                                                            modifier = Modifier.size(50.dp)
+                                                    )
+                                                    Text("x1")
+                                                }
+                                            }
                                 }
                             }
                         }
@@ -441,10 +492,21 @@ fun BagScreen(navController: NavHostController) {
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        val context = LocalContext.current
+                        val resId = remember() {
+                            context.resources.getIdentifier(userItem.item.itemPic, "drawable", context.packageName)
+                        }
+
+                        val painter = if (resId != 0) {
+                            painterResource(id = resId)
+                        } else {
+                            painterResource(id = R.drawable.default_itempic)
+                        }
+
                         Image(
-                            painter = painterResource(id = R.drawable.default_itempic),
-                            contentDescription = null,
-                            modifier = Modifier.size(200.dp).padding(bottom = 8.dp)
+                            painter = painter,
+                            contentDescription = userItem.item.itemPic,
+                            modifier = Modifier.size(64.dp)
                         )
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),

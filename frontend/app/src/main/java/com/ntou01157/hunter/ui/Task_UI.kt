@@ -22,14 +22,17 @@ import com.ntou01157.hunter.models.model_api.UserTask
 import com.ntou01157.hunter.data.TaskRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.ntou01157.hunter.api.RetrofitClient
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import android.util.Log
+import retrofit2.HttpException // 新增：用來判斷並解析 HTTP 錯誤
 
 @Composable
 fun TaskListScreen(navController: NavController) {
     // 1) 以 email 解析 userId —— 用狀態保存，避免重組造成的再次請求
     var userId by remember { mutableStateOf<String?>(null) }
-    var resolvingId by remember { mutableStateOf(true) }
+    var resolvingId by remember { mutableStateOf(true) } //可以改false
     var resolveError by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
 
@@ -66,6 +69,9 @@ fun TaskListScreen(navController: NavController) {
         } finally {
             resolvingId = false
         }
+        // userId = "68886402bc049f83948150e8"
+        // resolvingId = false
+        // resolveError = null
     }
 
     // 3) 任務列表 UI 狀態
@@ -81,14 +87,22 @@ fun TaskListScreen(navController: NavController) {
             try {
                 Log.d("TaskListScreen", "開始載入任務，用戶ID: $uid")
                 val tasks = TaskRepository.refreshAndGetTasks(uid)
+                Log.d("TaskListScreen", "任務數量=${tasks.size}")
                 userTaskList.clear()
                 userTaskList.addAll(tasks)
                 if (tasks.isEmpty()) {
                     errorMessage = "目前沒有任務"
                 }
             } catch (e: Exception) {
-                errorMessage = "無法載入任務：${e.message}"
-                Log.e("TaskListScreen", "載入任務失敗", e)
+                val detail = if (e is HttpException) {
+                    val code = e.code()
+                    val rawBody = try { e.response()?.errorBody()?.string() } catch (ee: Exception) { null }
+                    "HTTP $code ${rawBody ?: "(無錯誤內容)"}"
+                } else {
+                    e.message ?: e.toString()
+                }
+                errorMessage = "無法載入任務：$detail"
+                Log.e("TaskListScreen", "載入任務失敗 userId=$uid detail=$detail", e)
             } finally {
                 isLoading = false
             }
@@ -104,6 +118,33 @@ fun TaskListScreen(navController: NavController) {
     var selectedUserTask by remember { mutableStateOf<UserTask?>(null) }
     var showMessageDialog by remember { mutableStateOf<String?>(null) }
 
+    // 路線規劃 LLM 敘述 Dialog 狀態
+    var showRouteDialog by remember { mutableStateOf(false) }
+    var routeLLMText by remember { mutableStateOf("") }
+
+    // 假設你有兩個地點選擇 start/end
+    var startLocation by remember { mutableStateOf(" ") }
+    var endLocation by remember { mutableStateOf(" ") }
+
+    // 新增：呼叫 LLM API 取得貼心提示（只生成溫馨提示，不描述地點）
+    suspend fun requestRouteLLMDescription(start: String, end: String): String {
+        return withContext(Dispatchers.IO) {
+            try {
+                val message = "請用繁體中文給我一段貼心提示，提醒在限時內完成任務，並鼓勵玩家旅途順利，給予信心喊話和注意安全。"
+                val response = RetrofitClient.apiService.chatWithLLM(
+                    userId ?: "",
+                    com.ntou01157.hunter.api.ChatRequest(
+                        message = message,
+                        history = emptyList()
+                    )
+                )
+                response.reply
+            } catch (e: Exception) {
+                "無法取得貼心提示：${e.message}"
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             Row(
@@ -112,14 +153,15 @@ fun TaskListScreen(navController: NavController) {
                     .padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
-                    onClick = { navController.navigate("main") },
-                    modifier = Modifier.padding(top = 25.dp, bottom = 4.dp)
+                Box(
+                    modifier = Modifier
+                        .padding(top = 25.dp, start = 16.dp)
+                        .clickable { navController.navigate("main") }
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.ic_home),
+                        painter = painterResource(id = R.drawable.home_icon),
                         contentDescription = "回首頁",
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(60.dp)
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
@@ -172,28 +214,55 @@ fun TaskListScreen(navController: NavController) {
                     Text("無使用者 ID，請重新登入", color = Color.Red, modifier = Modifier.align(Alignment.Center))
                 }
                 else -> {
-                    // 真的在顯示任務列表
-                    when {
-                        isLoading -> {
-                            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                        }
-                        errorMessage != null && userTaskList.isEmpty() -> {
-                            Column(
-                                modifier = Modifier.align(Alignment.Center),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(errorMessage!!, color = Color.Red)
+                    // 顯示任務列表 + 產生 LLM 任務按鈕 (修正原本未定義 llmTasks、item 範圍錯誤與語法錯誤)
+                    if (isLoading) {
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    } else {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp)
+                        ) {
+                            // 只計算 isLLM 任務數量，若不足 3 顯示按鈕
+                            val llmCount = userTaskList.count { it.task.isLLM && it.state != "claimed" }
+                            if (llmCount < 3) {
+                                Button(
+                                    onClick = {
+                                        coroutineScope.launch {
+                                            val uid = userId
+                                            if (uid == null) {
+                                                showMessageDialog = "尚未取得使用者 ID"
+                                                return@launch
+                                            }
+                                            isLoading = true
+                                            errorMessage = null
+                                            try {
+                                                // TODO: 將經緯度改為實際使用者位置
+                                                val newTasks = TaskRepository.createLLMMission(uid, 25.017, 121.542)
+                                                userTaskList.clear()
+                                                userTaskList.addAll(newTasks)
+                                                showMessageDialog = "已生成新的探索任務！"
+                                            } catch (e: Exception) {
+                                                errorMessage = "生成任務失敗：${e.message}"
+                                            } finally {
+                                                isLoading = false
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) { Text("生成探索任務") }
                                 Spacer(Modifier.height(12.dp))
-                                Button(onClick = { userId?.let { refreshTasks(it) } }) {
-                                    Text("重試")
-                                }
                             }
-                        }
-                        else -> {
+
+                            if (errorMessage != null) {
+                                Text(errorMessage ?: "", color = Color.Red)
+                                Spacer(Modifier.height(8.dp))
+                                Button(onClick = { userId?.let { refreshTasks(it) } }) { Text("重試") }
+                                Spacer(Modifier.height(12.dp))
+                            }
+
                             LazyColumn(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(16.dp),
+                                modifier = Modifier.fillMaxSize(),
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 items(userTaskList) { userTask ->
@@ -260,7 +329,6 @@ fun TaskListScreen(navController: NavController) {
                                 "claim" -> {
                                     TaskRepository.claimReward(uid, taskId)
                                     message = "獎勵已領取！"
-                                    // 領取後許多後端會更新數量或分數，這裡用整體刷新最保險
                                     refreshTasks(uid)
                                     success = true
                                 }
@@ -288,8 +356,40 @@ fun TaskListScreen(navController: NavController) {
                 }
             )
         }
+
+            // // 路線規劃按鈕不使用 align，改用 Column + Spacer 讓按鈕在右下角
+            // Column(
+            //     modifier = Modifier
+            //         .fillMaxSize()
+            //         .padding(24.dp),
+            //     verticalArrangement = Arrangement.Bottom,
+            //     horizontalAlignment = Alignment.End
+            // ) {
+            //     Button(
+            //         onClick = {
+            //             coroutineScope.launch {
+            //                 routeLLMText = requestRouteLLMDescription(startLocation, endLocation)
+            //                 showRouteDialog = true
+            //             }
+            //         }
+            //     ) {
+            //         Text("接受路線規劃")
+            //     }
+            // }
+
+            // // 顯示 LLM 貼心提示 Dialog
+            // if (showRouteDialog) {
+            //     AlertDialog(
+            //         onDismissRequest = { showRouteDialog = false },
+            //         title = { Text("貼心提示") },
+            //         text = { Text(routeLLMText) },
+            //         confirmButton = {
+            //             TextButton(onClick = { showRouteDialog = false }) { Text("確定") }
+            //         }
+            //     )
+            // }
+        }
     }
-}
 
 @Composable
 fun TaskItem(userTask: UserTask, onClick: (UserTask) -> Unit) {
@@ -343,10 +443,12 @@ fun TaskDialog(
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("目標：${task.taskTarget}")
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("難度：${task.taskDifficulty}")
-                Spacer(modifier = Modifier.height(8.dp))
-                task.taskDuration?.let { Text("時間：${formatMillis(it * 1000)}") } // 後端是秒，formatMillis 需要毫秒
-                Spacer(modifier = Modifier.height(8.dp))
+                if (task.isLLM) {
+                    Text("難度：${task.taskDifficulty}")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    task.taskDuration?.let { Text("時間：${formatMillis(it * 1000)}") } // taskDuration 是秒，formatMillis 需要毫秒
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
                 Text("獎勵分數：${task.rewardScore}")
             }
         },

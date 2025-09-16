@@ -36,7 +36,8 @@ const chatWithLLM = async (req, res) => {
     const flaskUrl = process.env.LLM_FLASK_URL || 'http://llm:5050/chat';
     let flaskRes;
     try {
-      flaskRes = await axios.post(flaskUrl, { message, history: usedHistory }, { timeout: 300000 });
+      // timeout 設定拉長到 3600 秒
+      flaskRes = await axios.post(flaskUrl, { message, history: usedHistory }, { timeout: 3600000 });
     } catch (flaskErr) {
       // 更詳細的錯誤日誌
       console.error("❌ Flask 連線或回傳錯誤：", flaskErr);
@@ -57,6 +58,10 @@ const chatWithLLM = async (req, res) => {
       // 若 Flask 回傳不是預期格式
       if (flaskErr.response && flaskErr.response.data) {
         return res.status(500).json({ error: "Flask 伺服器錯誤", flaskData: flaskErr.response.data });
+      }
+      if (flaskErr.code === 'ECONNABORTED') {
+        // axios timeout
+        return res.status(504).json({ error: "AI 回覆逾時，請稍後再試。" });
       }
       return res.status(500).json({ error: "Flask 連線或回傳錯誤", detail: flaskErr.message });
     }
@@ -92,8 +97,8 @@ const chatWithLLM = async (req, res) => {
       });
     } else {
       chat.history = [...chat.history, ...newHistoryItems];
-      if (chat.history.length > 6) {
-        chat.history = chat.history.slice(chat.history.length - 6);
+      if (chat.history.length > 10) {
+        chat.history = chat.history.slice(chat.history.length - 10);
       }
       chat.message = message;
       chat.userId = new mongoose.Types.ObjectId(userId);

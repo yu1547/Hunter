@@ -5,6 +5,7 @@ cache/
 __pycache__/
 *.pyc
 .idea/
+google-services.json
 
 # == Node backend ==
 /backend/node_modules/
@@ -21,3 +22,4 @@ __pycache__/
 # == macOS or OS-related ==
 *.log
 .DS_Store
+frontend/app/google-services.json

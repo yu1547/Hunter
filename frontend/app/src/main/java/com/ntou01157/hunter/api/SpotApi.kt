@@ -53,7 +53,7 @@ object SpotApi {
                         Spot(
                             spotId = spotId,
                             spotName = o.getString("spotName"),
-                            ChName = o.getString("ChName"),
+                            ChName = o.optString("ChName"),
                             latitude = o.getDouble("latitude"),
                             longitude = o.getDouble("longitude"),
                             description = o.optString("description", "")
