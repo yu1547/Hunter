@@ -34,11 +34,16 @@ const acceptTask = async (req, res) => {
     }
 
     const taskDetails = await Task.findById(taskId);
-    if (!taskDetails) return res.status(404).json({ message: '找不到任務詳細資訊' });
+    const eventDetails = await Event.findById(taskId);
+    if (!taskDetails && !eventDetails) {
+      return res.status(404).json({ message: '找不到任務或事件詳細資訊' });
+    }
 
     mission.state = 'in_progress';
     mission.acceptedAt = new Date();
-    if (taskDetails.taskDuration) {
+
+    // FIX: 避免 taskDetails 為 null 時取用 taskDuration
+    if (taskDetails && taskDetails.taskDuration) {
       mission.expiresAt = new Date(mission.acceptedAt.getTime() + taskDetails.taskDuration * 1000);
     }
 
@@ -86,6 +91,11 @@ const completeTask = async (req, res) => {
 
     const mission = user.missions.find(m => m.taskId.toString() === taskId);
     if (!mission) return res.status(404).json({ message: '用戶沒有此任務' });
+
+    // 僅允許 LLM 任務完成
+    if (!mission.isLLM) {
+      return res.status(400).json({ message: '僅能完成 LLM 任務' });
+    }
 
     if (mission.state !== 'in_progress') {
       return res.status(400).json({ message: '任務狀態為 ${mission.state}，無法完成' });
