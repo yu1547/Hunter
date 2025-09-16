@@ -1,6 +1,5 @@
 const User = require('../models/userModel');
 const Task = require('../models/taskModel');
-const Item = require('../models/itemModel');
 const Spot = require('../models/spotModel'); // 需有 Spot model
 const Event = require('../models/eventModel'); // 引入 Event model
 const Rank = require('../models/rankModel'); // 引入 Rank model
@@ -8,7 +7,6 @@ const { generateDropItems } = require('../services/dropService'); // 引入 gene
 const { addItemsToBackpack } = require('../services/backpackService'); // 引入 backpackService
 const axios = require('axios'); // 用於呼叫 Flask
 const mongoose = require('mongoose');
-const { calculateDrops } = require('../logic/dropLogic');
 
 // 新增：確保 missions 一定是陣列，避免 forEach 讀取 null
 function ensureMissionsArray(user) {
@@ -203,16 +201,44 @@ const refreshNormalMissions = async (user) => {
 
   if (totalNewTasksNeeded > 0) {
     const currentUserTaskIds = user.missions.map(m => m.taskId);
-    // 從 Event model 獲取新任務，且 type 不為 'daily'
-    const newEvents = await Event.aggregate([
-      {
-        $match: {
-          _id: { $nin: currentUserTaskIds }, // 過濾掉已經存在的任務
-          type: { $ne: 'daily' } // 確保 type 不是 'daily'
+
+    // ===== 新增：檢查是否有寶藏圖 buff，若有優先加入「偶遇銅寶箱」事件 =====
+    const hasTreasureMapBuff = Array.isArray(user.buff) && user.buff.some(b => {
+      if (b && typeof b === 'object') return b.name === 'treasure_map_once';
+      return false;
+    });
+
+    let newEvents = [];
+    if (hasTreasureMapBuff) {
+      const treasureEvent = await Event.findOne({
+        name: '偶遇銅寶箱',
+        type: { $ne: 'daily' },
+        _id: { $nin: currentUserTaskIds }
+      });
+      if (treasureEvent) {
+        newEvents.push(treasureEvent);
+        // 使用後移除該 buff
+        if (Array.isArray(user.buff)) {
+          user.buff = user.buff.filter(b => !(b && b.name === 'treasure_map_once'));
         }
-      },
-      { $sample: { size: totalNewTasksNeeded } } // 隨機選取 N 個事件
-    ]);
+      }
+    }
+
+    const remainingNeeded = totalNewTasksNeeded - newEvents.length;
+    if (remainingNeeded > 0) {
+      // 從 Event model 獲取其他新任務，且 type 不為 'daily'
+      const randomEvents = await Event.aggregate([
+        {
+          $match: {
+            _id: { $nin: currentUserTaskIds },
+            type: { $ne: 'daily' }
+          }
+        },
+        { $sample: { size: remainingNeeded } }
+      ]);
+      newEvents = newEvents.concat(randomEvents);
+    }
+    // ===== 寶藏圖 buff 優先邏輯結束 =====
 
     if (newEvents.length > 0) {
       let newEventIndex = 0;
