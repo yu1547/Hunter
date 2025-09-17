@@ -149,9 +149,9 @@ fun FavoritesScreen(
                                                             painter = painterResource(id = getSpotImageResId(landmark.spotName)),
                                                             contentDescription = landmark.spotName,
                                                             modifier = Modifier
-                                                                .fillMaxWidth(0.7f)
-                                                                .align(Alignment.TopCenter)
-                                                                .offset(y = screenHeight * 0.07f) // 地標照片下移(數字越大)
+                                                                .fillMaxWidth(0.7f) // 灰底
+                                                                .fillMaxHeight(0.57f)
+                                                                .align(Alignment.Center)
                                                         )
                                                     } else {
                                                         Box(

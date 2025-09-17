@@ -313,24 +313,24 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                     contentColor = Color.White
                 )
 
-                Button(onClick = { navController.navigate("bugHunt") }, colors = sideButtonColors) {
-                    Text("BugHunt")
-                }
-                Button(onClick = { navController.navigate("ancientTree") }, colors = sideButtonColors) {
-                    Text("古樹")
-                }
-                Button(onClick = { navController.navigate("merchant") }, colors = sideButtonColors) {
-                    Text("商人")
-                }
-                Button(onClick = { navController.navigate("slimeAttack") }, colors = sideButtonColors) {
-                    Text("史萊姆")
-                }
-                Button(onClick = { navController.navigate("stonePile") }, colors = sideButtonColors) {
-                    Text("石堆")
-                }
-                Button(onClick = { navController.navigate("treasureBox") }, colors = sideButtonColors) {
-                    Text("寶箱")
-                }
+//                Button(onClick = { navController.navigate("bugHunt") }, colors = sideButtonColors) {
+//                    Text("BugHunt")
+//                }
+//                Button(onClick = { navController.navigate("ancientTree") }, colors = sideButtonColors) {
+//                    Text("古樹")
+//                }
+//                Button(onClick = { navController.navigate("merchant") }, colors = sideButtonColors) {
+//                    Text("商人")
+//                }
+//                Button(onClick = { navController.navigate("slimeAttack") }, colors = sideButtonColors) {
+//                    Text("史萊姆")
+//                }
+//                Button(onClick = { navController.navigate("stonePile") }, colors = sideButtonColors) {
+//                    Text("石堆")
+//                }
+//                Button(onClick = { navController.navigate("treasureBox") }, colors = sideButtonColors) {
+//                    Text("寶箱")
+//                }
             }
 
             // 客服
