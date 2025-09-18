@@ -5,6 +5,7 @@ import com.ntou01157.hunter.models.Supply
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
+<<<<<<< Updated upstream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -13,15 +14,25 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+=======
+import com.ntou01157.hunter.temp.*
+>>>>>>> Stashed changes
 
 object SupplyApi {
     private val client = OkHttpClient()
     private val JSON = "application/json; charset=utf-8".toMediaType()
 
+    private fun authHeader(builder: Request.Builder): Request.Builder {
+        val token = TokenManager.idToken
+        return if (!token.isNullOrEmpty()) {
+            builder.addHeader("Authorization", "Bearer $token")
+        } else builder
+    }
+
     // 取得所有補給站
     fun getAll(): List<Supply> {
         val url = "${ApiConfig.BASE_URL}/api/supplies"
-        val req = Request.Builder().url(url).get().build()
+        val req = authHeader(Request.Builder().url(url).get()).build()
         return try {
             client.newCall(req).execute().use { resp ->
                 if (!resp.isSuccessful) {
@@ -54,17 +65,24 @@ object SupplyApi {
     }
 
     data class ClaimResponse(
+<<<<<<< Updated upstream
             val success: Boolean,
             val reason: String? = null,
             val nextClaimTime: String? = null, // ISO8601 UTC
             val drops: List<String>? = null
+=======
+        val success: Boolean,
+        val reason: String? = null,
+        val nextClaimTime: String? = null,
+        val drops: List<String>? = null
+>>>>>>> Stashed changes
     )
 
-    // 領取補給：POST /api/supplies/{userId}/{supplyId}/claim
+    // 領取補給
     fun claim(userId: String, supplyId: String): ClaimResponse {
         val url = "${ApiConfig.BASE_URL}/api/supplies/claim/$userId/$supplyId"
-        val body = "{}".toRequestBody(JSON) // 無 body，保持 POST
-        val req = Request.Builder().url(url).post(body).build()
+        val body = "{}".toRequestBody(JSON)
+        val req = authHeader(Request.Builder().url(url).post(body)).build()
         return try {
             client.newCall(req).execute().use { resp ->
                 val raw = resp.body?.string().orEmpty()
