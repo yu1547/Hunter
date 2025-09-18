@@ -5,7 +5,6 @@ import com.ntou01157.hunter.models.Supply
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
-<<<<<<< Updated upstream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -14,9 +13,7 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
-=======
 import com.ntou01157.hunter.temp.*
->>>>>>> Stashed changes
 
 object SupplyApi {
     private val client = OkHttpClient()
@@ -65,17 +62,10 @@ object SupplyApi {
     }
 
     data class ClaimResponse(
-<<<<<<< Updated upstream
-            val success: Boolean,
-            val reason: String? = null,
-            val nextClaimTime: String? = null, // ISO8601 UTC
-            val drops: List<String>? = null
-=======
         val success: Boolean,
         val reason: String? = null,
         val nextClaimTime: String? = null,
         val drops: List<String>? = null
->>>>>>> Stashed changes
     )
 
     // 領取補給
