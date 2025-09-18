@@ -10,7 +10,8 @@ const addItemToBackpack = (req, res) => {
 const craftItem = async (req, res) => {
   try {
     const { id } = req.params; // userId
-    const { itemId } = req.body; // the item to use for crafting
+    const rawItemId = req.body?.itemId; // the item to use for crafting
+    const itemId = rawItemId ? String(rawItemId) : null;
 
     if (!itemId) {
       return res.status(400).json({ message: '請提供要合成的道具 ID' });
@@ -21,9 +22,14 @@ const craftItem = async (req, res) => {
       return res.status(404).json({ message: '找不到該用戶' });
     }
 
-    // 找到要用於合成的道具在背包中的位置
+    // 確保背包為陣列
+    if (!Array.isArray(user.backpackItems)) {
+      user.backpackItems = [];
+    }
+
+    // 找到要用於合成的道具在背包中的位置（將 ObjectId 與字串以 String 正規化後比較）
     const itemToCraftIndex = user.backpackItems.findIndex(
-      item => item.itemId === itemId
+      (item) => String(item.itemId) === itemId
     );
 
     if (itemToCraftIndex === -1) {
@@ -33,7 +39,7 @@ const craftItem = async (req, res) => {
     const itemInBackpack = user.backpackItems[itemToCraftIndex];
 
     // 檢查數量是否足夠 (>= 3)
-    if (itemInBackpack.quantity < 3) {
+    if (Number(itemInBackpack.quantity) < 3) {
       return res.status(400).json({ message: '道具數量不足，無法合成' });
     }
 
@@ -50,28 +56,27 @@ const craftItem = async (req, res) => {
     // 減少合成材料的數量
     itemInBackpack.quantity -= 3;
     // 如果材料用完，就從背包中移除
-    if (itemInBackpack.quantity === 0) {
+    if (itemInBackpack.quantity <= 0) {
       user.backpackItems.splice(itemToCraftIndex, 1);
     }
 
-    const resultItemId = sourceItem.resultId.toString();
+    const resultItemId = String(sourceItem.resultId);
 
-    // 找到合成結果道具在背包中的位置
+    // 找到合成結果道具在背包中的位置（同樣以字串化後比較）
     const resultItemIndex = user.backpackItems.findIndex(
-      item => item.itemId === resultItemId
+      (item) => String(item.itemId) === resultItemId
     );
 
     if (resultItemIndex > -1) {
       // 如果結果道具已存在，增加數量
       user.backpackItems[resultItemIndex].quantity += 1;
     } else {
-      // 如果結果道具不存在，添加新道具
-      user.backpackItems.push({ itemId: resultItemId, quantity: 1 });
+      // 如果結果道具不存在，添加新道具（保留原始型別，讓 Mongoose 自行轉型）
+      user.backpackItems.push({ itemId: sourceItem.resultId, quantity: 1 });
     }
 
     await user.save();
-    res.status(200).json( user.backpackItems );
-
+    res.status(200).json(user);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
