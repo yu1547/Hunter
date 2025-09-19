@@ -280,9 +280,6 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                 properties = MapProperties(isMyLocationEnabled = true),
                 onMapClick = { selectedSupply = null }
             ) {
-                userLocation?.let {
-                    Marker(state = MarkerState(position = it), title = "所在位置")
-                }
                 spots.forEach { spot -> spotMarker(spot = spot, userId = user.uid) }
                 supplyStations.forEach { supply ->
                     SupplyMarker(supply = supply, onClick = {
@@ -337,8 +334,8 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             FloatingActionButton(
                 onClick = { showChatDialog = true },
                 modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 24.dp, bottom = 96.dp),
+                    .align(Alignment.BottomStart) // 靠左下
+                    .padding(start = 15.dp, bottom = 40.dp), // 左側間距
                 containerColor = Color(0xFFbc8f8f),
                 contentColor = Color.White,
                 shape = RoundedCornerShape(50)
