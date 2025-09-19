@@ -121,12 +121,8 @@ fun BagScreen(navController: NavHostController) {
                 else -> allItems.filter { it.count.value > 0 }
             }
 
-    // 如果選中的是素材，找出可合成的結果物品
-    val resultItem = remember(selectedItem) {
-        if (selectedItem?.item?.itemType == 0 && selectedItem?.item?.resultId != null) {
-            allItems.find { it.item.itemId == selectedItem?.item?.resultId }
-        } else null
-    }
+    // 合成結果 ID（不依賴背包是否已有該結果物）
+    val resultItemId = selectedItem?.item?.resultId?.takeIf { selectedItem?.item?.itemType == 0 }
 
     Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues ->
         Column(
@@ -261,135 +257,6 @@ fun BagScreen(navController: NavHostController) {
                         }
                     }
                 }
-            }
-
-            // 合成彈窗
-            if (showCraftDialog && resultItem != null) {
-                AlertDialog(
-                    onDismissRequest = { showCraftDialog = false },
-                    title = {
-                        Box(Modifier.fillMaxWidth()) {
-                            Text("合成物", modifier = Modifier.align(Alignment.Center))
-                            Text("✕", modifier = Modifier.align(Alignment.TopEnd).clickable {
-                                showCraftDialog = false
-                            }, fontSize = 24.sp)
-                        }
-                    },
-                    text = {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Image(
-                                painter = painterResource(id = R.drawable.default_itempic),
-                                contentDescription = resultItem.item.itemName,
-                                modifier = Modifier.size(100.dp)
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                selectedItem?.let { material ->
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Image(
-                                            painter = painterResource(id = R.drawable.default_itempic),
-                                            contentDescription = material.item.itemName,
-                                            modifier = Modifier.size(50.dp)
-                                        )
-                                        Text("x1")
-                                    }
-                                }
-                                // 顯示其它需要的素材（同 resultId 且不同於當前素材）
-                                val others = allItems.filter {
-                                    it.item.itemType == 0 &&
-                                            it.item.resultId == resultItem.item.itemId &&
-                                            it.item.itemId != selectedItem?.item?.itemId
-                                }
-                                others.forEach { material ->
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Image(
-                                            painter = painterResource(id = R.drawable.default_itempic),
-                                            contentDescription = material.item.itemName,
-                                            modifier = Modifier.size(80.dp)
-                                        )
-                                        Text("x1")
-                                    }
-
-                                    // 顯示其他需要的素材
-                                    allItems
-                                            .filter {
-                                                it.item.itemType == 0 &&
-                                                        it.item.resultId ==
-                                                                resultItem.item.itemId &&
-                                                        it.item.itemId != selectedItem?.item?.itemId
-                                            }
-                                            .forEach { material ->
-                                                Column(
-                                                        horizontalAlignment =
-                                                                Alignment.CenterHorizontally
-                                                ) {
-                                                    // val materialImageResId =
-                                                    // getDrawableId(material.item.itemPic)
-                                                    // if (materialImageResId ==
-                                                    // R.drawable.ic_placeholder) {
-                                                    //     Log.e("BagScreen", "Invalid imageResId
-                                                    // for other material: ${material.item.itemName}
-                                                    // (pic: ${material.item.itemPic})")
-                                                    // }
-                                                    Image(
-                                                            painter =
-                                                                    painterResource(
-                                                                            id =
-                                                                                    R.drawable
-                                                                                            .default_itempic
-                                                                    ), // 之後要記得改成materialImageResId，而且要把上面註解取消
-                                                            contentDescription =
-                                                                    material.item.itemName,
-                                                            modifier = Modifier.size(50.dp)
-                                                    )
-                                                    Text("x1")
-                                                }
-                                            }
-                                }
-                            }
-                        }
-                    },
-                    confirmButton = {
-                        Button(onClick = {
-                            coroutineScope.launch {
-                                val uid = userIdState ?: run {
-                                    snackbarHostState.showSnackbar("尚未取得使用者 ID，無法合成")
-                                    return@launch
-                                }
-                                val requiredMaterials = allItems.filter {
-                                    it.item.itemType == 0 && it.item.resultId == resultItem.item.itemId
-                                }
-                                val hasEnough = requiredMaterials.all { material ->
-                                    allItems.any { ui -> ui.item.itemId == material.item.itemId && ui.count.value >= 1 }
-                                }
-                                if (hasEnough) {
-                                    try {
-                                        var latest: List<UserItem>? = null
-                                        requiredMaterials.forEach { material ->
-                                            latest = craftItem(uid, material.item.itemId)
-                                        }
-                                        latest?.let {
-                                            allItems.clear()
-                                            allItems.addAll(it)
-                                        }
-                                        snackbarHostState.showSnackbar("合成成功！")
-                                        showCraftDialog = false
-                                        selectedItem = null
-                                    } catch (e: Exception) {
-                                        snackbarHostState.showSnackbar("合成失敗: ${e.message}")
-                                    }
-                                } else {
-                                    snackbarHostState.showSnackbar("材料不足，無法合成")
-                                }
-                            }
-                        }) { Text("合成") }
-                    },
-                    shape = RoundedCornerShape(16.dp)
-                )
             }
         }
 
@@ -528,6 +395,98 @@ fun BagScreen(navController: NavHostController) {
                             ) { Text("前往合成") }
                         }
                     }
+                },
+                shape = RoundedCornerShape(16.dp)
+            )
+        }
+
+        // 合成彈窗（放在最後，確保顯示在最上層）
+        if (showCraftDialog && resultItemId != null) {
+            AlertDialog(
+                onDismissRequest = { showCraftDialog = false },
+                title = {
+                    Box(Modifier.fillMaxWidth()) {
+                        Text("合成物", modifier = Modifier.align(Alignment.Center))
+                        Text("✕", modifier = Modifier.align(Alignment.TopEnd).clickable {
+                            showCraftDialog = false
+                        }, fontSize = 24.sp)
+                    }
+                },
+                text = {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Image(
+                            painter = painterResource(id = R.drawable.default_itempic),
+                            contentDescription = "合成物",
+                            modifier = Modifier.size(100.dp)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            selectedItem?.let { material ->
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Image(
+                                        painter = painterResource(id = R.drawable.default_itempic),
+                                        contentDescription = material.item.itemName,
+                                        modifier = Modifier.size(50.dp)
+                                    )
+                                    Text("x1")
+                                }
+                            }
+                            val others = allItems.filter {
+                                it.item.itemType == 0 &&
+                                        it.item.resultId == resultItemId &&
+                                        it.item.itemId != selectedItem?.item?.itemId
+                            }
+                            others.forEach { material ->
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Image(
+                                        painter = painterResource(id = R.drawable.default_itempic),
+                                        contentDescription = material.item.itemName,
+                                        modifier = Modifier.size(50.dp)
+                                    )
+                                    Text("x1")
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        coroutineScope.launch {
+                            val uid = userIdState ?: run {
+                                snackbarHostState.showSnackbar("尚未取得使用者 ID，無法合成")
+                                return@launch
+                            }
+                            val requiredMaterials = allItems.filter {
+                                it.item.itemType == 0 && it.item.resultId == resultItemId
+                            }
+                            val hasEnough = requiredMaterials.all { material ->
+                                allItems.any { ui -> ui.item.itemId == material.item.itemId && ui.count.value >= 1 }
+                            }
+                            if (hasEnough) {
+                                try {
+                                    var latest: List<UserItem>? = null
+                                    requiredMaterials.forEach { material ->
+                                        latest = craftItem(uid, material.item.itemId)
+                                    }
+                                    latest?.let {
+                                        allItems.clear()
+                                        allItems.addAll(it)
+                                    }
+                                    snackbarHostState.showSnackbar("合成成功！")
+                                    showCraftDialog = false
+                                    selectedItem = null
+                                } catch (e: Exception) {
+                                    snackbarHostState.showSnackbar("合成失敗: ${e.message}")
+                                }
+                            } else {
+                                snackbarHostState.showSnackbar("材料不足，無法合成")
+                            }
+                        }
+                    }) { Text("合成") }
                 },
                 shape = RoundedCornerShape(16.dp)
             )
