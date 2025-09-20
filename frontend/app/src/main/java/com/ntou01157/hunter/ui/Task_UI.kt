@@ -150,30 +150,37 @@ fun TaskListScreen(navController: NavController) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .background(Color(0xFFD1BEAD))
                     .padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
                     modifier = Modifier
-                        .padding(top = 25.dp, start = 16.dp)
+                        .padding(top = 20.dp, start = 16.dp)
                         .clickable { navController.navigate("main") }
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.home_icon),
                         contentDescription = "回首頁",
-                        modifier = Modifier.size(60.dp)
+                        modifier = Modifier.size(50.dp)
                     )
                 }
-                Spacer(modifier = Modifier.width(12.dp))
-                Text("任務清單", fontSize = 22.sp)
+                Spacer(modifier = Modifier.width(15.dp))
+                Text(
+                    "任務清單",
+                    fontSize = 22.sp,
+                    color = Color(0xFF5D4D3E),
+                    modifier = Modifier.padding(top = 16.dp)
+                )
             }
-        }
+        },
+        containerColor = Color(0xFFD1BEAD)
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(Color(0xFFF3E5E5))
+                .background(Color(0xFFD1BEAD))
         ) {
             // 先處理「解析 userId」這層狀態
             when {
@@ -225,6 +232,9 @@ fun TaskListScreen(navController: NavController) {
                         ) {
                             // 只計算 isLLM 任務數量，若不足 3 顯示按鈕
                             val llmCount = userTaskList.count { it.task.isLLM && it.state != "claimed" }
+                            val llmTasks = userTaskList.filter { it.task.isLLM && it.state != "claimed" }
+                            val normalTasks = userTaskList.filter { !it.task.isLLM }
+                            val llmTaskCount = llmTasks.size
                             if (llmCount < 3) {
                                 Button(
                                     onClick = {
@@ -249,7 +259,8 @@ fun TaskListScreen(navController: NavController) {
                                             }
                                         }
                                     },
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF977D66))
                                 ) { Text("生成探索任務") }
                                 Spacer(Modifier.height(12.dp))
                             }
@@ -257,16 +268,75 @@ fun TaskListScreen(navController: NavController) {
                             if (errorMessage != null) {
                                 Text(errorMessage ?: "", color = Color.Red)
                                 Spacer(Modifier.height(8.dp))
-                                Button(onClick = { userId?.let { refreshTasks(it) } }) { Text("重試") }
+                                Button(
+                                    onClick = { userId?.let { refreshTasks(it) } },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF977D66))
+                                ) { Text("重試") }
                                 Spacer(Modifier.height(12.dp))
                             }
 
-                            LazyColumn(
-                                modifier = Modifier.fillMaxSize(),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            // 路線任務區域框
+                            if (llmTasks.isNotEmpty()) {
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 8.dp),
+                                    shape = RoundedCornerShape(16.dp),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8E2CF))
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp)
+                                    ) {
+                                        Text(
+                                            text = "路線任務",
+                                            fontSize = 18.sp,
+                                            color = Color(0xFF6D4C41),
+                                            modifier = Modifier.padding(bottom = 8.dp)
+                                        )
+                                        LazyColumn(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            items(llmTasks) { userTask ->
+                                                TaskItem(userTask) { selectedUserTask = it }
+                                            }
+                                        }
+                                    }
+                                }
+                                Spacer(Modifier.height(12.dp))
+                            }
+
+                            // 一般任務區域框
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFFF8E2CF))
                             ) {
-                                items(userTaskList) { userTask ->
-                                    TaskItem(userTask) { selectedUserTask = it }
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp)
+                                ) {
+                                    Text(
+                                        text = "一般任務",
+                                        fontSize = 18.sp,
+                                        color = Color(0xFF6D4C41),
+                                        modifier = Modifier.padding(bottom = 8.dp)
+                                    )
+                                    LazyColumn(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        items(normalTasks) { userTask ->
+                                            TaskItem(userTask) { selectedUserTask = it }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -397,16 +467,17 @@ fun TaskItem(userTask: UserTask, onClick: (UserTask) -> Unit) {
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick(userTask) }
+            .clickable { onClick(userTask) },
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Row(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(18.dp)
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(userTask.task.taskName, fontSize = 18.sp)
+            Text(userTask.task.taskName, fontSize = 15.sp)
             Text(
                 text = when (userTask.state) {
                     "available"   -> "未接受"
@@ -454,7 +525,10 @@ fun TaskDialog(
         },
         confirmButton = {
             when (userTask.state) {
-                "available"   -> Button(onClick = { onAction("accept") }) { Text("接受任務") }
+                "available"   -> Button(
+                    onClick = { onAction("accept") },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF977D66))
+                ) { Text("接受任務") }
                 "in_progress" -> Button(onClick = { onAction("complete") }) { Text("完成任務 (測試)") }
                 "completed"   -> Button(onClick = { onAction("claim") }) { Text("領取獎勵") }
             }
@@ -464,9 +538,10 @@ fun TaskDialog(
                 if (userTask.state == "available" || userTask.state == "in_progress") {
                     TextButton(onClick = { onAction("decline") }) { Text("拒絕", color = Color.Red) }
                 }
-                TextButton(onClick = onDismiss) { Text("關閉") }
+                TextButton(onClick = onDismiss) { Text("關閉", color = Color(0xFF977D66)) }
             }
         },
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(16.dp),
+        containerColor = Color.White
     )
 }
