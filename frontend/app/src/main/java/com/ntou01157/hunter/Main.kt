@@ -246,7 +246,9 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
     Scaffold(
         contentWindowInsets = WindowInsets(0),
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor = Color.White // 底色設為白色
+            ) {
                 val currentRoute = navController.currentBackStackEntry?.destination?.route
                 bottomItems.forEach { item ->
                     NavigationBarItem(
