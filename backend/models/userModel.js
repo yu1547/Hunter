@@ -15,6 +15,44 @@ const { Schema } = mongoose;
 
 // 定義使用者模型結構
 const userSchema = new Schema({
+  email: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  displayName: {
+    type: String,
+    default: ""
+  },
+  photoURL: {
+    type: String,
+    default: ""
+  },
+  role: {
+    type: String,
+    default: "player"
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  lastLogin: {
+    type: Date,
+    default: Date.now
+  },
+  gender: {
+    type: String,
+    enum: ['男', '女', '不透露'],
+    default: '不透露'
+  },
+  age: {
+    type: String,
+    default: "18"
+  },
+  username: {
+    type: String,
+    default: ""
+  },
   backpackItems: [{
     _id: false, //不會自動生成 _id
     itemId: {
@@ -67,37 +105,6 @@ const userSchema = new Schema({
       required: false
     }
   }],
-  settings: {
-    music: {
-      type: Boolean,
-      default: true
-    },
-    notification: {
-      type: Boolean,
-      default: true
-    },
-    language: {
-      type: String,
-      default: 'zh-TW'
-    }
-  },
-  username: {
-    type: String,
-    default: "Hunter"
-  },
-  gender: {
-    type: String,
-    enum: ['男', '女', '不透露'],
-    default: '不透露'
-  },
-  age: {
-    type: String,  // 如果你希望用數字存，可以改成 Number
-    default: "18"
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
   spotsScanLogs: {
     type: Map,
     of: Boolean,
@@ -108,6 +115,20 @@ const userSchema = new Schema({
     of: Date,
     default: {}
   },
+  settings: {
+      music: {
+        type: Boolean,
+        default: true
+      },
+      notification: {
+        type: Boolean,
+        default: true
+      },
+      language: {
+        type: String,
+        default: 'zh-TW'
+      }
+    },
   buff: {
     type: Object,
     default: null

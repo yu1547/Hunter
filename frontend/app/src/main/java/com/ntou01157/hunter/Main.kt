@@ -240,7 +240,9 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
     Scaffold(
         contentWindowInsets = WindowInsets(0),
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor = Color.White // 底色設為白色
+            ) {
                 val currentRoute = navController.currentBackStackEntry?.destination?.route
                 bottomItems.forEach { item ->
                     NavigationBarItem(
@@ -334,8 +336,8 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             FloatingActionButton(
                 onClick = { showChatDialog = true },
                 modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 24.dp, bottom = 96.dp),
+                    .align(Alignment.BottomStart) // 靠左下
+                    .padding(start = 15.dp, bottom = 40.dp), // 左側間距
                 containerColor = Color(0xFFbc8f8f),
                 contentColor = Color.White,
                 shape = RoundedCornerShape(50)

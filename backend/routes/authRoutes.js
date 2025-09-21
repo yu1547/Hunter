@@ -21,7 +21,7 @@ router.post("/google", async (req, res) => {
                 email,
                 displayName: "",
                 age: "",
-                gender: "",
+                gender: "不透露",
                 photoURL: "",
                 role: "player",
                 createdAt: new Date(),
