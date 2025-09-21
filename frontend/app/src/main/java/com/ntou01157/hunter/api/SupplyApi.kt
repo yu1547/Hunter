@@ -192,4 +192,34 @@ object SupplyApi {
             null
         }
     }
+
+    data class StatusResponse(
+        val success: Boolean,
+        val canClaim: Boolean,
+        val nextClaimTime: String? = null
+    )
+
+    // 查補給站狀態：GET /api/supplies/status/{userId}/{supplyId}
+    fun status(userId: String, supplyId: String): StatusResponse {
+        val url = "${ApiConfig.BASE_URL}/api/supplies/status/$userId/$supplyId"
+        val req = Request.Builder().url(url).get().build()
+        return try {
+            client.newCall(req).execute().use { resp ->
+                val raw = resp.body?.string().orEmpty()
+                if (!resp.isSuccessful || raw.isEmpty()) {
+                    Log.e("SupplyApi", "HTTP ${resp.code} from $url body=$raw")
+                    return StatusResponse(success = false, canClaim = false)
+                }
+                val jo = JSONObject(raw)
+                StatusResponse(
+                    success = jo.optBoolean("success", false),
+                    canClaim = jo.optBoolean("canClaim", false),
+                    nextClaimTime = jo.optString("nextClaimTime", null)
+                )
+            }
+        } catch (e: Exception) {
+            Log.e("SupplyApi", "status 失敗", e)
+            StatusResponse(success = false, canClaim = false)
+        }
+    }
 }
