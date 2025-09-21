@@ -66,10 +66,11 @@ fun SupplyDialog(
             },
             text = {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Button(onClick = onCollect) { Text("領取資源") }
+
                     if (isCooldown) {
-                        Spacer(modifier = Modifier.height(8.dp))
                         Text("冷卻中，剩餘 $cooldownText")
+                    } else {
+                        Button(onClick = onCollect) { Text("領取資源") }
                     }
                     // 如果有每日事件，顯示這個按鈕
                     if (hasDailyEvent) {
@@ -106,6 +107,23 @@ fun SupplyHandlerDialog(
     var dailyEventName by remember { mutableStateOf<String?>(null) }
     val hasDailyEvent = dailyEventName != null
 
+    // 開啟就先查狀態（不領取）
+    LaunchedEffect(supply.supplyId) {
+        val st = withContext(Dispatchers.IO) { SupplyApi.status(user.id, supply.supplyId) }
+        if (st.success) {
+            if (st.canClaim) {
+                cooldownUntil = null
+                cooldownText = ""
+            } else {
+                val until = SupplyApi.parseUtcMillis(st.nextClaimTime)
+                if (until != null) {
+                    cooldownUntil = until
+                    val left = (until - System.currentTimeMillis()).coerceAtLeast(0)
+                    cooldownText = formatMs(left)
+                }
+            }
+        }
+    }
     // 每秒更新倒數
     LaunchedEffect(cooldownUntil) {
         while (cooldownUntil != null && System.currentTimeMillis() < cooldownUntil!!) {

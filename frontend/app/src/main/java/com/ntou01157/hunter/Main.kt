@@ -56,6 +56,8 @@ import com.ntou01157.hunter.ui.event_ui.StonePileUI
 import com.ntou01157.hunter.ui.event_ui.TreasureBoxUI
 import com.ntou01157.hunter.ui.event_ui.WordleGameUI
 import com.ntou01157.hunter.models.model_api.expireAtOf
+import com.ntou01157.hunter.utils.GeoVerifier
+import kotlinx.coroutines.launch
 
 class MainApplication : android.app.Application() {
     lateinit var rankRepository: RankRepository
@@ -236,7 +238,7 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
         NavItem("favorites", "收藏冊", R.drawable.checkinbook_icon),
         NavItem("profile", "個人檔案", R.drawable.profile_icon),
     )
-
+    val scope = rememberCoroutineScope()
     Scaffold(
         contentWindowInsets = WindowInsets(0),
         bottomBar = {
@@ -284,8 +286,23 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                 }
                 supplyStations.forEach { supply ->
                     SupplyMarker(supply = supply, onClick = {
-                        selectedSupply = it
-                        showSupplyDialog = true
+                        scope.launch {
+                            val loc = locationService.getCurrentLocation()
+                            if (loc == null) {
+                                android.widget.Toast.makeText(context, "無法取得定位", android.widget.Toast.LENGTH_SHORT).show()
+                                return@launch
+                            }
+                            val current = LatLng(loc.latitude, loc.longitude)
+                            val target = LatLng(supply.latitude, supply.longitude)
+                            val distance = GeoVerifier.distanceMeters(current, target)
+                            val inRange = distance <= GeoVerifier.DEFAULT_THRESHOLD_METERS
+                            if (!inRange) {
+                                android.widget.Toast.makeText(context, "離該補給站不夠近，再靠近一點喔!", android.widget.Toast.LENGTH_SHORT).show()
+                                return@launch
+                            }
+                            selectedSupply = supply
+                            showSupplyDialog = true
+                        }
                     })
                 }
             }

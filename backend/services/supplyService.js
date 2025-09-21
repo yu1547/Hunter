@@ -10,6 +10,16 @@ exports.getAllSupplies = async () => {
     return await Supply.find({}, { __v: 0 }).lean();
 };
 
+// 查詢狀態（不觸發領取）
+exports.getStatus = async ({ userId, supplyId }) => {
+    const user = await User.findById(userId);
+    if (!user) throw new Error('USER_NOT_FOUND');
+    const now = new Date();
+    const nextClaimTime = readSupplyNextDate(user, supplyId);
+    const canClaim = !nextClaimTime || nextClaimTime <= now;
+    return { canClaim, nextClaimTime };
+};
+
 // 讀：回傳 Date（相容舊資料 {nextClaimTime}）
 function readSupplyNextDate(user, supplyId) {
     const logs = user.supplyScanLogs;
