@@ -240,14 +240,14 @@ fun FavoritesScreen(
                             horizontalAlignment = Alignment.Start
                         ) {
                             Text(
-                                text = it.spotName,
+                                text = it.ChName,
                                 style = MaterialTheme.typography.titleLarge,
                                 color = Color.Black,
                                 fontSize = (screenWidth.value * 0.06f).sp // 標題依比例放大
                             )
                             Spacer(modifier = Modifier.height(dialogHeight * 0.03f))
                             Text(
-                                text = "內容說明。",
+                                text = it.description.ifBlank { "暫無介紹" },
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Color.Black,
                                 fontSize = (screenWidth.value * 0.045f).sp // 內容依比例放大
