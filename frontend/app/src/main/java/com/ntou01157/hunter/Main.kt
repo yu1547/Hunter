@@ -37,15 +37,12 @@ import com.ntou01157.hunter.api.SupplyApi
 import com.ntou01157.hunter.data.RankRepository // Correct import for your RankRepository
 import com.ntou01157.hunter.handlers.MissionHandler
 import com.ntou01157.hunter.handlers.SpotLogHandler
-import com.ntou01157.hunter.mock.FakeUser
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.util.Log
 import com.ntou01157.hunter.models.model_api.User as ApiUser
-import com.ntou01157.hunter.models.User as UiUser
 import com.ntou01157.hunter.models.*
 import com.ntou01157.hunter.temp.*
 import com.ntou01157.hunter.models.SupplyRepository
-import com.ntou01157.hunter.models.User
 import com.ntou01157.hunter.ui.*
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.Dispatchers
@@ -100,17 +97,13 @@ class Main : ComponentActivity() {
                     var showLockedDialog by remember { mutableStateOf(false) }
 
                     LaunchedEffect(Unit) {
+                        val email = FirebaseAuth.getInstance().currentUser?.email ?: return@LaunchedEffect
                         try {
-                            val email = FirebaseAuth.getInstance().currentUser?.email
-                            if (email != null) {
-                                val apiUser = RetrofitClient.apiService.getUserByEmail(email)
-                                userId = apiUser.id
-                            } else {
-                                userId = FakeUser.uid
-                            }
+                            val apiUser = RetrofitClient.apiService.getUserByEmail(email)
+                            userId = apiUser.id
                         } catch (e: Exception) {
                             Log.e("FavoritesScreen", "載入使用者失敗: ${e.message}", e)
-                            userId = FakeUser.uid
+                            userId = null
                         }
                         pages = SpotLogHandler.getSpotPages()
                     }
@@ -187,14 +180,16 @@ class Main : ComponentActivity() {
 @Composable
 fun MainScreen(navController: androidx.navigation.NavHostController) {
     var showChatDialog by remember { mutableStateOf(false) }
+    var apiUser by remember { mutableStateOf<ApiUser?>(null) }
 
     // ===== Buff 狀態 ===========================================
     var branchExpireAt by remember { mutableStateOf<Long?>(null) }
     LaunchedEffect(Unit) {
         try {
             val email = FirebaseAuth.getInstance().currentUser?.email ?: return@LaunchedEffect
-            val apiUser: ApiUser = RetrofitClient.apiService.getUserByEmail(email)
-            branchExpireAt = apiUser.buff.expireAtOf("ancient_branch")
+            val u: ApiUser = RetrofitClient.apiService.getUserByEmail(email)
+            branchExpireAt = u.buff.expireAtOf("ancient_branch")
+            apiUser = u
         } catch (e: Exception) {
             Log.e("MainScreen", "load buff failed: ${e.message}", e)
         }
@@ -205,7 +200,6 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
     var supplyStations by remember { mutableStateOf<List<Supply>>(emptyList()) }
     var selectedSupply by remember { mutableStateOf<Supply?>(null) }
     var showSupplyDialog by remember { mutableStateOf(false) }
-    val user: User = FakeUser
 
     val context = LocalContext.current
     val locationPermissionState =
@@ -283,7 +277,9 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                 userLocation?.let {
                     Marker(state = MarkerState(position = it), title = "所在位置")
                 }
-                spots.forEach { spot -> spotMarker(spot = spot, userId = user.uid) }
+                apiUser?.let { u ->
+                    spots.forEach { spot -> spotMarker(spot = spot, userId = u.id) }
+                }
                 supplyStations.forEach { supply ->
                     SupplyMarker(supply = supply, onClick = {
                         selectedSupply = it
@@ -292,13 +288,14 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                 }
             }
 
-//            if (showSupplyDialog && selectedSupply != null) {
-//                SupplyHandlerDialog(
-//                    supply = selectedSupply!!,
-//                    user = user,
-//                    onDismiss = { showSupplyDialog = false }
-//                )
-//            }
+            if (showSupplyDialog && selectedSupply != null && apiUser != null) {
+                SupplyHandlerDialog(
+                    supply = selectedSupply!!,
+                    user = apiUser!!,
+                    onDismiss = { showSupplyDialog = false },
+                    navController = navController
+                )
+            }
 
             // 右側活動類按鈕
             Column(
