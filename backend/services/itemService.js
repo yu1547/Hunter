@@ -61,9 +61,9 @@ async function ensureItemIdByName(lookup, session) {
 
 // 資料庫中鑰匙碎片的 itemPic
 const PIC = {
-    copperShard: 'copper_piece',   // DB的銅碎片 itemPic
-    silverShard: 'silver_piece',   // DB的銀碎片 itemPic
-    goldShard: 'gold_piece',     // DB的金碎片 itemPic
+    copperShard: 'copper_key_piece',   // DB的銅碎片 itemPic
+    silverShard: 'silver_key_piece',   // DB的銀碎片 itemPic
+    goldShard: 'gold_key_piece',     // DB的金碎片 itemPic
 };
 
 //檢查重複buff

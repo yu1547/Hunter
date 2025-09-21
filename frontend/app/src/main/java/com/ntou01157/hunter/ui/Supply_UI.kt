@@ -24,6 +24,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.ntou01157.hunter.models.model_api.User as ApiUser
 
 // 補給站地圖上的圖標
 @SuppressLint("UnrememberedMutableState")
@@ -91,7 +92,7 @@ private fun formatMs(ms: Long): String {
 @Composable
 fun SupplyHandlerDialog(
         supply: Supply,
-        user: User,
+        user: ApiUser,
         onDismiss: () -> Unit,
         navController: NavController // 新增 NavController 參數
 ) {
@@ -127,7 +128,7 @@ fun SupplyHandlerDialog(
                 scope.launch {
                     val res =
                             withContext(Dispatchers.IO) {
-                                SupplyApi.claim(user.uid, supply.supplyId)
+                                SupplyApi.claim(user.id, supply.supplyId)
                             }
                     if (res.success) {
                         Toast.makeText(context, "領取成功", Toast.LENGTH_SHORT).show()
@@ -158,12 +159,12 @@ fun SupplyHandlerDialog(
                         // 首先檢查任務狀態
                         val missionCheckRes =
                                 withContext(Dispatchers.IO) {
-                                    MissionHandler.checkSpotMission(user.uid, supply.supplyId)
+                                    MissionHandler.checkSpotMission(user.id, supply.supplyId)
                                 }
 
                         if (missionCheckRes != null && missionCheckRes.isMissionCompleted) {
                             Toast.makeText(context, "恭喜，您已完成一個任務！", Toast.LENGTH_LONG).show()
-                        } else if (missionCheckRes?.isMissionCompleted == false) {
+                        } else  {
                             Toast.makeText(context, "任務地點已標記完成！", Toast.LENGTH_LONG).show()
                         }
 
