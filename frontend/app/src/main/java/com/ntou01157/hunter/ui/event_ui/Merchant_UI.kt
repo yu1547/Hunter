@@ -1,5 +1,6 @@
 package com.ntou01157.hunter.ui.event_ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,7 +16,10 @@ import com.ntou01157.hunter.api.TradeRequest
 import com.ntou01157.hunter.models.model_api.ItemModel
 import kotlinx.coroutines.launch
 import android.util.Log
-
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import com.ntou01157.hunter.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,88 +58,111 @@ fun MerchantUI(onEventCompleted: (message: String) -> Unit) {
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = "神秘商人",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(bottom = 16.dp)
+            Image(
+                painter = painterResource(id = R.drawable.merchant_background),
+                contentDescription = "背景",
+                modifier = Modifier.fillMaxSize()
             )
-
-            Text(
-                text = "用你的物品來交換他珍藏的寶物吧。",
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
-
-            if (isLoading.value) {
-                CircularProgressIndicator()
-            } else {
-                // 修正 1: 傳遞正確的 allItems 類型
-                KeyFragmentInventoryDisplay(allItems)
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            MerchantOption(
-                title = "銅鑰匙碎片 x5 -> 銅鑰匙 x1",
-                description = "使用五個銅鑰匙碎片兌換一個銅鑰匙。",
-                onTradeClick = {
-                    coroutineScope.launch {
-                        try {
-                            // 修正 2: 這裡不再使用本地的 TradeRequest，而是從 com.ntou01157.hunter.api 引入
-                            val response = eventApiService.trade(TradeRequest(userId, "bronzeKey"))
-                            if (response.success) {
-                                snackbarHostState.showSnackbar(response.message)
-                                fetchItems()
-                            } else {
-                                snackbarHostState.showSnackbar(response.message)
-                            }
-                        } catch (e: Exception) {
-                            Log.e("MerchantUI", "交易失敗", e)
-                            snackbarHostState.showSnackbar("網路錯誤，無法交易。")
-                        }
-                    }
-                }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            MerchantOption(
-                title = "銀鑰匙碎片 x5 -> 銀鑰匙 x1",
-                description = "使用五個銀鑰匙碎片兌換一個銀鑰匙。",
-                onTradeClick = {
-                    coroutineScope.launch {
-                        try {
-                            // 修正 2: 這裡不再使用本地的 TradeRequest，而是從 com.ntou01157.hunter.api 引入
-                            val response = eventApiService.trade(TradeRequest(userId, "silverKey"))
-                            if (response.success) {
-                                snackbarHostState.showSnackbar(response.message)
-                                fetchItems()
-                            } else {
-                                snackbarHostState.showSnackbar(response.message)
-                            }
-                        } catch (e: Exception) {
-                            Log.e("MerchantUI", "交易失敗", e)
-                            snackbarHostState.showSnackbar("網路錯誤，無法交易。")
-                        }
-                    }
-                }
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = { onEventCompleted("你選擇了離開") },
-                modifier = Modifier.fillMaxWidth()
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Top
             ) {
-                Text(text = "離開")
+                Text(
+                    text = "神秘商人",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 24.dp)
+                )
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 70.dp, bottom = 12.dp),
+                    shape = RoundedCornerShape(2.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFD3E3D3))
+                ) {
+                    Text(
+                        text = "用你的物品來交換他珍藏的寶物吧！",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .padding(vertical = 12.dp, horizontal = 8.dp)
+                            .fillMaxWidth()
+                    )
+                }
+
+                if (isLoading.value) {
+                    CircularProgressIndicator(color = Color(0xFF4F7942))
+                } else {
+                    // 修正 1: 傳遞正確的 allItems 類型
+                    KeyFragmentInventoryDisplay(allItems)
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                MerchantOption(
+                    title = "銅鑰匙碎片 x5 -> 銅鑰匙 x1",
+                    description = "使用五個銅鑰匙碎片兌換一個銅鑰匙。",
+                    onTradeClick = {
+                        coroutineScope.launch {
+                            try {
+                                // 修正 2: 這裡不再使用本地的 TradeRequest，而是從 com.ntou01157.hunter.api 引入
+                                val response = eventApiService.trade(TradeRequest(userId, "bronzeKey"))
+                                if (response.success) {
+                                    snackbarHostState.showSnackbar(response.message)
+                                    fetchItems()
+                                } else {
+                                    snackbarHostState.showSnackbar(response.message)
+                                }
+                            } catch (e: Exception) {
+                                Log.e("MerchantUI", "交易失敗", e)
+                                snackbarHostState.showSnackbar("網路錯誤，無法交易。")
+                            }
+                        }
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                MerchantOption(
+                    title = "銀鑰匙碎片 x5 -> 銀鑰匙 x1",
+                    description = "使用五個銀鑰匙碎片兌換一個銀鑰匙。",
+                    onTradeClick = {
+                        coroutineScope.launch {
+                            try {
+                                // 修正 2: 這裡不再使用本地的 TradeRequest，而是從 com.ntou01157.hunter.api 引入
+                                val response = eventApiService.trade(TradeRequest(userId, "silverKey"))
+                                if (response.success) {
+                                    snackbarHostState.showSnackbar(response.message)
+                                    fetchItems()
+                                } else {
+                                    snackbarHostState.showSnackbar(response.message)
+                                }
+                            } catch (e: Exception) {
+                                Log.e("MerchantUI", "交易失敗", e)
+                                snackbarHostState.showSnackbar("網路錯誤，無法交易。")
+                            }
+                        }
+                    }
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = { onEventCompleted("你選擇了離開") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F7942))
+                ) {
+                    Text(text = "離開")
+                }
             }
         }
     }
@@ -147,7 +174,7 @@ fun MerchantUI(onEventCompleted: (message: String) -> Unit) {
 fun MerchantOption(title: String, description: String, onTradeClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Row(
             modifier = Modifier
@@ -166,7 +193,10 @@ fun MerchantOption(title: String, description: String, onTradeClick: () -> Unit)
                     style = MaterialTheme.typography.bodySmall
                 )
             }
-            Button(onClick = onTradeClick) {
+            Button(
+                onClick = onTradeClick,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F7942))
+            ) {
                 Text(text = "交換")
             }
         }
@@ -178,7 +208,7 @@ fun MerchantOption(title: String, description: String, onTradeClick: () -> Unit)
 fun KeyFragmentInventoryDisplay(allItems: List<UserItem>) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
