@@ -37,15 +37,12 @@ import com.ntou01157.hunter.api.SupplyApi
 import com.ntou01157.hunter.data.RankRepository // Correct import for your RankRepository
 import com.ntou01157.hunter.handlers.MissionHandler
 import com.ntou01157.hunter.handlers.SpotLogHandler
-import com.ntou01157.hunter.mock.FakeUser
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.util.Log
 import com.ntou01157.hunter.models.model_api.User as ApiUser
-import com.ntou01157.hunter.models.User as UiUser
 import com.ntou01157.hunter.models.*
 import com.ntou01157.hunter.temp.*
 import com.ntou01157.hunter.models.SupplyRepository
-import com.ntou01157.hunter.models.User
 import com.ntou01157.hunter.ui.*
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.Dispatchers
@@ -59,6 +56,8 @@ import com.ntou01157.hunter.ui.event_ui.StonePileUI
 import com.ntou01157.hunter.ui.event_ui.TreasureBoxUI
 import com.ntou01157.hunter.ui.event_ui.WordleGameUI
 import com.ntou01157.hunter.models.model_api.expireAtOf
+import com.ntou01157.hunter.utils.GeoVerifier
+import kotlinx.coroutines.launch
 
 class MainApplication : android.app.Application() {
     lateinit var rankRepository: RankRepository
@@ -100,17 +99,13 @@ class Main : ComponentActivity() {
                     var showLockedDialog by remember { mutableStateOf(false) }
 
                     LaunchedEffect(Unit) {
+                        val email = FirebaseAuth.getInstance().currentUser?.email ?: return@LaunchedEffect
                         try {
-                            val email = FirebaseAuth.getInstance().currentUser?.email
-                            if (email != null) {
-                                val apiUser = RetrofitClient.apiService.getUserByEmail(email)
-                                userId = apiUser.id
-                            } else {
-                                userId = FakeUser.uid
-                            }
+                            val apiUser = RetrofitClient.apiService.getUserByEmail(email)
+                            userId = apiUser.id
                         } catch (e: Exception) {
                             Log.e("FavoritesScreen", "載入使用者失敗: ${e.message}", e)
-                            userId = FakeUser.uid
+                            userId = null
                         }
                         pages = SpotLogHandler.getSpotPages()
                     }
@@ -187,14 +182,16 @@ class Main : ComponentActivity() {
 @Composable
 fun MainScreen(navController: androidx.navigation.NavHostController) {
     var showChatDialog by remember { mutableStateOf(false) }
+    var apiUser by remember { mutableStateOf<ApiUser?>(null) }
 
     // ===== Buff 狀態 ===========================================
     var branchExpireAt by remember { mutableStateOf<Long?>(null) }
     LaunchedEffect(Unit) {
         try {
             val email = FirebaseAuth.getInstance().currentUser?.email ?: return@LaunchedEffect
-            val apiUser: ApiUser = RetrofitClient.apiService.getUserByEmail(email)
-            branchExpireAt = apiUser.buff.expireAtOf("ancient_branch")
+            val u: ApiUser = RetrofitClient.apiService.getUserByEmail(email)
+            branchExpireAt = u.buff.expireAtOf("ancient_branch")
+            apiUser = u
         } catch (e: Exception) {
             Log.e("MainScreen", "load buff failed: ${e.message}", e)
         }
@@ -205,7 +202,6 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
     var supplyStations by remember { mutableStateOf<List<Supply>>(emptyList()) }
     var selectedSupply by remember { mutableStateOf<Supply?>(null) }
     var showSupplyDialog by remember { mutableStateOf(false) }
-    val user: User = FakeUser
 
     val context = LocalContext.current
     val locationPermissionState =
@@ -242,11 +238,13 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
         NavItem("favorites", "收藏冊", R.drawable.checkinbook_icon),
         NavItem("profile", "個人檔案", R.drawable.profile_icon),
     )
-
+    val scope = rememberCoroutineScope()
     Scaffold(
         contentWindowInsets = WindowInsets(0),
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor = Color.White // 底色設為白色
+            ) {
                 val currentRoute = navController.currentBackStackEntry?.destination?.route
                 bottomItems.forEach { item ->
                     NavigationBarItem(
@@ -283,22 +281,40 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                 userLocation?.let {
                     Marker(state = MarkerState(position = it), title = "所在位置")
                 }
-                spots.forEach { spot -> spotMarker(spot = spot, userId = user.uid) }
+                apiUser?.let { u ->
+                    spots.forEach { spot -> spotMarker(spot = spot, userId = u.id) }
+                }
                 supplyStations.forEach { supply ->
                     SupplyMarker(supply = supply, onClick = {
-                        selectedSupply = it
-                        showSupplyDialog = true
+                        scope.launch {
+                            val loc = locationService.getCurrentLocation()
+                            if (loc == null) {
+                                android.widget.Toast.makeText(context, "無法取得定位", android.widget.Toast.LENGTH_SHORT).show()
+                                return@launch
+                            }
+                            val current = LatLng(loc.latitude, loc.longitude)
+                            val target = LatLng(supply.latitude, supply.longitude)
+                            val distance = GeoVerifier.distanceMeters(current, target)
+                            val inRange = distance <= GeoVerifier.DEFAULT_THRESHOLD_METERS
+                            if (!inRange) {
+                                android.widget.Toast.makeText(context, "離該補給站不夠近，再靠近一點喔!", android.widget.Toast.LENGTH_SHORT).show()
+                                return@launch
+                            }
+                            selectedSupply = supply
+                            showSupplyDialog = true
+                        }
                     })
                 }
             }
 
-//            if (showSupplyDialog && selectedSupply != null) {
-//                SupplyHandlerDialog(
-//                    supply = selectedSupply!!,
-//                    user = user,
-//                    onDismiss = { showSupplyDialog = false }
-//                )
-//            }
+            if (showSupplyDialog && selectedSupply != null && apiUser != null) {
+                SupplyHandlerDialog(
+                    supply = selectedSupply!!,
+                    user = apiUser!!,
+                    onDismiss = { showSupplyDialog = false },
+                    navController = navController
+                )
+            }
 
             // 右側活動類按鈕
             Column(
@@ -337,8 +353,8 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
             FloatingActionButton(
                 onClick = { showChatDialog = true },
                 modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 24.dp, bottom = 96.dp),
+                    .align(Alignment.BottomStart) // 靠左下
+                    .padding(start = 15.dp, bottom = 40.dp), // 左側間距
                 containerColor = Color(0xFFbc8f8f),
                 contentColor = Color.White,
                 shape = RoundedCornerShape(50)

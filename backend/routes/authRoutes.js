@@ -31,7 +31,7 @@ router.post("/google", async (req, res) => {
                 firebaseUid: uid, // 可以存 Firebase UID
                 displayName: decodedToken.name || "",
                 age: "",
-                gender: "",
+                gender: "不透露",
                 photoURL: decodedToken.picture || "",
                 role: "player",
                 createdAt: new Date(),

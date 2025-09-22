@@ -170,26 +170,8 @@ fun spotMarker(
                 }
             },
 
-//            dismissButton = {
-//                TextButton(onClick = { showDialog = false }) {
-//                    Text("取消")
-//                }
-//            },
-//            title = { Text(spot.ChName) },
-//            text = {
-//                Column(
-//                    modifier = Modifier.fillMaxWidth(),
-//                    verticalArrangement = Arrangement.spacedBy(12.dp)
-//                ) {
-//                    //顯示圖片
-//                    val context = LocalContext.current
-//                    val resName = remember(spot.spotName) {
-//                        // 將「(地標)」「空白」「非 a-z0-9_」轉成底線
-//                        spot.spotName.lowercase().replace(Regex("[^a-z0-9_]+"), "_").trim('_')
-//                    }
-//                },
                 dismissButton = { TextButton(onClick = { showDialog = false }) { Text("取消") } },
-                title = { Text(spot.spotName) },
+                title = { Text(spot.ChName) },
                 text = {
                     Column(
                             modifier = Modifier.fillMaxWidth(),
