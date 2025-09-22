@@ -6,13 +6,11 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-
-
+import com.ntou01157.hunter.temp.*
 
 object ItemApi {
     private val client = OkHttpClient()
@@ -23,9 +21,10 @@ object ItemApi {
         val duplicate: Boolean,
         val message: String?,
         val backpackItems: List<BackpackEntry>?,
-        val buff: JSONArray?,
-        val effects: JSONArray?
+        val buff: org.json.JSONArray?,
+        val effects: org.json.JSONArray?
     )
+
     data class BackpackEntry(val itemId: String, val quantity: Int)
 
     fun generateRequestId(userId: String, itemId: String): String {
@@ -37,7 +36,16 @@ object ItemApi {
         withContext(Dispatchers.IO) {
             val url = "${ApiConfig.BASE_URL}/api/items/use/$userId/$itemId"
             val body = JSONObject().put("requestId", requestId).toString().toRequestBody(JSON)
-            val req = Request.Builder().url(url).post(body).build()
+
+            val builder = Request.Builder().url(url).post(body)
+
+            // ✅ 帶上 Firebase Token
+            TokenManager.idToken?.let { token ->
+                builder.addHeader("Authorization", "Bearer $token")
+            }
+
+            val req = builder.build()
+
             try {
                 client.newCall(req).execute().use { resp ->
                     val raw = resp.body?.string().orEmpty()
@@ -61,5 +69,4 @@ object ItemApi {
                 UseResult(false, "NETWORK_ERROR", false, null)
             }
         }
-
 }
