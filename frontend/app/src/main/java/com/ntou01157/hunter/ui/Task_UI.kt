@@ -26,7 +26,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.util.Log
-import retrofit2.HttpException // 新增：用來判斷並解析 HTTP 錯誤
+import retrofit2.HttpException
+import java.io.IOException
 
 // 新增：定位與權限相關 import
 import android.Manifest
@@ -105,15 +106,19 @@ fun TaskListScreen(navController: NavController) {
                     errorMessage = "目前沒有任務"
                 }
             } catch (e: Exception) {
-                val detail = if (e is HttpException) {
-                    val code = e.code()
-                    val rawBody = try { e.response()?.errorBody()?.string() } catch (ee: Exception) { null }
-                    "HTTP $code ${rawBody ?: "(無錯誤內容)"}"
-                } else {
-                    e.message ?: e.toString()
+                // 不顯示後端錯誤內容，統一用通用訊息
+                val userFacing = when (e) {
+                    is HttpException -> when (e.code()) {
+                        401, 403 -> "沒有權限，請重新登入"
+                        404 -> "資料不存在，請稍後再試"
+                        in 500..599 -> "伺服器忙碌，請稍後再試"
+                        else -> "載入失敗，請稍後再試"
+                    }
+                    is IOException -> "網路連線失敗，請檢查網路後重試"
+                    else -> "發生未知錯誤，請稍後再試"
                 }
-                errorMessage = "無法載入任務：$detail"
-                Log.e("TaskListScreen", "載入任務失敗 userId=$uid detail=$detail", e)
+                errorMessage = "無法載入任務：$userFacing"
+                Log.e("TaskListScreen", "載入任務失敗 userId=$uid", e) // 詳細錯誤只寫入 Log
             } finally {
                 isLoading = false
             }
@@ -176,7 +181,18 @@ fun TaskListScreen(navController: NavController) {
             userTaskList.addAll(newTasks)
             showMessageDialog = "已生成新的探索任務！"
         } catch (e: Exception) {
-            errorMessage = "生成任務失敗：${e.message}"
+            // 不顯示後端錯誤內容，統一用通用訊息
+            val userFacing = when (e) {
+                is HttpException -> when (e.code()) {
+                    401, 403 -> "沒有權限，請重新登入"
+                    in 500..599 -> "伺服器忙碌，請稍後再試"
+                    else -> "動作失敗，請稍後再試"
+                }
+                is IOException -> "網路連線失敗，請檢查網路後重試"
+                else -> "發生未知錯誤，請稍後再試"
+            }
+            errorMessage = "生成任務失敗：$userFacing"
+            Log.e("TaskListScreen", "生成 LLM 任務失敗 uid=$uid", e) // 詳細錯誤只寫入 Log
         } finally {
             isLoading = false
         }
@@ -441,15 +457,17 @@ fun TaskListScreen(navController: NavController) {
                                         }
                                         message = "任務已接受！"
                                         success = true
+                                    } else {
+                                        message = "無法接受任務：未取得最新狀態，請稍後再試"
                                     }
                                 }
                                 "decline" -> {
-                                    TaskRepository.declineTask(uid, taskId)
+                                    val newState = TaskRepository.declineTask(uid, taskId)
                                     val idx = userTaskList.indexOfFirst { it.task.taskId == taskId }
                                     if (idx != -1) {
-                                        userTaskList[idx] = userTaskList[idx].copy(state = "declined")
+                                        userTaskList[idx] = userTaskList[idx].copy(state = newState ?: "declined")
                                     }
-                                    message = "任務已拒絕"
+                                    message = if (newState != null) "任務已拒絕" else "任務已拒絕（狀態回傳為空）"
                                     success = true
                                 }
                                 "complete" -> {
@@ -461,21 +479,29 @@ fun TaskListScreen(navController: NavController) {
                                         }
                                         message = "任務已完成！"
                                         success = true
+                                    } else {
+                                        // 針對完成任務特別強化的錯誤提示
+                                        message = "無法完成任務：請檢查任務條件有無完成或稍後再試"
                                     }
                                 }
                                 "claim" -> {
-                                    TaskRepository.claimReward(uid, taskId)
-                                    message = "獎勵已領取！"
-                                    refreshTasks(uid)
-                                    success = true
+                                    val newState = TaskRepository.claimReward(uid, taskId)
+                                    if (newState != null) {
+                                        message = "獎勵已領取！"
+                                        refreshTasks(uid)
+                                        success = true
+                                    } else {
+                                        message = "無法領取獎勵：未取得最新狀態，請稍後再試"
+                                    }
                                 }
                             }
                         } catch (e: Exception) {
-                            Log.e("TaskListScreen", "任務操作失敗", e)
+                            Log.e("TaskListScreen", "任務操作失敗 action=$action", e) // 詳細錯誤只寫入 Log
+                            message = buildUserFriendlyError(action, e) // UI 顯示通用訊息
                             success = false
                         }
 
-                        showMessageDialog = if (success) message else "操作失敗"
+                        showMessageDialog = message
                         selectedUserTask = null
                     }
                 }
@@ -526,6 +552,37 @@ fun TaskListScreen(navController: NavController) {
             //     )
             // }
         }
+    }
+
+    // 針對不同動作與錯誤，產生不含後端字串的通用訊息
+    fun buildUserFriendlyError(action: String, error: Throwable): String {
+        fun actionText(a: String) = when (a) {
+            "accept" -> "接受任務"
+            "decline" -> "拒絕任務"
+            "complete" -> "完成任務"
+            "claim" -> "領取獎勵"
+            else -> "操作"
+        }
+
+        val base = when (error) {
+            is HttpException -> when (error.code()) {
+                400, 422 -> when (action) {
+                    "complete" -> "任務完成失敗！請檢查任務條件有無完成或稍後再試"
+                    "accept" -> "此任務目前無法接受"
+                    "claim" -> "請先完成任務再領取獎勵"
+                    "decline" -> "此任務目前無法拒絕"
+                    else -> "請確認操作條件是否符合"
+                }
+                401, 403 -> "沒有權限執行此操作，請重新登入"
+                404 -> "找不到任務或使用者，請刷新後重試"
+                409 -> "任務狀態已變更，請刷新任務列表後再試"
+                in 500..599 -> "伺服器暫時不可用，請稍後再試"
+                else -> "請稍後再試"
+            }
+            is IOException -> "網路連線失敗，請檢查網路後重試"
+            else -> "發生未知錯誤，請稍後再試"
+        }
+        return "無法${actionText(action)}：$base"
     }
 
 @Composable

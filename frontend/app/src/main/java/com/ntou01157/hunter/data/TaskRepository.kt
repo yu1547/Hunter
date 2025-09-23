@@ -50,45 +50,27 @@ object TaskRepository {
     }
 
     suspend fun acceptTask(userId: String, taskId: String): String? = withContext(Dispatchers.IO) {
-        try {
-            val user = apiService.acceptTask(userId, taskId)
-            user.missions.find { it.taskId == taskId }?.state
-        } catch (e: Exception) {
-            Log.e("TaskRepo", "使用者 $userId 接受任務 $taskId 失敗", e)
-            null
-        }
+        // 直接拋出例外給呼叫端處理，避免吞錯
+        val user = apiService.acceptTask(userId, taskId)
+        user.missions.find { it.taskId == taskId }?.state
     }
 
     suspend fun declineTask(userId: String, taskId: String): String? = withContext(Dispatchers.IO) {
-        try {
-            val user = apiService.declineTask(userId, taskId)
-            user.missions.find { it.taskId == taskId }?.state
-        } catch (e: Exception) {
-            Log.e("TaskRepo", "使用者 $userId 拒絕任務 $taskId 失敗", e)
-            null
-        }
+        // 直接拋出例外給呼叫端處理，避免吞錯
+        val user = apiService.declineTask(userId, taskId)
+        user.missions.find { it.taskId == taskId }?.state
     }
 
     suspend fun completeTask(userId: String, taskId: String): String? = withContext(Dispatchers.IO) {
-        try {
-            val user = apiService.completeTask(userId, taskId)
-            user.missions.find { it.taskId == taskId }?.state
-        } catch (e: Exception) {
-            Log.e("TaskRepo", "使用者 $userId 完成任務 $taskId 失敗", e)
-            null
-        }
+        // 直接拋出例外給呼叫端處理，避免吞錯
+        val user = apiService.completeTask(userId, taskId)
+        user.missions.find { it.taskId == taskId }?.state
     }
 
     suspend fun claimReward(userId: String, taskId: String): String? = withContext(Dispatchers.IO) {
-        try {
-            val response = apiService.claimReward(userId, taskId)
-            // 獎勵領取後，該任務狀態會變為 claimed，並可能有新任務出現
-            // 直接回傳新狀態即可
-            response.user.missions.find { it.taskId == taskId }?.state
-        } catch (e: Exception) {
-            Log.e("TaskRepo", "使用者 $userId 領取任務 $taskId 獎勵失敗", e)
-            null
-        }
+        // 直接拋出例外給呼叫端處理，避免吞錯
+        val response = apiService.claimReward(userId, taskId)
+        response.user.missions.find { it.taskId == taskId }?.state
     }
 
     suspend fun createLLMMission(userId: String, latitude: Double, longitude: Double): List<UserTask> = withContext(Dispatchers.IO) {
