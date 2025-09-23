@@ -8,10 +8,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.ContentScale
 import com.ntou01157.hunter.R
 import com.ntou01157.hunter.api.CompleteSlimeAttackRequest
 import com.ntou01157.hunter.api.CompleteSlimeAttackResponse
@@ -62,76 +65,112 @@ fun SlimeAttackUI(onEventCompleted: (message: String) -> Unit) {
     }
 
     Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues ->
-        Column(
-                modifier = Modifier.fillMaxSize().padding(paddingValues).padding(16.dp),
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.attack_background),
+                contentDescription = "背景",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop // 適配螢幕比例
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
-        ) {
-            if (!gameEnded) {
-                // 顯示剩餘時間
-                Text(
+            ) {
+                if (!gameEnded) {
+                    // 顯示剩餘時間
+                    Text(
                         text = "剩餘時間: $remainingTime 秒",
                         style = MaterialTheme.typography.headlineSmall,
-                        textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(16.dp))
+                        textAlign = TextAlign.Center,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                Text(
-                        text = "一隻史萊姆擋住了你的去路！點擊它來攻擊！",
+                    Text(
+                        text = "一隻史萊姆擋住了你的去路！",
                         style = MaterialTheme.typography.bodyLarge,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(bottom = 24.dp)
-                )
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "點擊它來進行攻擊！",
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(bottom = 24.dp),
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
 
-                Box(
+                    Box(
                         modifier =
-                                Modifier.size(200.dp).clickable(enabled = !isAttacking) {
-                                    coroutineScope.launch {
-                                        isAttacking = true
-                                        val newDamage = Random.nextInt(1, 4)
-                                        damage = newDamage
-                                        totalDamage += newDamage
-                                        delay(500)
-                                        isAttacking = false
-                                        damage = 0 // 傷害數值歸零，隱藏顯示
-                                    }
-                                },
+                        Modifier.size(200.dp).clickable(enabled = !isAttacking) {
+                            coroutineScope.launch {
+                                isAttacking = true
+                                val newDamage = Random.nextInt(1, 4)
+                                damage = newDamage
+                                totalDamage += newDamage
+                                delay(500)
+                                isAttacking = false
+                                damage = 0 // 傷害數值歸零，隱藏顯示
+                            }
+                        },
                         contentAlignment = Alignment.Center
-                ) {
-                    Image(
-                            painter = painterResource(id = R.drawable.slime),
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.attack_icon),
                             contentDescription = "Slime",
                             modifier = Modifier.fillMaxSize()
-                    )
-                    if (damage > 0) {
-                        Text(
+                        )
+                        if (damage > 0) {
+                            Text(
                                 text = "-$damage",
                                 style =
-                                        MaterialTheme.typography.headlineMedium.copy(
-                                                color = MaterialTheme.colorScheme.error
-                                        ),
-                                modifier = Modifier.align(Alignment.BottomCenter)
-                        )
+                                MaterialTheme.typography.headlineMedium.copy(
+                                    color = MaterialTheme.colorScheme.error
+                                ),
+                                modifier = Modifier.align(Alignment.BottomCenter),
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
-                }
-                Spacer(modifier = Modifier.height(24.dp))
-                Text(text = "總傷害: $totalDamage", style = MaterialTheme.typography.titleLarge)
-            } else {
-                Text(
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        text = "總傷害: $totalDamage",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                } else {
+                    Text(
                         text = "你已經成功擊退了史萊姆！",
                         style = MaterialTheme.typography.headlineMedium,
-                        textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
+                        textAlign = TextAlign.Center,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
                         text = "總傷害: $totalDamage。後端已為你發放了獎勵。",
-                        style = MaterialTheme.typography.bodyLarge
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-                Button(
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(
                         onClick = { onEventCompleted("史萊姆襲擊事件已結束") },
-                        modifier = Modifier.fillMaxWidth()
-                ) { Text(text = "離開") }
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F7942))
+                    ) { Text(text = "離開", color = Color.White, fontWeight = FontWeight.Bold) }
+                }
             }
         }
     }

@@ -20,8 +20,12 @@ import com.ntou01157.hunter.api.OpenTreasureBoxRequest
 import com.ntou01157.hunter.api.OpenTreasureBoxResponse
 import kotlinx.coroutines.launch
 import android.util.Log
-
-
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.remember
+import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,126 +63,139 @@ fun TreasureBoxUI(onEventCompleted: (message: String) -> Unit) {
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Box(
+            modifier = Modifier.fillMaxSize()
         ) {
-            Text(
-                text = "偶遇寶箱",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            Text(
-                text = "偶遇寶箱，你要打開他嗎？",
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
-
             Image(
-                painter = painterResource(id = R.drawable.chest),
-                contentDescription = "Treasure Box",
-                modifier = Modifier.size(200.dp)
+                painter = painterResource(id = R.drawable.treasure_background),
+                contentDescription = "背景",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
             )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            if (isLoading.value) {
-                CircularProgressIndicator()
-            } else {
-                // 修正 1: 傳遞正確的 allItems 類型
-                KeyInventoryDisplay(allItems)
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            TreasureBoxOption(
-                keyName = "銅鑰匙",
-                onOpenClick = {
-                    coroutineScope.launch {
-                        try {
-                            val response = eventApiService.openTreasureBox(
-                                // 修正 2: 使用從 api 套件引入的 OpenTreasureBoxRequest
-                                OpenTreasureBoxRequest(userId, "bronze")
-                            )
-                            if (response.success) {
-                                fetchItems()
-                                snackbarHostState.showSnackbar("你用銅鑰匙打開了寶箱，獲得道具: ${response.drops.joinToString()}")
-                                onEventCompleted("寶箱事件已完成")
-                            } else {
-                                snackbarHostState.showSnackbar(response.message)
-                            }
-                        } catch (e: Exception) {
-                            Log.e("TreasureBoxUI", "開啟寶箱失敗", e)
-                            snackbarHostState.showSnackbar("網路錯誤，無法開啟寶箱。")
-                        }
-                    }
-                }
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            TreasureBoxOption(
-                keyName = "銀鑰匙",
-                onOpenClick = {
-                    coroutineScope.launch {
-                        try {
-                            val response = eventApiService.openTreasureBox(
-                                // 修正 2: 使用從 api 套件引入的 OpenTreasureBoxRequest
-                                OpenTreasureBoxRequest(userId, "silver")
-                            )
-                            if (response.success) {
-                                fetchItems()
-                                snackbarHostState.showSnackbar("你用銀鑰匙打開了寶箱，獲得道具: ${response.drops.joinToString()}")
-                                onEventCompleted("寶箱事件已完成")
-                            } else {
-                                snackbarHostState.showSnackbar(response.message)
-                            }
-                        } catch (e: Exception) {
-                            Log.e("TreasureBoxUI", "開啟寶箱失敗", e)
-                            snackbarHostState.showSnackbar("網路錯誤，無法開啟寶箱。")
-                        }
-                    }
-                }
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            TreasureBoxOption(
-                keyName = "金鑰匙",
-                onOpenClick = {
-                    coroutineScope.launch {
-                        try {
-                            val response = eventApiService.openTreasureBox(
-                                // 修正 2: 使用從 api 套件引入的 OpenTreasureBoxRequest
-                                OpenTreasureBoxRequest(userId, "gold")
-                            )
-                            if (response.success) {
-                                fetchItems()
-                                snackbarHostState.showSnackbar("你用金鑰匙打開了寶箱，獲得道具: ${response.drops.joinToString()}")
-                                onEventCompleted("寶箱事件已完成")
-                            } else {
-                                snackbarHostState.showSnackbar(response.message)
-                            }
-                        } catch (e: Exception) {
-                            Log.e("TreasureBoxUI", "開啟寶箱失敗", e)
-                            snackbarHostState.showSnackbar("網路錯誤，無法開啟寶箱。")
-                        }
-                    }
-                }
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = {
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar("你選擇了離開，寶箱依然靜靜地躺在那裡。")
-                    }
-                    onEventCompleted("寶箱事件已結束")
-                },
-                modifier = Modifier.fillMaxWidth()
+            // 用可滾動的 Column 讓內容不會被截掉
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                Text(text = "離開")
+                Text(
+                    text = "偶遇寶箱",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = Color.White,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                Text(
+                    text = "偶遇寶箱，你要打開他嗎？",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 24.dp)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Image(
+                    painter = painterResource(id = R.drawable.treasure_icon),
+                    contentDescription = "Treasure Box",
+                    modifier = Modifier.size(200.dp)
+                )
+
+                Spacer(modifier = Modifier.height(15.dp))
+
+                if (isLoading.value) {
+                    CircularProgressIndicator(color = Color(0xFF4F7942))
+                } else {
+                    KeyInventoryDisplay(allItems)
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                TreasureBoxOption(
+                    keyName = "銅鑰匙",
+                    onOpenClick = {
+                        coroutineScope.launch {
+                            try {
+                                val response = eventApiService.openTreasureBox(
+                                    OpenTreasureBoxRequest(userId, "bronze")
+                                )
+                                if (response.success) {
+                                    fetchItems()
+                                    snackbarHostState.showSnackbar("你用銅鑰匙打開了寶箱，獲得道具: ${response.drops.joinToString()}")
+                                    onEventCompleted("寶箱事件已完成")
+                                } else {
+                                    snackbarHostState.showSnackbar(response.message)
+                                }
+                            } catch (e: Exception) {
+                                Log.e("TreasureBoxUI", "開啟寶箱失敗", e)
+                                snackbarHostState.showSnackbar("網路錯誤，無法開啟寶箱。")
+                            }
+                        }
+                    }
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                TreasureBoxOption(
+                    keyName = "銀鑰匙",
+                    onOpenClick = {
+                        coroutineScope.launch {
+                            try {
+                                val response = eventApiService.openTreasureBox(
+                                    OpenTreasureBoxRequest(userId, "silver")
+                                )
+                                if (response.success) {
+                                    fetchItems()
+                                    snackbarHostState.showSnackbar("你用銀鑰匙打開了寶箱，獲得道具: ${response.drops.joinToString()}")
+                                    onEventCompleted("寶箱事件已完成")
+                                } else {
+                                    snackbarHostState.showSnackbar(response.message)
+                                }
+                            } catch (e: Exception) {
+                                Log.e("TreasureBoxUI", "開啟寶箱失敗", e)
+                                snackbarHostState.showSnackbar("網路錯誤，無法開啟寶箱。")
+                            }
+                        }
+                    }
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                TreasureBoxOption(
+                    keyName = "金鑰匙",
+                    onOpenClick = {
+                        coroutineScope.launch {
+                            try {
+                                val response = eventApiService.openTreasureBox(
+                                    OpenTreasureBoxRequest(userId, "gold")
+                                )
+                                if (response.success) {
+                                    fetchItems()
+                                    snackbarHostState.showSnackbar("你用金鑰匙打開了寶箱，獲得道具: ${response.drops.joinToString()}")
+                                    onEventCompleted("寶箱事件已完成")
+                                } else {
+                                    snackbarHostState.showSnackbar(response.message)
+                                }
+                            } catch (e: Exception) {
+                                Log.e("TreasureBoxUI", "開啟寶箱失敗", e)
+                                snackbarHostState.showSnackbar("網路錯誤，無法開啟寶箱。")
+                            }
+                        }
+                    }
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("你選擇了離開，寶箱依然靜靜地躺在那裡。")
+                        }
+                        onEventCompleted("寶箱事件已結束")
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F7942))
+                ) {
+                    Text(text = "離開")
+                }
             }
         }
     }
@@ -205,7 +222,10 @@ fun TreasureBoxOption(keyName: String, onOpenClick: () -> Unit) {
                 text = "使用 $keyName 開啟寶箱",
                 style = MaterialTheme.typography.bodyLarge
             )
-            Button(onClick = onOpenClick) {
+            Button(
+                onClick = onOpenClick,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F7942))
+            ) {
                 Text(text = "開啟")
             }
         }
@@ -217,7 +237,7 @@ fun TreasureBoxOption(keyName: String, onOpenClick: () -> Unit) {
 fun KeyInventoryDisplay(allItems: List<UserItem>) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),

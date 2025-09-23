@@ -7,10 +7,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.ContentScale
 import com.ntou01157.hunter.R
 import com.ntou01157.hunter.api.GetStonePileStatusResponse
 import com.ntou01157.hunter.api.RetrofitClient
@@ -48,36 +51,50 @@ fun StonePileUI(onEventCompleted: (message: String) -> Unit) {
     LaunchedEffect(key1 = userId) { fetchInitialData() }
 
     Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues ->
-        Column(
-                modifier = Modifier.fillMaxSize().padding(paddingValues).padding(16.dp),
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.stone_background),
+                contentDescription = "背景",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
-        ) {
-            Text(
+            ) {
+                Text(
                     text = "神秘的石堆",
                     style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 16.dp)
-            )
+                )
 
-            Text(
-                    text = "你發現了一堆不尋常的石頭，你決定搬開它。",
+                Text(
+                    text = "發現了一堆不尋常的石頭，你決定搬開它。",
                     style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(bottom = 24.dp)
-            )
+                    modifier = Modifier.padding(top = 16.dp, bottom = 24.dp)
+                )
 
-            Image(
-                    painter = painterResource(id = R.drawable.stone_pile),
+                Image(
+                    painter = painterResource(id = R.drawable.stone_icon),
                     contentDescription = "Stone Pile",
                     modifier = Modifier.size(200.dp)
-            )
+                )
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-            if (isLoading.value) {
-                CircularProgressIndicator()
-            } else if (canTriggerToday.value) {
-                Button(
+                if (isLoading.value) {
+                    CircularProgressIndicator(color = Color(0xFF4F7942))
+                } else if (canTriggerToday.value) {
+                    Button(
                         onClick = {
                             coroutineScope.launch {
                                 try {
@@ -104,19 +121,23 @@ fun StonePileUI(onEventCompleted: (message: String) -> Unit) {
                                 }
                             }
                         },
-                        modifier = Modifier.fillMaxWidth()
-                ) { Text(text = "搬開石頭") }
-            } else {
-                Text(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F7942))
+                    ) { Text(text = "搬開石頭", fontWeight = FontWeight.Bold) }
+                } else {
+                    Text(
                         text = "你已經獲得了今天的獎勵，請明天再來。",
                         style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-                Button(
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(
                         onClick = { onEventCompleted("你選擇了離開") },
-                        modifier = Modifier.fillMaxWidth()
-                ) { Text(text = "離開") }
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F7942))
+                    ) { Text(text = "離開", fontWeight = FontWeight.Bold) }
+                }
             }
         }
     }

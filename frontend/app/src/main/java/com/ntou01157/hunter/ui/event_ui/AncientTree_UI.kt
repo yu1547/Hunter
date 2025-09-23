@@ -1,20 +1,24 @@
 package com.ntou01157.hunter.ui.event_ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.ntou01157.hunter.models.model_api.UserItem
+import com.ntou01157.hunter.R
 import com.ntou01157.hunter.api.ApiService
-import com.ntou01157.hunter.api.RetrofitClient
 import com.ntou01157.hunter.api.BlessTreeRequest
+import com.ntou01157.hunter.api.RetrofitClient
 import com.ntou01157.hunter.models.model_api.ItemModel
+import com.ntou01157.hunter.models.model_api.UserItem
 import kotlinx.coroutines.launch
 import android.util.Log
+import androidx.compose.ui.graphics.Color
 
 
 
@@ -56,88 +60,101 @@ fun AncientTreeUI(onEventCompleted: (message: String) -> Unit) {
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = "古樹的祝福",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(bottom = 16.dp)
+            Image(
+                painter = painterResource(id = R.drawable.tree_background),
+                contentDescription = "背景",
+                modifier = Modifier.fillMaxSize()
             )
-
-            Text(
-                text = "古樹散發著神秘的氣息，用史萊姆黏液來獻祭它，也許能獲得意想不到的祝福。",
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
-
-            if (isLoading.value) {
-                CircularProgressIndicator()
-            } else {
-                // 修正2: 傳遞正確的 allItems 類型
-                InventoryDisplay(allItems)
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            AncientTreeOption(
-                title = "普通的史萊姆黏液",
-                description = "獻祭一瓶普通的史萊姆黏液，獲得銅鑰匙碎片 x2",
-                onBlessClick = {
-                    coroutineScope.launch {
-                        try {
-                            // 修正3: 這裡不再使用本地的 BlessTreeRequest，而是從 com.ntou01157.hunter.api 引入
-                            val response = eventApiService.blessTree(BlessTreeRequest(userId, "普通的史萊姆黏液"))
-                            if (response.success) {
-                                snackbarHostState.showSnackbar(response.message)
-                                fetchItems()
-                            } else {
-                                snackbarHostState.showSnackbar(response.message)
-                            }
-                        } catch (e: Exception) {
-                            Log.e("AncientTreeUI", "獻祭失敗", e)
-                            snackbarHostState.showSnackbar("網路錯誤，無法獻祭。")
-                        }
-                    }
-                }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            AncientTreeOption(
-                title = "黏稠的史萊姆黏液",
-                description = "獻祭一瓶黏稠的史萊姆黏液，獲得銀鑰匙碎片 x2",
-                onBlessClick = {
-                    coroutineScope.launch {
-                        try {
-                            val response = eventApiService.blessTree(BlessTreeRequest(userId, "黏稠的史萊姆黏液"))
-                            if (response.success) {
-                                snackbarHostState.showSnackbar(response.message)
-                                fetchItems()
-                            } else {
-                                snackbarHostState.showSnackbar(response.message)
-                            }
-                        } catch (e: Exception) {
-                            Log.e("AncientTreeUI", "獻祭失敗", e)
-                            snackbarHostState.showSnackbar("網路錯誤，無法獻祭。")
-                        }
-                    }
-                }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = { onEventCompleted("你選擇了離開") },
-                modifier = Modifier.fillMaxWidth()
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                Text(text = "離開")
+                Text(
+                    text = "古樹的祝福",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                Text(
+                    text = "古樹散發著神秘的氣息，用史萊姆黏液來獻祭它，也許能獲得意想不到的祝福。",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 24.dp)
+                )
+
+                if (isLoading.value) {
+                    CircularProgressIndicator(color = Color(0xFF4F7942))
+                } else {
+                    // 修正2: 傳遞正確的 allItems 類型
+                    InventoryDisplay(allItems)
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                AncientTreeOption(
+                    title = "普通的史萊姆黏液",
+                    description = "獻祭一瓶普通的史萊姆黏液，獲得銅鑰匙碎片 x2",
+                    onBlessClick = {
+                        coroutineScope.launch {
+                            try {
+                                // 修正3: 這裡不再使用本地的 BlessTreeRequest，而是從 com.ntou01157.hunter.api 引入
+                                val response = eventApiService.blessTree(BlessTreeRequest(userId, "普通的史萊姆黏液"))
+                                if (response.success) {
+                                    snackbarHostState.showSnackbar(response.message)
+                                    fetchItems()
+                                } else {
+                                    snackbarHostState.showSnackbar(response.message)
+                                }
+                            } catch (e: Exception) {
+                                Log.e("AncientTreeUI", "獻祭失敗", e)
+                                snackbarHostState.showSnackbar("網路錯誤，無法獻祭。")
+                            }
+                        }
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                AncientTreeOption(
+                    title = "黏稠的史萊姆黏液",
+                    description = "獻祭一瓶黏稠的史萊姆黏液，獲得銀鑰匙碎片 x2",
+                    onBlessClick = {
+                        coroutineScope.launch {
+                            try {
+                                val response = eventApiService.blessTree(BlessTreeRequest(userId, "黏稠的史萊姆黏液"))
+                                if (response.success) {
+                                    snackbarHostState.showSnackbar(response.message)
+                                    fetchItems()
+                                } else {
+                                    snackbarHostState.showSnackbar(response.message)
+                                }
+                            } catch (e: Exception) {
+                                Log.e("AncientTreeUI", "獻祭失敗", e)
+                                snackbarHostState.showSnackbar("網路錯誤，無法獻祭。")
+                            }
+                        }
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = { onEventCompleted("你選擇了離開") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F7942))
+                ) {
+                    Text(text = "離開")
+                }
             }
         }
     }
@@ -149,7 +166,7 @@ fun AncientTreeUI(onEventCompleted: (message: String) -> Unit) {
 fun AncientTreeOption(title: String, description: String, onBlessClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -166,7 +183,8 @@ fun AncientTreeOption(title: String, description: String, onBlessClick: () -> Un
             Spacer(modifier = Modifier.height(8.dp))
             Button(
                 onClick = onBlessClick,
-                modifier = Modifier.align(Alignment.End)
+                modifier = Modifier.align(Alignment.End),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F7942))
             ) {
                 Text(text = "獻祭")
             }
@@ -179,7 +197,7 @@ fun AncientTreeOption(title: String, description: String, onBlessClick: () -> Un
 fun InventoryDisplay(allItems: List<UserItem>) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
