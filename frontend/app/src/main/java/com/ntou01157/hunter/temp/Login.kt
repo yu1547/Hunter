@@ -35,6 +35,7 @@ fun LoginScreen(navController: NavHostController, loginViewModel: LoginViewModel
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val data: Intent? = result.data
         loginViewModel.handleSignInResult(
+            activity = activity,
             data = data,
             onSuccess = { email ->
                 navController.navigate("main") {

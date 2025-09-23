@@ -1,6 +1,7 @@
 package com.ntou01157.hunter.temp
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.os.Handler
 import android.os.Looper
@@ -8,6 +9,11 @@ import android.util.Log
 import com.google.android.gms.auth.api.signin.*
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.*
+import com.ntou01157.hunter.api.RetrofitClient
+import com.ntou01157.hunter.models.model_api.User
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -32,6 +38,7 @@ object GoogleSignInHelper {
 
     fun handleResult(
         data: Intent?,
+        context: Context, // ⚠️ 傳 Activity or Application Context 進來，播放音樂需要
         onSuccess: (FirebaseUser) -> Unit,
         onFailure: (String) -> Unit
     ) {
@@ -50,11 +57,13 @@ object GoogleSignInHelper {
                             if (tokenResult.isSuccessful) {
                                 val idToken = tokenResult.result?.token
                                 if (idToken != null) {
-                                    // ⬅️ 存到全域 TokenManager
                                     TokenManager.idToken = idToken
 
-                                    // ✅ 同步傳給後端
+                                    // ✅ 傳到後端建立/更新使用者
                                     createUserInBackend(idToken, {
+                                        // 後端建立完成後，去抓使用者設定
+                                        fetchUserSettings(user.email ?: "", context)
+
                                         onSuccess(user)
                                     }, { error ->
                                         onFailure("後端錯誤：$error")
@@ -81,7 +90,7 @@ object GoogleSignInHelper {
         onFailure: (String) -> Unit
     ) {
         val json = JSONObject()
-        json.put("idToken", idToken) // ✅ 傳 Token，不是 email
+        json.put("idToken", idToken)
 
         val requestBody = json.toString()
             .toRequestBody("application/json".toMediaType())
@@ -106,5 +115,27 @@ object GoogleSignInHelper {
                 }
             }
         })
+    }
+
+    // ✅ 登入成功後抓取使用者設定並控制音樂
+    private fun fetchUserSettings(email: String, context: Context) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val apiUser: User = RetrofitClient.apiService.getUserByEmail(email)
+                val musicEnabled = apiUser.settings?.music ?: false
+
+                Log.d("GoogleSignInHelper", "music 設定 = $musicEnabled")
+
+                Handler(Looper.getMainLooper()).post {
+                    if (musicEnabled) {
+                        MusicPlayerManager.playMusic(context)
+                    } else {
+                        MusicPlayerManager.pauseMusic()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("GoogleSignInHelper", "取得使用者設定失敗: ${e.message}", e)
+            }
+        }
     }
 }
