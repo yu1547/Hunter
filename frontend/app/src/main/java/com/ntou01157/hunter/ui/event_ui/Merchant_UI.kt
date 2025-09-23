@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import com.ntou01157.hunter.R
+import androidx.compose.ui.layout.ContentScale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,7 +29,7 @@ fun MerchantUI(onEventCompleted: (message: String) -> Unit) {
     val eventApiService = RetrofitClient.apiService
     val userId = "68a48da731f22c76b7a5f52c"
     val coroutineScope = rememberCoroutineScope()
-    // 修正 1: 將 allItems 的類型從 UserItemModel 改為 UserItem，與 API 回傳類型一致
+    // 將 allItems 的類型從 UserItemModel 改為 UserItem，與 API 回傳類型一致
     val allItems = remember { mutableStateListOf<UserItem>() }
     val isLoading = remember { mutableStateOf(true) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -40,7 +41,7 @@ fun MerchantUI(onEventCompleted: (message: String) -> Unit) {
                 // 這裡的 items 已經是正確的 List<UserItem> 類型
                 val items: List<UserItem> = eventApiService.fetchUserItems(userId)
                 allItems.clear()
-                // 修正 1: allItems 現在是 List<UserItem>，可以直接添加
+                // allItems 現在是 List<UserItem>，可以直接添加
                 allItems.addAll(items)
             } catch (e: Exception) {
                 Log.e("MerchantUI", "獲取物品失敗", e)
@@ -56,7 +57,8 @@ fun MerchantUI(onEventCompleted: (message: String) -> Unit) {
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        contentWindowInsets = WindowInsets(0.dp)
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -65,12 +67,14 @@ fun MerchantUI(onEventCompleted: (message: String) -> Unit) {
             Image(
                 painter = painterResource(id = R.drawable.merchant_background),
                 contentDescription = "背景",
+                contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
+                    .windowInsetsPadding(WindowInsets.safeDrawing)
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
@@ -168,7 +172,7 @@ fun MerchantUI(onEventCompleted: (message: String) -> Unit) {
     }
 }
 
-// 修正 2: 刪除此處的資料類別定義，它們應該被放在 com.ntou01157.hunter.api.ApiService.kt 檔案中
+// 刪除此處的資料類別定義，它們應該被放在 com.ntou01157.hunter.api.ApiService.kt 檔案中
 
 @Composable
 fun MerchantOption(title: String, description: String, onTradeClick: () -> Unit) {
@@ -204,7 +208,7 @@ fun MerchantOption(title: String, description: String, onTradeClick: () -> Unit)
 }
 
 @Composable
-// 修正 1: 將參數類型從 List<UserItemModel> 改為 List<UserItem>
+// 將參數類型從 List<UserItemModel> 改為 List<UserItem>
 fun KeyFragmentInventoryDisplay(allItems: List<UserItem>) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -216,10 +220,10 @@ fun KeyFragmentInventoryDisplay(allItems: List<UserItem>) {
         ) {
             Text(text = "你的鑰匙碎片", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
-            // 修正 3: UserItem 類別中直接有 item 屬性，其內有 itemName 屬性
+            // UserItem 類別中直接有 item 屬性，其內有 itemName 屬性
             val bronzeFragment = allItems.find { it.item.itemName == "銅鑰匙碎片" }
             val silverFragment = allItems.find { it.item.itemName == "銀鑰匙碎片" }
-            // 修正 3: count 屬性直接就是 Int，不需要 .value
+            // count 屬性直接就是 Int，不需要 .value
             Text(text = "銅鑰匙碎片: ${bronzeFragment?.count ?: 0}")
             Text(text = "銀鑰匙碎片: ${silverFragment?.count ?: 0}")
         }
