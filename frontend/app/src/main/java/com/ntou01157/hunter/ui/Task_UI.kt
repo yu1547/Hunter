@@ -28,6 +28,17 @@ import kotlinx.coroutines.withContext
 import android.util.Log
 import retrofit2.HttpException // 新增：用來判斷並解析 HTTP 錯誤
 
+// 新增：定位與權限相關 import
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import com.google.android.gms.location.LocationServices
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+
 @Composable
 fun TaskListScreen(navController: NavController) {
     // 1) 以 email 解析 userId —— 用狀態保存，避免重組造成的再次請求
@@ -126,23 +137,70 @@ fun TaskListScreen(navController: NavController) {
     var startLocation by remember { mutableStateOf(" ") }
     var endLocation by remember { mutableStateOf(" ") }
 
-    // 新增：呼叫 LLM API 取得貼心提示（只生成溫馨提示，不描述地點）
-    suspend fun requestRouteLLMDescription(start: String, end: String): String {
-        return withContext(Dispatchers.IO) {
-            try {
-                val message = "請用繁體中文給我一段貼心提示，提醒在限時內完成任務，並鼓勵玩家旅途順利，給予信心喊話和注意安全。"
-                val response = RetrofitClient.apiService.chatWithLLM(
-                    userId ?: "",
-                    com.ntou01157.hunter.api.ChatRequest(
-                        message = message,
-                        history = emptyList()
-                    )
-                )
-                response.reply
-            } catch (e: Exception) {
-                "無法取得貼心提示：${e.message}"
+    // 新增：定位與權限處理
+    val context = LocalContext.current
+    val fusedClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+    var pendingGenerate by remember { mutableStateOf(false) }
+
+    // 取得目前位置（已授權才會回傳，否則回傳 null）
+    suspend fun getUserLocation(): Pair<Double, Double>? {
+        val hasPermission =
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        if (!hasPermission) return null
+
+        return suspendCancellableCoroutine { cont ->
+            fusedClient.lastLocation
+                .addOnSuccessListener { loc ->
+                    cont.resume(loc?.let { it.latitude to it.longitude })
+                }
+                .addOnFailureListener {
+                    if (cont.isActive) cont.resume(null)
+                }
+        }
+    }
+
+    // 用當前位置生成 LLM 任務
+    suspend fun generateTasksWithCurrentLocation(uid: String) {
+        isLoading = true
+        errorMessage = null
+        try {
+            val loc = getUserLocation()
+            if (loc == null) {
+                errorMessage = "無法取得目前位置，請確認定位已開啟並授權。"
+                return
+            }
+            val (lat, lng) = loc
+            val newTasks = TaskRepository.createLLMMission(uid, lat, lng)
+            userTaskList.clear()
+            userTaskList.addAll(newTasks)
+            showMessageDialog = "已生成新的探索任務！"
+        } catch (e: Exception) {
+            errorMessage = "生成任務失敗：${e.message}"
+        } finally {
+            isLoading = false
+        }
+    }
+
+    // 權限請求 launcher：授權後若有待辦生成則續接流程
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { perms ->
+        val granted = (perms[Manifest.permission.ACCESS_FINE_LOCATION] == true) ||
+                      (perms[Manifest.permission.ACCESS_COARSE_LOCATION] == true)
+        if (pendingGenerate) {
+            if (granted) {
+                val uid = userId
+                if (uid != null) {
+                    coroutineScope.launch { generateTasksWithCurrentLocation(uid) }
+                } else {
+                    showMessageDialog = "尚未取得使用者 ID"
+                }
+            } else {
+                showMessageDialog = "需要位置權限才能生成任務"
             }
         }
+        pendingGenerate = false
     }
 
     Scaffold(
@@ -244,19 +302,28 @@ fun TaskListScreen(navController: NavController) {
                                                 showMessageDialog = "尚未取得使用者 ID"
                                                 return@launch
                                             }
-                                            isLoading = true
-                                            errorMessage = null
-                                            try {
-                                                // TODO: 將經緯度改為實際使用者位置
-                                                val newTasks = TaskRepository.createLLMMission(uid, 25.017, 121.542)
-                                                userTaskList.clear()
-                                                userTaskList.addAll(newTasks)
-                                                showMessageDialog = "已生成新的探索任務！"
-                                            } catch (e: Exception) {
-                                                errorMessage = "生成任務失敗：${e.message}"
-                                            } finally {
-                                                isLoading = false
+
+                                            // 檢查權限，未授權則請求
+                                            val hasFine = ContextCompat.checkSelfPermission(
+                                                context, Manifest.permission.ACCESS_FINE_LOCATION
+                                            ) == PackageManager.PERMISSION_GRANTED
+                                            val hasCoarse = ContextCompat.checkSelfPermission(
+                                                context, Manifest.permission.ACCESS_COARSE_LOCATION
+                                            ) == PackageManager.PERMISSION_GRANTED
+
+                                            if (!hasFine && !hasCoarse) {
+                                                pendingGenerate = true
+                                                permissionLauncher.launch(
+                                                    arrayOf(
+                                                        Manifest.permission.ACCESS_FINE_LOCATION,
+                                                        Manifest.permission.ACCESS_COARSE_LOCATION
+                                                    )
+                                                )
+                                                return@launch
                                             }
+
+                                            // 已授權，使用實際位置生成任務
+                                            generateTasksWithCurrentLocation(uid)
                                         }
                                     },
                                     modifier = Modifier.fillMaxWidth(),
