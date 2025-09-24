@@ -653,7 +653,7 @@ fun TaskDialog(
                     onClick = { onAction("accept") },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF977D66))
                 ) { Text("接受任務") }
-                "in_progress" -> Button(onClick = { onAction("complete") }) { Text("完成任務 (測試)") }
+                "in_progress" -> Button(onClick = { onAction("complete") }) { Text("完成任務") }
                 "completed"   -> Button(onClick = { onAction("claim") }) { Text("領取獎勵") }
             }
         },
