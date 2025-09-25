@@ -92,7 +92,7 @@ const getStonePileStatus = async (req, res) => {
 
 // 處理觸發石堆事件的 API
 const triggerStonePile = async (req, res) => {
-    const { userId } = req.body; // <-- 請將這裡改為 req.body
+    const { userId } = req.body;
 
     try {
         // 1. 確保使用者 ID 是有效的 ObjectId 格式，如果無效則直接返回錯誤。
@@ -143,8 +143,21 @@ const triggerStonePile = async (req, res) => {
     }
 };
 
+
+// 獲取所有事件的 API
+const getAllEvents = async (req, res) => {
+    try {
+        const events = await Event.find();
+        res.status(200).json(events);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+
 module.exports = {
     trade,
     getStonePileStatus,
     triggerStonePile,
+    getAllEvents,
 };

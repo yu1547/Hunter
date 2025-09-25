@@ -50,10 +50,8 @@ const startGame = async (req, res) => {
             return res.status(404).json({ success: false, message: '找不到用戶' });
         }
 
-        // 隨機選取一個謎底單字
         const secretWord = WORD_LIST[Math.floor(Math.random() * WORD_LIST.length)];
 
-        // 在資料庫中建立一場新遊戲的紀錄
         const newGame = new Game({
             userId: user._id,
             secretWord: secretWord,
@@ -137,17 +135,17 @@ const submitGuess = async (req, res) => {
         if (guessWord.toUpperCase() === game.secretWord.toUpperCase()) {
             game.status = 'win';
             message = '恭喜你！猜對了！';
-        // 處理積分和任務移除 (與你原本的邏輯相同)
-        const user = await User.findById(game.userId);
-        if (user) {
-            user.score = (user.score || 0) + 500;
-            await user.save();
-            const bugHuntTask = await Task.findOne({ name: "Bug Hunt" });
-            if (bugHuntTask) {
-                user.missions = user.missions.filter(mission => mission.taskId.toString() !== bugHuntTask._id.toString());
+            // 處理積分和任務移除 (與你原本的邏輯相同)
+            const user = await User.findById(game.userId);
+            if (user) {
+                user.score = (user.score || 0) + 500;
                 await user.save();
+                const bugHuntTask = await Task.findOne({ name: "Bug Hunt" });
+                if (bugHuntTask) {
+                    user.missions = user.missions.filter(mission => mission.taskId.toString() !== bugHuntTask._id.toString());
+                    await user.save();
+                }
             }
-        }
         } else if (game.attemptsLeft <= 0) {
             game.status = 'lose';
             message = `猜測次數用完囉！謎底是 ${game.secretWord}`;
@@ -178,7 +176,6 @@ const openTreasureBox = async (req, res) => {
     const keyItemName = `${keyType === 'bronze' ? '銅' : keyType === 'silver' ? '銀' : '金'}鑰匙`;
 
     try {
-        // 這裡的 db.findUserById 和 db.updateUserInventory 需要替換成您實際的 Mongoose 或其他 ORM 方法
         const user = await User.findById(userId);
         if (!user) return res.status(404).json({ success: false, message: '使用者不存在。' });
 
@@ -258,7 +255,7 @@ const blessTree = async (req, res) => {
 
         await user.save();
 
-        return res.json({ success: true, message: `古樹給予了你祝福，獲得${rewardItemName} x${rewardCount}。` });
+        return res.json({ success: true, message: `古樹給予了你祝福，獲得${rewardItemName} x ${rewardCount}。` });
 
     } catch (error) {
         console.error("獻祭古樹失敗：", error);

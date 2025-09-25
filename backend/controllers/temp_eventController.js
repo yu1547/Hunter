@@ -91,16 +91,6 @@ exports.refreshDailyEvents = async (req, res) => {
     }
 };
 
-// 獲取所有事件的 API
-exports.getAllEvents = async (req, res) => {
-    try {
-        const events = await Event.find().populate('spotId');
-        res.status(200).json(events);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
-
 // 觸發事件的 API，根據使用者位置與事件地點比對
 exports.triggerEvent = async (req, res) => {
     const { eventId } = req.params;
