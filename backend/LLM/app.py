@@ -109,4 +109,5 @@ if __name__ == '__main__':
     #     print("js_to_py.json not found, skipping /route test.")
     # except Exception as e:
     #     print(f"An error occurred during /route test request: {e}")
-    app.run(host="0.0.0.0", port=5050, debug=True, use_reloader=False)
+    port = int(os.getenv("PORT", "5050"))  # Render/容器會注入 PORT
+    app.run(host="0.0.0.0", port=port, debug=True, use_reloader=False)

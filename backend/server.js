@@ -98,5 +98,5 @@ app.use('/api/chat', authenticate, chatRoutes);
 app.use('/api/supplies', authenticate, suppliesRoutes);
 
 app.listen(PORT, () => {
-  console.log(`伺服器運行於 http://localhost:${PORT}`);
+  console.log(`伺服器運行於 PORT:${PORT}`);
 });
