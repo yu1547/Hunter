@@ -109,7 +109,6 @@ app.use('/api/settings', authenticate, settingsRoutes);
 app.use('/api/recognize', authenticate, recognitionRoutes);
 app.use('/api/chat', authenticate, chatRoutes);
 app.use('/api/supplies', authenticate, suppliesRoutes);
+app.get('/health', (req,res)=>res.status(200).send('ok'));
 
-app.listen(PORT, () => {
-  console.log(`伺服器運行於 PORT:${PORT}`);
-});
+app.listen(PORT, '0.0.0.0', () => console.log(`Server on ${PORT}`));
