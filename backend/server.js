@@ -28,7 +28,20 @@ const mongoose = require('mongoose');
 
 // ========== 🔑 Firebase Admin 初始化 ==========
 const admin = require("firebase-admin");
-const serviceAccount = require(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+const gac = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+if (!gac) throw new Error('GOOGLE_APPLICATION_CREDENTIALS not set');
+
+let serviceAccount;
+
+if (gac.trim().startsWith('{')) {
+  // Render：環境變數放整包 JSON
+  serviceAccount = JSON.parse(gac);
+  if (serviceAccount.private_key?.includes('\\n')) {
+    serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+  }
+} else {
+  serviceAccount = require(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+}
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
