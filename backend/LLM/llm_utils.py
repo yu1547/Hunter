@@ -88,7 +88,7 @@ def parse_paragraph(filename, max_length=300):
         paragraphs.append(" ".join(current_paragraph))
     return paragraphs
 
-def calc_embeddings(paragraphs, max_tokens=300):
+def calc_embeddings(paragraphs, max_tokens=400):
     """計算遊戲規則的向量嵌入，長段落自動分割"""
     embeddings = []
     for para in paragraphs:
