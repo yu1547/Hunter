@@ -276,9 +276,9 @@ object RetrofitClient {
                 }
                 chain.proceed(requestBuilder.build())
             }
-            .connectTimeout(1200, java.util.concurrent.TimeUnit.SECONDS)
-            .readTimeout(1200, java.util.concurrent.TimeUnit.SECONDS)
-            .writeTimeout(1200, java.util.concurrent.TimeUnit.SECONDS)
+            .connectTimeout(6000, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(6000, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(6000, java.util.concurrent.TimeUnit.SECONDS)
             .build()
 
         Retrofit.Builder()
