@@ -510,7 +510,7 @@ const createLLMMission = async (req, res) => {
     };
 
     // 呼叫 Flask /route
-    const flaskUrl = process.env.LLM_FLASK_URL || 'http://llm:5050/route'; // docker 內部網域
+    const flaskUrl = process.env.LLM_ROUTE_URL || 'http://llm:5050/route'; // docker 內部網域
     const flaskRes = await axios.post(flaskUrl, payload, { timeout: 10000 });
 
     const result = flaskRes.data;
