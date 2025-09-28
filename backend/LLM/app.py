@@ -79,6 +79,15 @@ def route():
         print("Error in /route:", e)  # 印出詳細錯誤訊息
         return jsonify({"error": str(e)}), 500
 
+@app.get("/healthz")
+def healthz():
+    # 活性探針：服務起來就回 200
+    return jsonify({
+        "status": "ok",
+        "service": "hunter-llm",
+        "port": int(os.getenv("PORT", "5050"))
+    }), 200
+
 
 # 特徵比對
 @app.route("/compare", methods=["POST"])
