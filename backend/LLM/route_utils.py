@@ -70,6 +70,9 @@ def generate_route_from_start(start_lat, start_lon, candidate_landmarks, api_key
             p2["latitude"], p2["longitude"],
             api_key
         )
+        # 新增：印出距離與時間
+        print(f"get_real_distance_google -> 距離: {dist} 公尺, 時間: {dur_sec} 秒")
+
         total_distance += dist
         total_duration_seconds += dur_sec
         

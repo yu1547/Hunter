@@ -11,6 +11,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.google.android.gms.maps.model.LatLng
@@ -58,24 +60,47 @@ fun SupplyDialog(
             confirmButton = {},
             title = {
                 Box(modifier = Modifier.fillMaxWidth()) {
-                    Text("-補給站-${supply.name}", modifier = Modifier.align(Alignment.Center))
+                    Text(
+                        "-補給站-${supply.name}",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
                     IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.TopEnd)) {
                         Icon(Icons.Default.Close, contentDescription = "關閉")
                     }
                 }
             },
             text = {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
 
                     if (isCooldown) {
-                        Text("冷卻中，剩餘 $cooldownText")
+                        Text(
+                            "冷卻中，剩餘 $cooldownText",
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
                     } else {
-                        Button(onClick = onCollect) { Text("領取資源") }
+                        Button(
+                            onClick = onCollect,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("領取資源", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                        }
                     }
                     // 如果有每日事件，顯示這個按鈕
                     if (hasDailyEvent) {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = onDailyEvent) { Text("執行任務") }
+                        Button(
+                            onClick = onDailyEvent,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("執行任務", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                        }
                     }
                 }
             }

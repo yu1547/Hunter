@@ -6,15 +6,24 @@ import okhttp3.Request
 import org.json.JSONArray
 import org.json.JSONObject
 import com.ntou01157.hunter.models.Spot
+import com.ntou01157.hunter.temp.*
 
 object SpotApi {
     private val client = OkHttpClient()
 
     fun getAllSpots(): List<Spot> {
         val url = "${ApiConfig.BASE_URL}/api/spots"
+
+        val token = TokenManager.idToken
+        if (token.isNullOrEmpty()) {
+            Log.e("SpotApi", "❌ 沒有 Token，無法呼叫 API")
+            return emptyList()
+        }
+
         val request = Request.Builder()
             .url(url)
             .get()
+            .addHeader("Authorization", "Bearer $token") // ✅ 加上 Token
             .build()
 
         return try {
@@ -30,7 +39,6 @@ object SpotApi {
                     return emptyList()
                 }
 
-                // 後端格式：{ "success": true, "spots": [ ... ] }
                 val root = JSONObject(body)
                 if (!root.optBoolean("success", false)) {
                     Log.e("SpotApi", "success=false in response")
@@ -45,10 +53,7 @@ object SpotApi {
                 val list = ArrayList<Spot>(arr.length())
                 for (i in 0 until arr.length()) {
                     val o = arr.getJSONObject(i)
-
-                    // 你的 _id 是字串（不是 {"$oid": "..."}）
                     val spotId = o.optString("_id", "")
-
                     list.add(
                         Spot(
                             spotId = spotId,

@@ -33,7 +33,7 @@ const chatWithLLM = async (req, res) => {
     }
 
     // 呼叫 Flask /chat，傳入 message 與 history
-    const flaskUrl = process.env.LLM_FLASK_URL || 'http://llm:5050/chat';
+    const flaskUrl = process.env.LLM_CHAT_URL || 'http://llm:5050/chat';
     let flaskRes;
     try {
       // timeout 設定拉長到 3600 秒

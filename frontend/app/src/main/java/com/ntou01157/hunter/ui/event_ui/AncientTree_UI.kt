@@ -19,6 +19,7 @@ import com.ntou01157.hunter.models.model_api.UserItem
 import kotlinx.coroutines.launch
 import android.util.Log
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 
 
 
@@ -30,7 +31,6 @@ fun AncientTreeUI(onEventCompleted: (message: String) -> Unit) {
     val userId = "68a48da731f22c76b7a5f52c"
 
     val coroutineScope = rememberCoroutineScope()
-    // 修正1: 宣告 allItems 時，使用正確的資料模型 UserItem
     val allItems = remember { mutableStateListOf<UserItem>() }
     val isLoading = remember { mutableStateOf(true) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -39,10 +39,8 @@ fun AncientTreeUI(onEventCompleted: (message: String) -> Unit) {
         coroutineScope.launch {
             isLoading.value = true
             try {
-                // 這裡的 items 已經是正確的 List<UserItem> 類型
                 val items: List<UserItem> = eventApiService.fetchUserItems(userId)
                 allItems.clear()
-                // 修正1: allItems 現在是 List<UserItem>，可以直接添加
                 allItems.addAll(items)
             } catch (e: Exception) {
                 Log.e("AncientTreeUI", "獲取物品失敗", e)
@@ -67,7 +65,8 @@ fun AncientTreeUI(onEventCompleted: (message: String) -> Unit) {
             Image(
                 painter = painterResource(id = R.drawable.tree_background),
                 contentDescription = "背景",
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.matchParentSize(),
+                contentScale = ContentScale.Crop
             )
             Column(
                 modifier = Modifier
@@ -160,7 +159,7 @@ fun AncientTreeUI(onEventCompleted: (message: String) -> Unit) {
     }
 }
 
-// 修正3: 刪除此處的資料類別定義，它們應該被放在 com.ntou01157.hunter.api.ApiService.kt 檔案中
+// 刪除此處的資料類別定義，它們應該被放在 com.ntou01157.hunter.api.ApiService.kt 檔案中
 
 @Composable
 fun AncientTreeOption(title: String, description: String, onBlessClick: () -> Unit) {
@@ -193,7 +192,7 @@ fun AncientTreeOption(title: String, description: String, onBlessClick: () -> Un
 }
 
 @Composable
-// 修正2: 將參數類型從 List<UserItemModel> 改為 List<UserItem>
+// 將參數類型從 List<UserItemModel> 改為 List<UserItem>
 fun InventoryDisplay(allItems: List<UserItem>) {
     Card(
         modifier = Modifier.fillMaxWidth(),

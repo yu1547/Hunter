@@ -20,6 +20,16 @@ async function decFromBackpack(userId, itemId, session) {
     ).session(session);
     if (!u || !u.backpackItems?.length) throw new Error('NO_STOCK');
 
+    if (currentQty === 1) {
+        // 會變 0：直接移除該項，避免把 quantity 寫成 0（因為 schema min:1）
+        await User.updateOne(
+            { _id: userId },
+            { $pull: { backpackItems: { itemId } } },
+            { session }
+        );
+        return;
+    }
+    // 其餘情況（≥2）正常扣 1
     await User.updateOne(
         { _id: userId, 'backpackItems.itemId': itemId },
         { $inc: { 'backpackItems.$.quantity': -1 } },

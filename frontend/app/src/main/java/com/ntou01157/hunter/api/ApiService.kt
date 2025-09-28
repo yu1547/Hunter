@@ -34,9 +34,9 @@ data class CompleteBugHuntResponse(val success: Boolean, val message: String)
 data class OpenTreasureBoxRequest(val userId: String, val keyType: String)
 
 data class OpenTreasureBoxResponse(
-        val success: Boolean,
-        val message: String,
-        val drops: List<String>
+    val success: Boolean,
+    val message: String,
+    val drops: List<String>
 )
 
 // 為了 Merchant_UI
@@ -52,9 +52,9 @@ data class BlessTreeResponse(val success: Boolean, val message: String)
 data class CompleteSlimeAttackRequest(val userId: String, val totalDamage: Int)
 
 data class CompleteSlimeAttackResponse(
-        val success: Boolean,
-        val message: String,
-        val rewards: List<String>
+    val success: Boolean,
+    val message: String,
+    val rewards: List<String>
 )
 
 // 為了 StonePileUI
@@ -65,162 +65,162 @@ data class TriggerStonePileRequest(val userId: String)
 data class TriggerStonePileResponse(val success: Boolean, val message: String)
 
 data class CheckSpotMissionResponse(
-        val user: User?, // Make this field nullable
-        val message: String,
-        val isMissionCompleted: Boolean // Indicate if the mission is now fully completed
+    val user: User?, // Make this field nullable
+    val message: String,
+    val isMissionCompleted: Boolean // Indicate if the mission is now fully completed
 )
 // 通用成功回傳
 data class SuccessResponse(
-        val success: Boolean,
-        val message: String,
-        val cooldownUntil: Long? = null
+    val success: Boolean,
+    val message: String,
+    val cooldownUntil: Long? = null
 )
 
 // API 接口定義
 interface ApiService {
-        // --- Item endpoints ---
-        @GET("api/items/{id}") suspend fun getItem(@Path("id") id: String): Item
+    // --- Item endpoints ---
+    @GET("api/items/{id}") suspend fun getItem(@Path("id") id: String): Item
 
-        @GET("api/users/{id}") suspend fun getUser(@Path("id") id: String): User
+    @GET("api/users/{id}") suspend fun getUser(@Path("id") id: String): User
 
-        @POST("api/users/{id}/craft")
-        suspend fun craftItem(@Path("id") id: String, @Body body: CraftRequestBody): User
+    @POST("api/users/{id}/craft")
+    suspend fun craftItem(@Path("id") id: String, @Body body: CraftRequestBody): User
 
-        @GET("api/users/email/{email}")
-        suspend fun getUserByEmail(@Path("email") email: String): User
+    @GET("api/users/email/{email}")
+    suspend fun getUserByEmail(@Path("email") email: String): User
 
-        @PUT("api/users/{id}")
-        suspend fun updateUser(@Path("id") id: String, @Body updatedUser: User): User
+    @PUT("api/users/{id}")
+    suspend fun updateUser(@Path("id") id: String, @Body updatedUser: User): User
 
-        @PUT("api/users/{id}")
-        suspend fun updateUser(@Path("id") id: String, @Body updatedData: Map<String, String>): User
+    @PUT("api/users/{id}")
+    suspend fun updateUser(@Path("id") id: String, @Body updatedData: Map<String, String>): User
 
-        @PATCH("/api/users/{id}/photo")
-        suspend fun updatePhotoUrl(
-                @Path("id") userId: String,
-                @Body body: PhotoUrlBody
-        ): Response<Unit>
+    @PATCH("/api/users/{id}/photo")
+    suspend fun updatePhotoUrl(
+        @Path("id") userId: String,
+        @Body body: PhotoUrlBody
+    ): Response<Unit>
 
-        
-        // --- Task endpoints ---
-        @GET("api/tasks/{id}")
-        suspend fun getTask(@Path("id") id: String): Task
 
-        @GET("api/rank/{userId}") // Changed "api/ranks" to "api/rank" for consistency with backend routes
-        suspend fun getRank(@Path("userId") userId: String): Response<RankResponse>
+    // --- Task endpoints ---
+    @GET("api/tasks/{id}")
+    suspend fun getTask(@Path("id") id: String): Task
 
-        // ✅ 取得排行榜（帶目前使用者 userId）
-        @GET("api/ranks/{userId}")
-        suspend fun getRankByUserId(@Path("userId") userId: String): RankResponse
+    @GET("api/rank/{userId}") // Changed "api/ranks" to "api/rank" for consistency with backend routes
+    suspend fun getRank(@Path("userId") userId: String): Response<RankResponse>
 
-        // ✅ 建立排名資料（當 userRank 不存在時用）
-        @POST("api/ranks")
-        suspend fun createRank(@Body body: RankCreateRequest): Response<Unit>
-        
-        
-        // --- Mission endpoints ---
-        @POST("api/users/{userId}/missions/refresh")
-        suspend fun refreshAllMissions(@Path("userId") userId: String): User
+    // ✅ 取得排行榜（帶目前使用者 userId）
+    @GET("api/ranks/{userId}")
+    suspend fun getRankByUserId(@Path("userId") userId: String): RankResponse
 
-        @POST("api/users/{userId}/missions/{taskId}/accept")
-        suspend fun acceptTask(@Path("userId") userId: String, @Path("taskId") taskId: String): User
+    // ✅ 建立排名資料（當 userRank 不存在時用）
+    @POST("api/ranks")
+    suspend fun createRank(@Body body: RankCreateRequest): Response<Unit>
 
-        @POST("api/users/{userId}/missions/{taskId}/decline")
-        suspend fun declineTask(
-                @Path("userId") userId: String,
-                @Path("taskId") taskId: String
-        ): User
 
-        @POST("api/users/{userId}/missions/{taskId}/complete")
-        suspend fun completeTask(
-                @Path("userId") userId: String,
-                @Path("taskId") taskId: String
-        ): User
+    // --- Mission endpoints ---
+    @POST("api/users/{userId}/missions/refresh")
+    suspend fun refreshAllMissions(@Path("userId") userId: String): User
 
-        @POST("api/users/{userId}/missions/{taskId}/claim")
-        suspend fun claimReward(
-                @Path("userId") userId: String,
-                @Path("taskId") taskId: String
-        ): UserResponse
+    @POST("api/users/{userId}/missions/{taskId}/accept")
+    suspend fun acceptTask(@Path("userId") userId: String, @Path("taskId") taskId: String): User
 
-        // 檢查補給站任務點
-        @PUT("api/users/{userId}/missions/check-spot/{spotId}")
-        suspend fun checkSpotMission(
-                @Path("userId") userId: String,
-                @Path("spotId") spotId: String
-        ): CheckSpotMissionResponse
+    @POST("api/users/{userId}/missions/{taskId}/decline")
+    suspend fun declineTask(
+        @Path("userId") userId: String,
+        @Path("taskId") taskId: String
+    ): User
 
-        // 取得事件詳細資訊
-        @GET("api/events/{eventId}")
-        suspend fun getEventById(@Path("eventId") eventId: String): EventModel
+    @POST("api/users/{userId}/missions/{taskId}/complete")
+    suspend fun completeTask(
+        @Path("userId") userId: String,
+        @Path("taskId") taskId: String
+    ): User
 
-        @POST("events/trigger/{eventId}")
-        suspend fun triggerEvent(
-                @Path("eventId") eventId: String,
-                @Body request: TriggerEventRequest
-        ): EventResponse // 修正: 回傳型別應該是 EventResponse
+    @POST("api/users/{userId}/missions/{taskId}/claim")
+    suspend fun claimReward(
+        @Path("userId") userId: String,
+        @Path("taskId") taskId: String
+    ): UserResponse
 
-        @POST("api/events/complete/{eventId}")
-        suspend fun completeEvent(
-                @Path("eventId") eventId: String,
-                @Body request: CompleteEventRequest
-        ): EventResponse
+    // 檢查補給站任務點
+    @PUT("api/users/{userId}/missions/check-spot/{spotId}")
+    suspend fun checkSpotMission(
+        @Path("userId") userId: String,
+        @Path("spotId") spotId: String
+    ): CheckSpotMissionResponse
 
-        // 日常事件測試路由
-        @POST("api/events/trade") suspend fun trade(@Body request: TradeRequest): TradeResponse
+    // 取得事件詳細資訊
+    @GET("api/events/{eventId}")
+    suspend fun getEventById(@Path("eventId") eventId: String): EventModel
 
-        @GET("api/events/stone-pile-status/{userId}")
-        suspend fun getStonePileStatus(@Path("userId") userId: String): GetStonePileStatusResponse
+    @POST("events/trigger/{eventId}")
+    suspend fun triggerEvent(
+        @Path("eventId") eventId: String,
+        @Body request: TriggerEventRequest
+    ): EventResponse // 修正: 回傳型別應該是 EventResponse
 
-        @POST("api/events/trigger-stone-pile")
-        suspend fun triggerStonePile(
-                @Body request: TriggerStonePileRequest
-        ): TriggerStonePileResponse
+    @POST("api/events/complete/{eventId}")
+    suspend fun completeEvent(
+        @Path("eventId") eventId: String,
+        @Body request: CompleteEventRequest
+    ): EventResponse
 
-        // 任務測試路由
-        @POST("api/tasks/complete-bug-hunt")
-        suspend fun completeBugHunt(
-                @Body requestBody: CompleteBugHuntRequestBody
-        ): CompleteBugHuntResponse
+    // 日常事件測試路由
+    @POST("api/events/trade") suspend fun trade(@Body request: TradeRequest): TradeResponse
 
-        @POST("api/tasks/open-treasure-box")
-        suspend fun openTreasureBox(@Body request: OpenTreasureBoxRequest): OpenTreasureBoxResponse
+    @GET("api/events/stone-pile-status/{userId}")
+    suspend fun getStonePileStatus(@Path("userId") userId: String): GetStonePileStatusResponse
 
-        @POST("api/tasks/bless-tree")
-        suspend fun blessTree(@Body request: BlessTreeRequest): BlessTreeResponse
+    @POST("api/events/trigger-stone-pile")
+    suspend fun triggerStonePile(
+        @Body request: TriggerStonePileRequest
+    ): TriggerStonePileResponse
 
-        @POST("api/tasks/complete-slime-attack")
-        suspend fun completeSlimeAttack(
-                @Body request: CompleteSlimeAttackRequest
-        ): CompleteSlimeAttackResponse
+    // 任務測試路由
+    @POST("api/tasks/complete-bug-hunt")
+    suspend fun completeBugHunt(
+        @Body requestBody: CompleteBugHuntRequestBody
+    ): CompleteBugHuntResponse
 
-        // 您可能還需要一個 API 來獲取使用者背包物品
-        @GET("api/users/{userId}/items")
-        suspend fun fetchUserItems(@Path("userId") userId: String): List<UserItem>
+    @POST("api/tasks/open-treasure-box")
+    suspend fun openTreasureBox(@Body request: OpenTreasureBoxRequest): OpenTreasureBoxResponse
 
-        @POST("api/missions/llm/{userId}")
-        suspend fun createLLMMission(
-                @Path("userId") userId: String,
-                @Body body: CreateLLMMissionRequest
-        ): User
+    @POST("api/tasks/bless-tree")
+    suspend fun blessTree(@Body request: BlessTreeRequest): BlessTreeResponse
 
-        // --- Settings endpoints ---
-        @GET("api/settings/{id}") suspend fun fetchSettings(@Path("id") id: String): Settings
+    @POST("api/tasks/complete-slime-attack")
+    suspend fun completeSlimeAttack(
+        @Body request: CompleteSlimeAttackRequest
+    ): CompleteSlimeAttackResponse
 
-        @PUT("api/settings/{id}")
-        suspend fun updateSettings(@Path("id") id: String, @Body settings: Settings)
+    // 您可能還需要一個 API 來獲取使用者背包物品
+    @GET("api/users/{userId}/items")
+    suspend fun fetchUserItems(@Path("userId") userId: String): List<UserItem>
 
-        // 指派每日任務給使用者
-        @POST("api/users/{userId}/missions/assign-daily")
-        suspend fun assignDailyMissions(@Path("userId") userId: String): SuccessResponse
+    @POST("api/missions/llm/{userId}")
+    suspend fun createLLMMission(
+        @Path("userId") userId: String,
+        @Body body: CreateLLMMissionRequest
+    ): User
 
-        // --- Chat endpoints ---
-        @POST("api/chat/{userId}")
-        suspend fun chatWithLLM(@Path("userId") userId: String, @Body body: ChatRequest): ChatResponse
+    // --- Settings endpoints ---
+    @GET("api/settings/{id}") suspend fun fetchSettings(@Path("id") id: String): Settings
 
-        // 刪除對話紀錄
-        @DELETE("api/chat/{userId}")
-        suspend fun deleteChatHistory(@Path("userId") userId: String)
+    @PUT("api/settings/{id}")
+    suspend fun updateSettings(@Path("id") id: String, @Body settings: Settings)
+
+    // 指派每日任務給使用者
+    @POST("api/users/{userId}/missions/assign-daily")
+    suspend fun assignDailyMissions(@Path("userId") userId: String): SuccessResponse
+
+    // --- Chat endpoints ---
+    @POST("api/chat/{userId}")
+    suspend fun chatWithLLM(@Path("userId") userId: String, @Body body: ChatRequest): ChatResponse
+
+    // 刪除對話紀錄
+    @DELETE("api/chat/{userId}")
+    suspend fun deleteChatHistory(@Path("userId") userId: String)
 }
 
 
@@ -233,21 +233,21 @@ data class CreateLLMMissionRequest(val userLocation: Location)
 
 // 處理後端回傳 { user, message } 格式的資料類別
 data class UserResponse(
-        @SerializedName("user") val user: User,
-        @SerializedName("message") val message: String?
+    @SerializedName("user") val user: User,
+    @SerializedName("message") val message: String?
 )
 
 // 定義請求的資料結構
 data class TriggerEventRequest(
-        val userId: String,
-        val userLatitude: Double,
-        val userLongitude: Double
+    val userId: String,
+    val userLatitude: Double,
+    val userLongitude: Double
 )
 
 data class CompleteEventRequest(
-        val userId: String,
-        val selectedOption: String?,
-        val gameResult: Int?
+    val userId: String,
+    val selectedOption: String?,
+    val gameResult: Int?
 )
 
 // 聊天對話 API
@@ -259,24 +259,33 @@ data class ChatResponse(val reply: String)
 
 // 創建 Retrofit 實例
 object RetrofitClient {
-        private const val BASE_URL = "http://10.0.2.2:4000/" // 10.0.2.2 是 Android 模擬器訪問主機的特殊 IP
+    private const val BASE_URL = "http://10.0.2.2:4000/"
 
-        val apiService: ApiService by lazy {
-                // 增加日誌攔截器以查看網路請求和回應的詳細資訊
-                val logging =
-                        HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
-                val client = OkHttpClient.Builder()
-                .addInterceptor(logging)
-                .connectTimeout(6000, java.util.concurrent.TimeUnit.SECONDS)
-                .readTimeout(6000, java.util.concurrent.TimeUnit.SECONDS)
-                .writeTimeout(6000, java.util.concurrent.TimeUnit.SECONDS)
-                .build()
-
-                Retrofit.Builder()
-                        .baseUrl(BASE_URL)
-                        .client(client) // 使用帶有日誌攔截器的 client
-                        .addConverterFactory(GsonConverterFactory.create())
-                        .build()
-                        .create(ApiService::class.java)
+    val apiService: ApiService by lazy {
+        val logging = HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
         }
+
+        val client = OkHttpClient.Builder()
+            .addInterceptor(logging)
+            .addInterceptor { chain ->
+                val requestBuilder = chain.request().newBuilder()
+                val token = com.ntou01157.hunter.temp.TokenManager.idToken
+                if (!token.isNullOrEmpty()) {
+                    requestBuilder.addHeader("Authorization", "Bearer $token")
+                }
+                chain.proceed(requestBuilder.build())
+            }
+            .connectTimeout(6000, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(6000, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(6000, java.util.concurrent.TimeUnit.SECONDS)
+            .build()
+
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(ApiService::class.java)
+    }
 }

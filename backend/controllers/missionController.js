@@ -484,7 +484,6 @@ const checkAndTriggerEvent = async (userId, event) => {
 };
 
 
-
 // 產生 LLM 任務並分配給指定 user
 const createLLMMission = async (req, res) => {
   const { userId } = req.params;
@@ -511,14 +510,17 @@ const createLLMMission = async (req, res) => {
     };
 
     // 呼叫 Flask /route
-    const flaskUrl = process.env.LLM_FLASK_URL || 'http://llm:5050/route'; // docker 內部網域
+    const flaskUrl = process.env.LLM_ROUTE_URL || 'http://llm:5050/route'; // docker 內部網域
     const flaskRes = await axios.post(flaskUrl, payload, { timeout: 10000 });
 
     const result = flaskRes.data;
 
-    // 根據 LLM 回傳的難度產生獎勵道具
+    // 新增：印出 Flask 回傳的任務時長（原始值與型別）
+    console.log('[LLM] Flask 回傳的任務時長(原始):', result.taskDuration, '型別:', typeof result.taskDuration);
+
+    // 根據 LLM 回傳的難度產生獎勵道具（維持原本掉落難度對應）
     const difficultyMap = { easy: 2, normal: 3, hard: 4 };
-    const difficulty = difficultyMap[result.taskDifficulty] || 3; // 預設為 normal
+    const difficulty = difficultyMap[result.taskDifficulty] || 3; // 預設 normal
     const generatedDrops = await generateDropItems(difficulty); // returns [{itemId, quantity}]
 
     // 將掉落物轉換為 taskModel 需要的格式
@@ -526,6 +528,24 @@ const createLLMMission = async (req, res) => {
       itemId: new mongoose.Types.ObjectId(drop.itemId),
       quantity: drop.quantity
     }));
+
+    // 依任務難度設定分數 3/5/7
+    const scoreMap = { easy: 3, normal: 5, hard: 7 };
+    const missionScore = scoreMap[result.taskDifficulty] || 5;
+
+    // 正確處理 Flask 傳回的秒數
+    const taskDurationSeconds = typeof result.taskDuration === 'number' ? result.taskDuration : null;
+    // 以秒數換算 UTC 到期時間（Mongo 會以 ISO 8601 儲存）
+    const expiresAt = taskDurationSeconds ? new Date(Date.now() + taskDurationSeconds * 1000) : null;
+
+    // // 印出解析後的秒數與換算出的過期時間
+    // console.log('[LLM] 解析後任務時長(秒):', taskDurationSeconds);
+    // if (expiresAt) {
+    //   const deltaSec = Math.round((expiresAt.getTime() - Date.now()) / 1000);
+    //   console.log('[LLM] 轉換成過期時間(ISO):', expiresAt.toISOString(), '距現在(秒):', deltaSec);
+    // } else {
+    //   console.log('[LLM] 任務不設定過期時間：taskDuration 為無效或缺失');
+    // }
 
     // 依照 taskModel 組成任務
     const newTask = {
@@ -536,21 +556,21 @@ const createLLMMission = async (req, res) => {
       checkPlaces: result.route
         ? result.route.map(r => ({ spotId: new mongoose.Types.ObjectId(r.id) }))
         : [],
-      taskDuration: result.taskDuration ? result.taskDuration * 1000 : null, // LLM 回傳秒，轉為毫秒
+      taskDuration: taskDurationSeconds,
       rewardItems: rewardItems,
-      rewardScore: 50, // LLM 任務固定 50 分
+      rewardScore: missionScore, // 改為依難度 3/5/7
       isLLM: true
     };
 
     // 存入 tasks collection
     const createdTask = await Task.create(newTask);
 
-    // 加入 user.missions，狀態設為 in_progress，checkPlaces 同步 task.checkPlaces
+    // 加入 user.missions，直接寫入 UTC Date（DB 將以 ISO 8601 儲存）
     user.missions.push({
       taskId: createdTask._id,
       state: 'in_progress',
       acceptedAt: new Date(),
-      expiresAt: newTask.taskDuration ? new Date(Date.now() + newTask.taskDuration) : null,
+      expiresAt: expiresAt,
       refreshedAt: null,
       haveCheckPlaces: Array.isArray(createdTask.checkPlaces)
         ? createdTask.checkPlaces.map(place => ({

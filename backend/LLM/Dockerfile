@@ -13,6 +13,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 設定 OLLAMA_HOST 讓容器能連線主機上的 Ollama
 ENV OLLAMA_HOST=http://host.docker.internal:11434
 
+# 明確確保資料檔被帶入映像
+COPY data /app/data
+ENV FEATURE_DB_PATH=/app/data/train_features.db
+
 # 開放容器的 5050 連接埠
 EXPOSE 5050
 

@@ -79,6 +79,15 @@ def route():
         print("Error in /route:", e)  # 印出詳細錯誤訊息
         return jsonify({"error": str(e)}), 500
 
+@app.get("/healthz")
+def healthz():
+    # 活性探針：服務起來就回 200
+    return jsonify({
+        "status": "ok",
+        "service": "hunter-llm",
+        "port": int(os.getenv("PORT", "5050"))
+    }), 200
+
 
 # 特徵比對
 @app.route("/compare", methods=["POST"])
@@ -109,4 +118,5 @@ if __name__ == '__main__':
     #     print("js_to_py.json not found, skipping /route test.")
     # except Exception as e:
     #     print(f"An error occurred during /route test request: {e}")
-    app.run(host="0.0.0.0", port=5050, debug=True, use_reloader=False)
+    port = int(os.getenv("PORT", "5050"))  # Render/容器會注入 PORT
+    app.run(host="0.0.0.0", port=port, debug=True, use_reloader=False)

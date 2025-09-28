@@ -24,3 +24,4 @@ google-services.json
 *.log
 .DS_Store
 frontend/app/google-services.json
+backend/config/hunter-cde2a-firebase-adminsdk-fbsvc-975d1238b1.json
