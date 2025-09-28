@@ -35,6 +35,7 @@ import com.ntou01157.hunter.models.model_api.UserItem
 import com.ntou01157.hunter.Backpack.data.fetchUserItems
 import com.ntou01157.hunter.Backpack.data.craftItem
 import com.ntou01157.hunter.api.RetrofitClient
+import androidx.compose.ui.layout.ContentScale
 import kotlinx.coroutines.launch
 import com.ntou01157.hunter.api.ItemApi
 
@@ -63,7 +64,8 @@ fun BagScreen(navController: NavHostController) {
                     Log.e("BagScreen", "尚未登入，無法取得 email")
                     return@LaunchedEffect
                 }
-            val user = RetrofitClient.apiService.getUserByEmail(email) // 回傳單一 User（若你是 List 就改 firstOrNull）
+            val user =
+                RetrofitClient.apiService.getUserByEmail(email) // 回傳單一 User（若你是 List 就改 firstOrNull）
             userIdState = user.id
             Log.d("BagScreen", "取得 userId=${userIdState}")
         } catch (e: Exception) {
@@ -130,606 +132,733 @@ fun BagScreen(navController: NavHostController) {
     val resultItempic = allItems.find { it.item.itemId == resultItemId }
 
     Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFFF3DCDC))
-                .padding(horizontal = 16.dp)
-                .padding(paddingValues)
-        ) {
-            Box(
+        Box(modifier = Modifier.fillMaxSize()) {
+            Image(
+                painter = painterResource(id = R.drawable.bag_backboard),
+                contentDescription = "背包背景",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+            Column(
                 modifier = Modifier
-                    .padding(top = 25.dp, start = 16.dp)
-                    .clickable { navController.navigate("main") }
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
+                    .padding(paddingValues)
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.home_icon),
-                    contentDescription = "回首頁",
-                    modifier = Modifier.size(60.dp)
-                )
-            }
+                Box(
+                    modifier = Modifier
+                        .padding(top = 25.dp, start = 16.dp)
+                        .clickable { navController.navigate("main") }
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.home_icon),
+                        contentDescription = "回首頁",
+                        modifier = Modifier.size(60.dp)
+                    )
+                }
 
-            Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
-            Row(
-                modifier =
-                    Modifier.fillMaxWidth()
-                        .background(Color(0xFFEFEFEF))
-                        .padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                Text("(全部)", modifier = Modifier.clickable { filterState = 0 },
-                    color = if (filterState == 0) Color.Black else Color.Gray)
-                Text("(碎片)", modifier = Modifier.clickable { filterState = 1 },
-                    color = if (filterState == 1) Color.Black else Color.Gray)
-                Text("(道具)", modifier = Modifier.clickable { filterState = 2 },
-                    color = if (filterState == 2) Color.Black else Color.Gray)
-            }
+                Row(
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .background(Color(0xFFEFEFEF))
+                            .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    Text(
+                        "(全部)", modifier = Modifier.clickable { filterState = 0 },
+                        color = if (filterState == 0) Color.Black else Color.Gray
+                    )
+                    Text(
+                        "(碎片)", modifier = Modifier.clickable { filterState = 1 },
+                        color = if (filterState == 1) Color.Black else Color.Gray
+                    )
+                    Text(
+                        "(道具)", modifier = Modifier.clickable { filterState = 2 },
+                        color = if (filterState == 2) Color.Black else Color.Gray
+                    )
+                }
 
-            Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                when {
-                    userIdState == null -> {
-                        // 還在用 email 取得 userId
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CircularProgressIndicator()
-                            Spacer(Modifier.height(8.dp))
-                            Text("正在取得使用者資訊…")
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    when {
+                        userIdState == null -> {
+                            // 還在用 email 取得 userId
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                CircularProgressIndicator()
+                                Spacer(Modifier.height(8.dp))
+                                Text("正在取得使用者資訊…")
+                            }
                         }
-                    }
-                    isLoading.value -> {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CircularProgressIndicator()
-                            Spacer(Modifier.height(8.dp))
-                            Text("正在載入背包資料...")
+
+                        isLoading.value -> {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                CircularProgressIndicator()
+                                Spacer(Modifier.height(8.dp))
+                                Text("正在載入背包資料...")
+                            }
                         }
-                    }
-                    hasError.value -> {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("發生錯誤", color = Color.Red)
-                            Text(errorMessage.value, color = Color.Red)
-                            Button(onClick = {
-                                coroutineScope.launch {
-                                    val userId = userIdState ?: return@launch
-                                    isLoading.value = true
-                                    hasError.value = false
-                                    try {
-                                        val items = fetchUserItems(userId)
-                                        allItems.clear()
-                                        allItems.addAll(items)
-                                        if (items.isEmpty()) errorMessage.value = "背包中沒有物品"
-                                    } catch (e: Exception) {
-                                        hasError.value = true
-                                        errorMessage.value = "重試失敗: ${e.message}"
-                                    } finally {
-                                        isLoading.value = false
+
+                        hasError.value -> {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("發生錯誤", color = Color.Red)
+                                Text(errorMessage.value, color = Color.Red)
+                                Button(onClick = {
+                                    coroutineScope.launch {
+                                        val userId = userIdState ?: return@launch
+                                        isLoading.value = true
+                                        hasError.value = false
+                                        try {
+                                            val items = fetchUserItems(userId)
+                                            allItems.clear()
+                                            allItems.addAll(items)
+                                            if (items.isEmpty()) errorMessage.value =
+                                                "背包中沒有物品"
+                                        } catch (e: Exception) {
+                                            hasError.value = true
+                                            errorMessage.value = "重試失敗: ${e.message}"
+                                        } finally {
+                                            isLoading.value = false
+                                        }
                                     }
-                                }
-                            }) { Text("重試") }
+                                }) { Text("重試") }
+                            }
                         }
-                    }
-                    filteredItems.isEmpty() -> {
-                        Text("背包中沒有物品", color = Color.Gray)
-                    }
-                    else -> {
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(3),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp) // 保留邊距
-                        ) {
-                            items(filteredItems) { userItem ->
-                                Box(
-                                    modifier = Modifier
-                                        .size(100.dp) // 外框大小可以稍微調整
-                                        .clickable { selectedItem = userItem },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.square_button),
-                                        contentDescription = "Item Slot",
-                                        modifier = Modifier.fillMaxSize()
-                                    )
 
-                                    // 物品圖片
-                                    val context = LocalContext.current
-                                    val resId = remember(userItem.item.itemPic) {
-                                        context.resources.getIdentifier(userItem.item.itemPic, "drawable", context.packageName)
-                                    }
+                        filteredItems.isEmpty() -> {
+                            Text("背包中沒有物品", color = Color.Gray)
+                        }
 
-                                    val painter = if (resId != 0) {
-                                        painterResource(id = resId)
-                                    } else {
-                                        painterResource(id = R.drawable.default_itempic)
-                                    }
-
-                                    Image(
-                                        painter = painter,
-                                        contentDescription = userItem.item.itemPic,
-                                        modifier = Modifier.size(64.dp) // 放在框內縮小一點
-                                    )
-
-                                    // 數量文字
-                                    Text(
-                                        "${userItem.count.value}",
-                                        color = Color.Black,
-                                        fontSize = 14.sp,
+                        else -> {
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(3),
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(16.dp) // 保留邊距
+                            ) {
+                                items(filteredItems) { userItem ->
+                                    Box(
                                         modifier = Modifier
-                                            .align(Alignment.BottomEnd)
-                                            .padding(6.dp)
-                                    )
+                                            .size(100.dp) // 外框大小可以稍微調整
+                                            .clickable { selectedItem = userItem },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.square_button),
+                                            contentDescription = "Item Slot",
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+
+                                        // 物品圖片
+                                        val context = LocalContext.current
+                                        val resId = remember(userItem.item.itemPic) {
+                                            context.resources.getIdentifier(
+                                                userItem.item.itemPic,
+                                                "drawable",
+                                                context.packageName
+                                            )
+                                        }
+
+                                        val painter = if (resId != 0) {
+                                            painterResource(id = resId)
+                                        } else {
+                                            painterResource(id = R.drawable.default_itempic)
+                                        }
+
+                                        Image(
+                                            painter = painter,
+                                            contentDescription = userItem.item.itemPic,
+                                            modifier = Modifier.size(64.dp) // 放在框內縮小一點
+                                        )
+
+                                        // 數量文字
+                                        Text(
+                                            "${userItem.count.value}",
+                                            color = Color.Black,
+                                            fontSize = 14.sp,
+                                            modifier = Modifier
+                                                .align(Alignment.BottomEnd)
+                                                .padding(6.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-        }
 
-        // 物品詳細資訊對話框
-        selectedItem?.let { userItem ->
-            AlertDialog(
-                onDismissRequest = { selectedItem = null },
-                confirmButton = {
-                    val canUse = userItem.item.itemId in USABLE_ITEM_IDS &&
-                            userItem.count.value > 0 &&
-                            userIdState != null
-                    if (canUse) {
-                        Button(onClick = {
+            // 物品詳細資訊對話框
+            selectedItem?.let { userItem ->
+                AlertDialog(
+                    onDismissRequest = { selectedItem = null },
+                    confirmButton = {
+                        val canUse = userItem.item.itemId in USABLE_ITEM_IDS &&
+                                userItem.count.value > 0 &&
+                                userIdState != null
+                        if (canUse) {
+                            Button(onClick = {
 
-                        }) { Text("使用") }
-                    }
-                },
-                title = {
-                    Box(Modifier.fillMaxWidth()) {
-                        Text(" ")
-                        Text("✕", modifier = Modifier.align(Alignment.TopEnd).clickable {
-                            selectedItem = null
-                        }, fontSize = 24.sp)
-                    }
-                },
-                text = {
-                    val context = LocalContext.current
+                            }) { Text("使用") }
+                        }
+                    },
+                    title = {
+                        Box(Modifier.fillMaxWidth()) {
+                            Text(" ")
+                            Text("✕", modifier = Modifier.align(Alignment.TopEnd).clickable {
+                                selectedItem = null
+                            }, fontSize = 24.sp)
+                        }
+                    },
+                    text = {
+                        val context = LocalContext.current
 
-                    Dialog(
-                        onDismissRequest = { selectedItem = null },
-                        properties = DialogProperties(usePlatformDefaultWidth = false) // 禁用系統預設寬度
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .width(500.dp)
-                                .wrapContentHeight(),
-                            contentAlignment = Alignment.Center
+                        Dialog(
+                            onDismissRequest = { selectedItem = null },
+                            properties = DialogProperties(usePlatformDefaultWidth = false) // 禁用系統預設寬度
                         ) {
-                            // 背景框
-                            Image(
-                                painter = painterResource(id = R.drawable.dialog_1), // 你的對話框背景圖片
-                                contentDescription = "物品框",
-                                modifier = Modifier.fillMaxSize()
-                            )
-
-                            // 內容
-                            Column(
+                            Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 24.dp, vertical = 32.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
+                                    .width(500.dp)
+                                    .wrapContentHeight(),
+                                contentAlignment = Alignment.Center
                             ) {
-
-                                // 關閉按鈕
-                                Box(
-                                    modifier = Modifier
-                                        .width(280.dp) // 限制最大寬度
-                                        .wrapContentSize(Alignment.TopEnd) // 在範圍內靠右上
-                                ) {
-                                    Text(
-                                        "✕",
-                                        fontSize = 25.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier
-                                            .clickable { selectedItem = null }
-                                            .padding(4.dp)
-                                    )
-                                }
-
-                                // 名字
-                                Text(
-                                    text = userItem.item.itemName,
-                                    fontSize = 20.sp,
-                                    color = Color.Black,
-                                    textAlign = TextAlign.Center
-                                )
-
-                                Spacer(Modifier.height(12.dp))
-
-                                // 物品圖片
-                                val context = LocalContext.current
-                                val resId = context.resources.getIdentifier(
-                                    userItem.item.itemPic, "drawable", context.packageName
-                                )
-                                val painter = if (resId != 0) painterResource(id = resId)
-                                else painterResource(id = R.drawable.default_itempic)
-
+                                // 背景框
                                 Image(
-                                    painter = painter,
-                                    contentDescription = userItem.item.itemPic,
-                                    modifier = Modifier.size(64.dp)
+                                    painter = painterResource(id = R.drawable.dialog_1), // 你的對話框背景圖片
+                                    contentDescription = "物品框",
+                                    modifier = Modifier.fillMaxSize()
                                 )
 
-                                Spacer(Modifier.height(12.dp))
-
-                                // 稀有度 + 擁有數
-                                Row(
-                                    modifier = Modifier.width(220.dp),   // 控制寬度避免超出
-                                    horizontalArrangement = Arrangement.SpaceBetween
+                                // 內容
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 24.dp, vertical = 32.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    Text("稀有度：${userItem.item.itemRarity}", textAlign = TextAlign.Start)
-                                    Text("擁有 ${userItem.count.value} 件", textAlign = TextAlign.End)
-                                }
 
-                                Spacer(Modifier.height(16.dp))
-
-                                // 介紹
-                                Column(modifier = Modifier.width(220.dp)) {
-                                    Text("物品介紹：", fontSize = 16.sp)
-                                    Text(
-                                        text = userItem.item.itemEffect,
-                                        modifier = Modifier.padding(top = 4.dp),
-                                        textAlign = TextAlign.Start
-                                    )
-                                }
-
-                                Spacer(Modifier.height(24.dp))
-
-                                val canUse = userItem.item.itemId in USABLE_ITEM_IDS &&
-                                        userItem.count.value > 0 &&
-                                        userIdState != null
-
-                                if (canUse) {
-                                    // 使用按鈕
+                                    // 關閉按鈕
                                     Box(
                                         modifier = Modifier
-                                            .width(250.dp)
-                                            .height(100.dp)
-                                            .clickable {
-                                                coroutineScope.launch {
-                                                    val uid = userIdState!!
-                                                    // 產生本次動作的 requestId（若要重試要重用同一個）
-                                                    val reqId = ItemApi.generateRequestId(uid, userItem.item.itemId)
-                                                    val resp = ItemApi.useItem(uid, userItem.item.itemId, reqId)
-
-                                                    when {
-                                                        resp.success -> {
-                                                            // 成功 → 重新抓背包
-                                                            val refreshed = fetchUserItems(uid)
-                                                            allItems.clear(); allItems.addAll(refreshed)
-                                                            selectedItem = null
-
-                                                            // NEW: 依 effects 顯示提示
-                                                            val msgs = buildString {
-                                                                resp.effects?.let { arr ->
-                                                                    for (i in 0 until arr.length()) {
-                                                                        val e = arr.getJSONObject(i)
-
-                                                                        // 碎片
-                                                                        if (e.has("fragments")) {
-                                                                            val f = e.getJSONObject("fragments")
-                                                                            val it = f.keys()
-                                                                            while (it.hasNext()) {
-                                                                                val k = it.next()
-                                                                                val name = when (k) {
-                                                                                    "copperKeyShard" -> "銅鑰匙碎片"
-                                                                                    "silverKeyShard" -> "銀鑰匙碎片"
-                                                                                    "goldKeyShard"   -> "金鑰匙碎片"
-                                                                                    else -> k
-                                                                                }
-                                                                                append("獲得 $name x${f.optInt(k)}\n")
-                                                                            }
-                                                                        }
-
-                                                                        // Buff
-                                                                        if (e.has("buffAdded")) {
-                                                                            val b = e.getJSONObject("buffAdded")
-                                                                            val buffName = when (b.optString("name")) {
-                                                                                "torch" -> "火把"
-                                                                                "ancient_branch" -> "古樹的枝幹"
-                                                                                "treasure_map_once" -> "寶藏圖"
-                                                                                else -> b.optString("name")
-                                                                            }
-                                                                            append("獲得 $buffName Buff\n")
-                                                                        }
-
-                                                                        // 任務類
-                                                                        if (e.optBoolean("missionsRefreshed", false)) append("已立即刷新任務\n")
-                                                                        if (e.has("missionsExtendedMin")) append("限時任務延長 ${e.optInt("missionsExtendedMin")} 分鐘\n")
-                                                                    }
-                                                                }
-                                                            }.trim()
-
-                                                            if (msgs.isNotEmpty()) {
-                                                                snackbarHostState.showSnackbar(msgs)
-                                                            } else {
-                                                                snackbarHostState.showSnackbar("已使用：${userItem.item.itemName}")
-                                                            }
-                                                        }
-                                                        resp.duplicate -> {
-                                                            // 重複請求：視為已處理成功（通常第一次已成功）
-                                                            val refreshed = fetchUserItems(uid)
-                                                            allItems.clear(); allItems.addAll(refreshed)
-                                                            selectedItem = null
-                                                            snackbarHostState.showSnackbar("已處理（先前的請求已完成）")
-                                                        }
-
-                                                        else -> {
-                                                            snackbarHostState.showSnackbar("使用失敗，請稍後重試")
-                                                        }
-                                                    }
-                                                }
-                                            },
-                                        contentAlignment = Alignment.Center
+                                            .width(280.dp) // 限制最大寬度
+                                            .wrapContentSize(Alignment.TopEnd) // 在範圍內靠右上
                                     ) {
+                                        Text(
+                                            "✕",
+                                            fontSize = 25.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier
+                                                .clickable { selectedItem = null }
+                                                .padding(4.dp)
+                                        )
+                                    }
+
+                                    // 名字
+                                    Text(
+                                        text = userItem.item.itemName,
+                                        fontSize = 20.sp,
+                                        color = Color.Black,
+                                        textAlign = TextAlign.Center
+                                    )
+
+                                    Spacer(Modifier.height(12.dp))
+
+                                    // 物品圖片
+                                    val context = LocalContext.current
+                                    val resId = context.resources.getIdentifier(
+                                        userItem.item.itemPic, "drawable", context.packageName
+                                    )
+                                    val painter = if (resId != 0) painterResource(id = resId)
+                                    else painterResource(id = R.drawable.default_itempic)
+
+                                    Image(
+                                        painter = painter,
+                                        contentDescription = userItem.item.itemPic,
+                                        modifier = Modifier.size(64.dp)
+                                    )
+
+                                    Spacer(Modifier.height(12.dp))
+
+                                    // 稀有度 + 擁有數
+                                    Row(
+                                        modifier = Modifier.width(220.dp),   // 控制寬度避免超出
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            "稀有度：${userItem.item.itemRarity}",
+                                            textAlign = TextAlign.Start
+                                        )
+                                        Text(
+                                            "擁有 ${userItem.count.value} 件",
+                                            textAlign = TextAlign.End
+                                        )
+                                    }
+
+                                    Spacer(Modifier.height(16.dp))
+
+                                    // 介紹
+                                    Column(modifier = Modifier.width(220.dp)) {
+                                        Text("物品介紹：", fontSize = 16.sp)
+                                        Text(
+                                            text = userItem.item.itemEffect,
+                                            modifier = Modifier.padding(top = 4.dp),
+                                            textAlign = TextAlign.Start
+                                        )
+                                    }
+
+                                    Spacer(Modifier.height(24.dp))
+
+                                    val canUse = userItem.item.itemId in USABLE_ITEM_IDS &&
+                                            userItem.count.value > 0 &&
+                                            userIdState != null
+
+                                    if (canUse) {
+                                        // 使用按鈕
                                         Box(
                                             modifier = Modifier
                                                 .width(250.dp)
                                                 .height(100.dp)
-                                                .clickable { coroutineScope.launch {
-                                                    val uid = userIdState!!
-                                                    // 產生本次動作的 requestId（若要重試要重用同一個）
-                                                    val reqId = ItemApi.generateRequestId(uid, userItem.item.itemId)
-                                                    val resp = ItemApi.useItem(uid, userItem.item.itemId, reqId)
+                                                .clickable {
+                                                    coroutineScope.launch {
+                                                        val uid = userIdState!!
+                                                        // 產生本次動作的 requestId（若要重試要重用同一個）
+                                                        val reqId = ItemApi.generateRequestId(
+                                                            uid,
+                                                            userItem.item.itemId
+                                                        )
+                                                        val resp = ItemApi.useItem(
+                                                            uid,
+                                                            userItem.item.itemId,
+                                                            reqId
+                                                        )
 
-                                                    when {
-                                                        resp.success -> {
-                                                            // 成功 → 重新抓背包
-                                                            val refreshed = fetchUserItems(uid)
-                                                            allItems.clear(); allItems.addAll(refreshed)
-                                                            selectedItem = null
+                                                        when {
+                                                            resp.success -> {
+                                                                // 成功 → 重新抓背包
+                                                                val refreshed = fetchUserItems(uid)
+                                                                allItems.clear(); allItems.addAll(
+                                                                    refreshed
+                                                                )
+                                                                selectedItem = null
 
-                                                            // NEW: 依 effects 顯示提示
-                                                            val msgs = buildString {
-                                                                resp.effects?.let { arr ->
-                                                                    for (i in 0 until arr.length()) {
-                                                                        val e = arr.getJSONObject(i)
+                                                                // NEW: 依 effects 顯示提示
+                                                                val msgs = buildString {
+                                                                    resp.effects?.let { arr ->
+                                                                        for (i in 0 until arr.length()) {
+                                                                            val e =
+                                                                                arr.getJSONObject(i)
 
-                                                                        // 碎片
-                                                                        if (e.has("fragments")) {
-                                                                            val f = e.getJSONObject("fragments")
-                                                                            val it = f.keys()
-                                                                            while (it.hasNext()) {
-                                                                                val k = it.next()
-                                                                                val name = when (k) {
-                                                                                    "copperKeyShard" -> "銅鑰匙碎片"
-                                                                                    "silverKeyShard" -> "銀鑰匙碎片"
-                                                                                    "goldKeyShard"   -> "金鑰匙碎片"
-                                                                                    else -> k
+                                                                            // 碎片
+                                                                            if (e.has("fragments")) {
+                                                                                val f =
+                                                                                    e.getJSONObject(
+                                                                                        "fragments"
+                                                                                    )
+                                                                                val it = f.keys()
+                                                                                while (it.hasNext()) {
+                                                                                    val k =
+                                                                                        it.next()
+                                                                                    val name =
+                                                                                        when (k) {
+                                                                                            "copperKeyShard" -> "銅鑰匙碎片"
+                                                                                            "silverKeyShard" -> "銀鑰匙碎片"
+                                                                                            "goldKeyShard" -> "金鑰匙碎片"
+                                                                                            else -> k
+                                                                                        }
+                                                                                    append(
+                                                                                        "獲得 $name x${
+                                                                                            f.optInt(
+                                                                                                k
+                                                                                            )
+                                                                                        }\n"
+                                                                                    )
                                                                                 }
-                                                                                append("獲得 $name x${f.optInt(k)}\n")
                                                                             }
-                                                                        }
 
-                                                                        // Buff
-                                                                        if (e.has("buffAdded")) {
-                                                                            val b = e.getJSONObject("buffAdded")
-                                                                            val buffName = when (b.optString("name")) {
-                                                                                "torch" -> "火把"
-                                                                                "ancient_branch" -> "古樹的枝幹"
-                                                                                "treasure_map_once" -> "寶藏圖"
-                                                                                else -> b.optString("name")
+                                                                            // Buff
+                                                                            if (e.has("buffAdded")) {
+                                                                                val b =
+                                                                                    e.getJSONObject(
+                                                                                        "buffAdded"
+                                                                                    )
+                                                                                val buffName =
+                                                                                    when (b.optString(
+                                                                                        "name"
+                                                                                    )) {
+                                                                                        "torch" -> "火把"
+                                                                                        "ancient_branch" -> "古樹的枝幹"
+                                                                                        "treasure_map_once" -> "寶藏圖"
+                                                                                        else -> b.optString(
+                                                                                            "name"
+                                                                                        )
+                                                                                    }
+                                                                                append("獲得 $buffName Buff\n")
                                                                             }
-                                                                            append("獲得 $buffName Buff\n")
-                                                                        }
 
-                                                                        // 任務類
-                                                                        if (e.optBoolean("missionsRefreshed", false)) append("已立即刷新任務\n")
-                                                                        if (e.has("missionsExtendedMin")) append("限時任務延長 ${e.optInt("missionsExtendedMin")} 分鐘\n")
+                                                                            // 任務類
+                                                                            if (e.optBoolean(
+                                                                                    "missionsRefreshed",
+                                                                                    false
+                                                                                )
+                                                                            ) append("已立即刷新任務\n")
+                                                                            if (e.has("missionsExtendedMin")) append(
+                                                                                "限時任務延長 ${
+                                                                                    e.optInt("missionsExtendedMin")
+                                                                                } 分鐘\n"
+                                                                            )
+                                                                        }
                                                                     }
-                                                                }
-                                                            }.trim()
+                                                                }.trim()
 
-                                                            if (msgs.isNotEmpty()) {
-                                                                snackbarHostState.showSnackbar(msgs)
-                                                            } else {
-                                                                snackbarHostState.showSnackbar("已使用：${userItem.item.itemName}")
+                                                                if (msgs.isNotEmpty()) {
+                                                                    snackbarHostState.showSnackbar(
+                                                                        msgs
+                                                                    )
+                                                                } else {
+                                                                    snackbarHostState.showSnackbar("已使用：${userItem.item.itemName}")
+                                                                }
+                                                            }
+
+                                                            resp.duplicate -> {
+                                                                // 重複請求：視為已處理成功（通常第一次已成功）
+                                                                val refreshed = fetchUserItems(uid)
+                                                                allItems.clear(); allItems.addAll(
+                                                                    refreshed
+                                                                )
+                                                                selectedItem = null
+                                                                snackbarHostState.showSnackbar("已處理（先前的請求已完成）")
+                                                            }
+
+                                                            else -> {
+                                                                snackbarHostState.showSnackbar("使用失敗，請稍後重試")
                                                             }
                                                         }
-                                                        resp.duplicate -> {
-                                                            // 重複請求：視為已處理成功（通常第一次已成功）
-                                                            val refreshed = fetchUserItems(uid)
-                                                            allItems.clear(); allItems.addAll(refreshed)
-                                                            selectedItem = null
-                                                            snackbarHostState.showSnackbar("已處理（先前的請求已完成）")
-                                                        }
-
-                                                        else -> {
-                                                            snackbarHostState.showSnackbar("使用失敗，請稍後重試")
-                                                        }
                                                     }
-                                                }},
+                                                },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .width(250.dp)
+                                                    .height(100.dp)
+                                                    .clickable {
+                                                        coroutineScope.launch {
+                                                            val uid = userIdState!!
+                                                            // 產生本次動作的 requestId（若要重試要重用同一個）
+                                                            val reqId = ItemApi.generateRequestId(
+                                                                uid,
+                                                                userItem.item.itemId
+                                                            )
+                                                            val resp = ItemApi.useItem(
+                                                                uid,
+                                                                userItem.item.itemId,
+                                                                reqId
+                                                            )
+
+                                                            when {
+                                                                resp.success -> {
+                                                                    // 成功 → 重新抓背包
+                                                                    val refreshed =
+                                                                        fetchUserItems(uid)
+                                                                    allItems.clear(); allItems.addAll(
+                                                                        refreshed
+                                                                    )
+                                                                    selectedItem = null
+
+                                                                    // NEW: 依 effects 顯示提示
+                                                                    val msgs = buildString {
+                                                                        resp.effects?.let { arr ->
+                                                                            for (i in 0 until arr.length()) {
+                                                                                val e =
+                                                                                    arr.getJSONObject(
+                                                                                        i
+                                                                                    )
+
+                                                                                // 碎片
+                                                                                if (e.has("fragments")) {
+                                                                                    val f =
+                                                                                        e.getJSONObject(
+                                                                                            "fragments"
+                                                                                        )
+                                                                                    val it =
+                                                                                        f.keys()
+                                                                                    while (it.hasNext()) {
+                                                                                        val k =
+                                                                                            it.next()
+                                                                                        val name =
+                                                                                            when (k) {
+                                                                                                "copperKeyShard" -> "銅鑰匙碎片"
+                                                                                                "silverKeyShard" -> "銀鑰匙碎片"
+                                                                                                "goldKeyShard" -> "金鑰匙碎片"
+                                                                                                else -> k
+                                                                                            }
+                                                                                        append(
+                                                                                            "獲得 $name x${
+                                                                                                f.optInt(
+                                                                                                    k
+                                                                                                )
+                                                                                            }\n"
+                                                                                        )
+                                                                                    }
+                                                                                }
+
+                                                                                // Buff
+                                                                                if (e.has("buffAdded")) {
+                                                                                    val b =
+                                                                                        e.getJSONObject(
+                                                                                            "buffAdded"
+                                                                                        )
+                                                                                    val buffName =
+                                                                                        when (b.optString(
+                                                                                            "name"
+                                                                                        )) {
+                                                                                            "torch" -> "火把"
+                                                                                            "ancient_branch" -> "古樹的枝幹"
+                                                                                            "treasure_map_once" -> "寶藏圖"
+                                                                                            else -> b.optString(
+                                                                                                "name"
+                                                                                            )
+                                                                                        }
+                                                                                    append("獲得 $buffName Buff\n")
+                                                                                }
+
+                                                                                // 任務類
+                                                                                if (e.optBoolean(
+                                                                                        "missionsRefreshed",
+                                                                                        false
+                                                                                    )
+                                                                                ) append("已立即刷新任務\n")
+                                                                                if (e.has("missionsExtendedMin")) append(
+                                                                                    "限時任務延長 ${
+                                                                                        e.optInt("missionsExtendedMin")
+                                                                                    } 分鐘\n"
+                                                                                )
+                                                                            }
+                                                                        }
+                                                                    }.trim()
+
+                                                                    if (msgs.isNotEmpty()) {
+                                                                        snackbarHostState.showSnackbar(
+                                                                            msgs
+                                                                        )
+                                                                    } else {
+                                                                        snackbarHostState.showSnackbar(
+                                                                            "已使用：${userItem.item.itemName}"
+                                                                        )
+                                                                    }
+                                                                }
+
+                                                                resp.duplicate -> {
+                                                                    // 重複請求：視為已處理成功（通常第一次已成功）
+                                                                    val refreshed =
+                                                                        fetchUserItems(uid)
+                                                                    allItems.clear(); allItems.addAll(
+                                                                        refreshed
+                                                                    )
+                                                                    selectedItem = null
+                                                                    snackbarHostState.showSnackbar("已處理（先前的請求已完成）")
+                                                                }
+
+                                                                else -> {
+                                                                    snackbarHostState.showSnackbar("使用失敗，請稍後重試")
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Image(
+                                                    painter = painterResource(id = R.drawable.button),
+                                                    contentDescription = "使用",
+                                                    modifier = Modifier.fillMaxSize()  // 填滿 Box
+                                                )
+                                                Text("使用", color = Color.Black, fontSize = 23.sp)
+                                            }
+                                        }
+                                    } else if (userItem.item.itemType == 0) {
+                                        // 合成按鈕
+                                        Box(
+                                            modifier = Modifier
+                                                .width(250.dp)
+                                                .height(100.dp)
+                                                .clickable { showCraftDialog = true },
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Image(
                                                 painter = painterResource(id = R.drawable.button),
-                                                contentDescription = "使用",
-                                                modifier = Modifier.fillMaxSize()  // 填滿 Box
+                                                contentDescription = "合成按鈕",
+                                                modifier = Modifier.fillMaxSize()
                                             )
-                                            Text("使用", color = Color.Black, fontSize = 23.sp)
+                                            Text("前往合成", color = Color.Black, fontSize = 23.sp)
                                         }
                                     }
-                                } else if (userItem.item.itemType == 0) {
-                                    // 合成按鈕
-                                    Box(
-                                        modifier = Modifier
-                                            .width(250.dp)
-                                            .height(100.dp)
-                                            .clickable { showCraftDialog = true },
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Image(
-                                            painter = painterResource(id = R.drawable.button),
-                                            contentDescription = "合成按鈕",
-                                            modifier = Modifier.fillMaxSize()
-                                        )
-                                        Text("前往合成", color = Color.Black, fontSize = 23.sp)
-                                    }
-                                }
 
+                                }
                             }
                         }
-                    }
-                },
-                shape = RoundedCornerShape(16.dp)
-            )
-        }
+                    },
+                    shape = RoundedCornerShape(16.dp)
+                )
+            }
 
-        // 合成彈窗（放在最後，確保顯示在最上層）
-        if (showCraftDialog && resultItemId != null) {
-            Dialog(
-                onDismissRequest = { selectedItem = null },
-                properties = DialogProperties(usePlatformDefaultWidth = false) // 禁用系統預設寬度
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(500.dp)
-                        .wrapContentHeight(),
-                    contentAlignment = Alignment.Center
+            // 合成彈窗（放在最後，確保顯示在最上層）
+            if (showCraftDialog && resultItemId != null) {
+                Dialog(
+                    onDismissRequest = { selectedItem = null },
+                    properties = DialogProperties(usePlatformDefaultWidth = false) // 禁用系統預設寬度
                 ) {
-                    // 背景框
-                    Image(
-                        painter = painterResource(id = R.drawable.dialog_1), // 你的對話框背景圖片
-                        contentDescription = "物品框",
-                        modifier = Modifier.fillMaxSize()
-                    )
-
-                    Column(
+                    Box(
                         modifier = Modifier
-                            .padding(24.dp)
-                            .width(260.dp),  // 固定內容寬度，避免字亂跑
-                        horizontalAlignment = Alignment.CenterHorizontally
+                            .width(500.dp)
+                            .wrapContentHeight(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        // 關閉按鈕
-                        Text(
-                            "✕",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier
-                                .align(Alignment.End)
-                                .clickable { showCraftDialog = false }
-                        )
-
-                        // 物品名稱
-                        Text(
-                            text = resultItempic?.item?.itemName ?: "合成物",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-
-                        // 合成結果圖片
-                        val context = LocalContext.current
-                        val resId = context.resources.getIdentifier(
-                            resultItempic?.item?.itemPic ?: "",
-                            "drawable",
-                            context.packageName
-                        )
-                        val painter = if (resId != 0) painterResource(id = resId)
-                        else painterResource(id = R.drawable.default_itempic)
-
+                        // 背景框
                         Image(
-                            painter = painter,
-                            contentDescription = resultItempic?.item?.itemName,
-                            modifier = Modifier.size(100.dp)
+                            painter = painterResource(id = R.drawable.dialog_1), // 你的對話框背景圖片
+                            contentDescription = "物品框",
+                            modifier = Modifier.fillMaxSize()
                         )
 
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // 中間提示
-                        Text(
-                            "需消耗",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color.DarkGray,
-                            modifier = Modifier.padding(vertical = 4.dp)
-                        )
-
-                        // 材料區
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.fillMaxWidth()
+                        Column(
+                            modifier = Modifier
+                                .padding(24.dp)
+                                .width(260.dp),  // 固定內容寬度，避免字亂跑
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            selectedItem?.let { material ->
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    val matResId = context.resources.getIdentifier(
-                                        material.item.itemPic, "drawable", context.packageName
-                                    )
-                                    val matPainter = if (matResId != 0) painterResource(id = matResId)
-                                    else painterResource(id = R.drawable.default_itempic)
+                            // 關閉按鈕
+                            Text(
+                                "✕",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .align(Alignment.End)
+                                    .clickable { showCraftDialog = false }
+                            )
 
-                                    Image(
-                                        painter = matPainter,
-                                        contentDescription = material.item.itemName,
-                                        modifier = Modifier.size(50.dp)
-                                    )
-                                    Text("x3")
+                            // 物品名稱
+                            Text(
+                                text = resultItempic?.item?.itemName ?: "合成物",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+
+                            // 合成結果圖片
+                            val context = LocalContext.current
+                            val resId = context.resources.getIdentifier(
+                                resultItempic?.item?.itemPic ?: "",
+                                "drawable",
+                                context.packageName
+                            )
+                            val painter = if (resId != 0) painterResource(id = resId)
+                            else painterResource(id = R.drawable.default_itempic)
+
+                            Image(
+                                painter = painter,
+                                contentDescription = resultItempic?.item?.itemName,
+                                modifier = Modifier.size(100.dp)
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // 中間提示
+                            Text(
+                                "需消耗",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color.DarkGray,
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+
+                            // 材料區
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                selectedItem?.let { material ->
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        val matResId = context.resources.getIdentifier(
+                                            material.item.itemPic, "drawable", context.packageName
+                                        )
+                                        val matPainter =
+                                            if (matResId != 0) painterResource(id = matResId)
+                                            else painterResource(id = R.drawable.default_itempic)
+
+                                        Image(
+                                            painter = matPainter,
+                                            contentDescription = material.item.itemName,
+                                            modifier = Modifier.size(50.dp)
+                                        )
+                                        Text("x3")
+                                    }
                                 }
                             }
-                        }
 
-                        Spacer(modifier = Modifier.height(20.dp))
+                            Spacer(modifier = Modifier.height(20.dp))
 
-                        Box(
-                            modifier = Modifier
-                                .clickable {
-                                    coroutineScope.launch {
-                                        val uid = userIdState ?: run {
-                                            snackbarHostState.showSnackbar("尚未取得使用者 ID，無法合成")
-                                            return@launch
-                                        }
-                                        val requiredMaterials = allItems.filter {
-                                            it.item.itemType == 0 && it.item.resultId == resultItemId
-                                        }
-                                        val hasEnough = requiredMaterials.all { material ->
-                                            allItems.any { ui -> ui.item.itemId == material.item.itemId && ui.count.value >= 1 }
-                                        }
-                                        if (hasEnough) {
-                                            try {
-                                                var latest: List<UserItem>? = null
-                                                requiredMaterials.forEach { material ->
-                                                    latest = craftItem(uid, material.item.itemId)
-                                                }
-                                                latest?.let {
-                                                    allItems.clear()
-                                                    allItems.addAll(it)
-                                                }
-                                                snackbarHostState.showSnackbar("合成成功！")
-                                                showCraftDialog = false
-                                                selectedItem = null
-                                            } catch (e: Exception) {
-                                                snackbarHostState.showSnackbar("合成失敗: ${e.message}")
-                                            }
-                                            finally {
-                                                showCraftDialog = false
-                                                selectedItem = null
-                                            }
-                                        } else {
-                                            snackbarHostState.showSnackbar("材料不足，無法合成")
-                                        }
-                                    }
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.button),
-                                contentDescription = "合成按鈕",
+                            Box(
                                 modifier = Modifier
-                                    .width(200.dp)
-                                    .height(70.dp)
-                            )
-                            Text("合成", color = Color.Black, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                                    .clickable {
+                                        coroutineScope.launch {
+                                            val uid = userIdState ?: run {
+                                                snackbarHostState.showSnackbar("尚未取得使用者 ID，無法合成")
+                                                return@launch
+                                            }
+                                            val requiredMaterials = allItems.filter {
+                                                it.item.itemType == 0 && it.item.resultId == resultItemId
+                                            }
+                                            val hasEnough = requiredMaterials.all { material ->
+                                                allItems.any { ui -> ui.item.itemId == material.item.itemId && ui.count.value >= 1 }
+                                            }
+                                            if (hasEnough) {
+                                                try {
+                                                    var latest: List<UserItem>? = null
+                                                    requiredMaterials.forEach { material ->
+                                                        latest =
+                                                            craftItem(uid, material.item.itemId)
+                                                    }
+                                                    latest?.let {
+                                                        allItems.clear()
+                                                        allItems.addAll(it)
+                                                    }
+                                                    snackbarHostState.showSnackbar("合成成功！")
+                                                    showCraftDialog = false
+                                                    selectedItem = null
+                                                } catch (e: Exception) {
+                                                    snackbarHostState.showSnackbar("合成失敗: ${e.message}")
+                                                } finally {
+                                                    showCraftDialog = false
+                                                    selectedItem = null
+                                                }
+                                            } else {
+                                                snackbarHostState.showSnackbar("材料不足，無法合成")
+                                            }
+                                        }
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.button),
+                                    contentDescription = "合成按鈕",
+                                    modifier = Modifier
+                                        .width(200.dp)
+                                        .height(70.dp)
+                                )
+                                Text(
+                                    "合成",
+                                    color = Color.Black,
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }

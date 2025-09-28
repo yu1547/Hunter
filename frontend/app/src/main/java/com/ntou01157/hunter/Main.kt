@@ -39,6 +39,7 @@ import com.ntou01157.hunter.handlers.MissionHandler
 import com.ntou01157.hunter.handlers.SpotLogHandler
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.util.Log
+import androidx.compose.ui.text.font.FontWeight
 import com.ntou01157.hunter.models.model_api.User as ApiUser
 import com.ntou01157.hunter.models.*
 import com.ntou01157.hunter.temp.*
@@ -263,7 +264,7 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                                 modifier = Modifier.size(40.dp)
                             )
                         },
-                        label = { Text(item.label, fontSize = 9.sp) }
+                        label = { Text(item.label, fontSize = 15.sp, fontWeight = FontWeight.Bold) }
                     )
                 }
             }

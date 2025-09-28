@@ -28,9 +28,9 @@ router.post("/google", async (req, res) => {
             console.log("🆕 建立新使用者:", email);
             user = new User({
                 email,
-                firebaseUid: uid, // 可以存 Firebase UID
+                firebaseUid: uid,
                 displayName: decodedToken.name || "",
-                age: "",
+                age: "20",
                 gender: "不透露",
                 photoURL: decodedToken.picture || "",
                 role: "player",
@@ -38,16 +38,32 @@ router.post("/google", async (req, res) => {
                 lastLogin: new Date(),
                 backpackItems: [],
                 missions: [],
-                spotsScanLogs: {},
+                spotsScanLogs: {
+                    anchor: false,
+                    ball: false,
+                    eagle: false,
+                    lovechair: false,
+                    moai: false,
+                    vending: false,
+                    book: false,
+                    bookcase: false,
+                    freedomship: false,
+                    fountain: false
+                },
                 supplyScanLogs: {},
-                settings: [],
+                settings: {
+                    music: false,
+                    notification: false,
+                    language: "zh-TW"
+                },
                 buff: null,
-                username: ""
+                username: "user"
             });
 
             await user.save();
             console.log("✅ 使用者已儲存:", user._id);
-        } else {
+        }
+        else {
             console.log("🔁 使用者已存在:", user.email);
             user.lastLogin = new Date();
             await user.save();

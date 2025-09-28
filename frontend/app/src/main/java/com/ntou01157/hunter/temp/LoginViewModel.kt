@@ -16,12 +16,14 @@ class LoginViewModel : ViewModel() {
     }
 
     fun handleSignInResult(
+        activity: Activity,   // ← 新增參數
         data: Intent?,
         onSuccess: (email: String) -> Unit,
         onFailure: (String) -> Unit
     ) {
         GoogleSignInHelper.handleResult(
             data = data,
+            context = activity,   // ← 傳 context 進去
             onSuccess = { user ->
                 onSuccess(user.email ?: "unknown")
             },
