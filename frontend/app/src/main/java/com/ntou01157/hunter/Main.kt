@@ -283,7 +283,11 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                     Marker(state = MarkerState(position = it), title = "所在位置")
                 }
                 apiUser?.let { u ->
-                    spots.forEach { spot -> spotMarker(spot = spot, userId = u.id) }
+                    spots.forEach { spot -> spotMarker(
+                        spot = spot, 
+                        userId = u.id
+                        user = user,
+                        navController = navController) }
                 }
                 supplyStations.forEach { supply ->
                     SupplyMarker(supply = supply, onClick = {

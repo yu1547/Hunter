@@ -31,10 +31,8 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.ntou01157.hunter.DailyEvent
-import com.ntou01157.hunter.DailyEventDialog
 import com.ntou01157.hunter.LocationService // ← 新增：按下時再取最新定位
 import com.ntou01157.hunter.R
-import com.ntou01157.hunter.dailyEvents
 import com.ntou01157.hunter.handlers.CheckInHandler
 import com.ntou01157.hunter.models.*
 import com.ntou01157.hunter.models.Spot
@@ -44,11 +42,24 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+// 定義 Screen sealed class 以供 navController.navigate 使用
+sealed class Screen(val route: String) {
+    object BugHunt : Screen("bug_hunt")
+    object TreasureBox : Screen("treasure_box")
+    object Merchant : Screen("merchant")
+    object AncientTree : Screen("ancient_tree")
+    object SlimeAttack : Screen("slime_attack")
+    object StonePile : Screen("stone_pile")
+    object WordleGame : Screen("wordle_game")
+}
+
 @SuppressLint("UnrememberedMutableState")
 @Composable
 fun spotMarker(
         spot: Spot,
         userId: String,
+        user: User?, // 將 User 類型改為 User?
+        navController: NavController,
 ) {
     var showDialog by remember { mutableStateOf(false) }
     val markerState = remember { MarkerState(position = LatLng(spot.latitude, spot.longitude)) }
@@ -57,6 +68,15 @@ fun spotMarker(
     var showEventDialog by remember { mutableStateOf(false) }
     // 被選中的事件
     var selectedEvent by remember { mutableStateOf<DailyEvent?>(null) }
+
+    // 過濾出符合條件的任務：llm = false 且 status = 'in_progress'
+    val inProgressMissions =
+            remember(user) {
+                user?.missions?.filter { mission ->
+                    mission.isLLM == false && mission.state == "in_progress"
+                }
+                        ?: emptyList()
+            }
 
     // === 新增：相機與權限 launcher（僅接上打卡流程） ===
     val ctx = LocalContext.current
@@ -119,57 +139,116 @@ fun spotMarker(
     // 點擊地標後的對話框
     if (showDialog) {
         AlertDialog(
-            onDismissRequest = { showDialog = false },
-            confirmButton = {
-                androidx.compose.foundation.layout.Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                onDismissRequest = { showDialog = false },
+                confirmButton = {
+                    androidx.compose.foundation.layout.Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        TextButton(
+                                onClick = {
+                                    showDialog = false
+                                    // TODO: 打卡流程
+                                    // 例如：onCheckIn(spot) 或呼叫 ViewModel 發送請求
+                                    // → 已接上：檢查相機權限前，先以「當下定位」做 30m 距離驗證，通過才開相機
+                                    scope.launch {
+                                        val loc = locationService.getCurrentLocation()
+                                        if (loc == null) {
+                                            Toast.makeText(ctx, "無法取得定位", Toast.LENGTH_SHORT).show()
+                                            return@launch
+                                        }
+                                        val currentLatLng = LatLng(loc.latitude, loc.longitude)
+                                        val spotLatLng = LatLng(spot.latitude, spot.longitude)
+                                        // 確認距離
+                                        val distance =
+                                                GeoVerifier.distanceMeters(
+                                                        currentLatLng,
+                                                        spotLatLng
+                                                )
+                                        Log.i(
+                                                "GeoCheck",
+                                                "距離=%.2f m, 閾值=%.1f m, user=(%.6f,%.6f), spot=(%.6f,%.6f)".format(
+                                                        distance,
+                                                        GeoVerifier.DEFAULT_THRESHOLD_METERS,
+                                                        currentLatLng.latitude,
+                                                        currentLatLng.longitude,
+                                                        spotLatLng.latitude,
+                                                        spotLatLng.longitude
+                                                )
+                                        )
+                                        val inRange =
+                                                distance <= GeoVerifier.DEFAULT_THRESHOLD_METERS
 
-                    TextButton(onClick = {
-                        showDialog = false
-                        // TODO: 打卡流程
-                        // 例如：onCheckIn(spot) 或呼叫 ViewModel 發送請求
-                        // → 已接上：檢查相機權限前，先以「當下定位」做 30m 距離驗證，通過才開相機
-                        scope.launch {
-                            val loc = locationService.getCurrentLocation()
-                            if (loc == null) {
-                                Toast.makeText(ctx, "無法取得定位", Toast.LENGTH_SHORT).show()
-                                return@launch
-                            }
-                            val currentLatLng = LatLng(loc.latitude, loc.longitude)
-                            val spotLatLng = LatLng(spot.latitude, spot.longitude)
-                            //確認距離
-                            val distance = GeoVerifier.distanceMeters(currentLatLng, spotLatLng)
-                            Log.i(
-                                "GeoCheck",
-                                "距離=%.2f m, 閾值=%.1f m, user=(%.6f,%.6f), spot=(%.6f,%.6f)".format(
-                                   distance,
-                                   GeoVerifier.DEFAULT_THRESHOLD_METERS,
-                                   currentLatLng.latitude, currentLatLng.longitude,
-                                   spotLatLng.latitude, spotLatLng.longitude
-                               )
-                            )
-                            val inRange = distance <= GeoVerifier.DEFAULT_THRESHOLD_METERS
+                                        if (!inRange) {
+                                            Toast.makeText(
+                                                            ctx,
+                                                            "不在打卡範圍內（需 ≤ 30 公尺）",
+                                                            Toast.LENGTH_SHORT
+                                                    )
+                                                    .show()
+                                            return@launch
+                                        }
 
-                            if (!inRange) {
-                                Toast.makeText(ctx, "不在打卡範圍內（需 ≤ 30 公尺）", Toast.LENGTH_SHORT).show()
-                                return@launch
-                            }
+                                        val hasCam =
+                                                ContextCompat.checkSelfPermission(
+                                                        ctx,
+                                                        Manifest.permission.CAMERA
+                                                ) == PackageManager.PERMISSION_GRANTED
+                                        if (hasCam) {
+                                            cameraLauncher.launch(null)
+                                        } else {
+                                            permissionLauncher.launch(Manifest.permission.CAMERA)
+                                        }
+                                    }
+                                }
+                        ) { Text("打卡") }
+                        TextButton(
+                                onClick = {
+                                    showDialog = false
+                                    selectedEvent = dailyEvents.random()
+                                    showEventDialog = true
+                                }
+                        ) { Text("領取隨機事件") }
 
-                            val hasCam = ContextCompat.checkSelfPermission(
-                                ctx,
-                                Manifest.permission.CAMERA
-                            ) == PackageManager.PERMISSION_GRANTED
-                            if (hasCam) {
-                                cameraLauncher.launch(null)
-                            } else {
-                                permissionLauncher.launch(Manifest.permission.CAMERA)
-                            }
+                        inProgressMissions.forEach { mission ->
+                            TextButton(
+                                    onClick = {
+                                        when (mission.taskName) {
+                                            "Bug Hunt" -> {
+                                                navController.navigate(Screen.BugHunt.route)
+                                            }
+                                            "Treasure Box" -> {
+                                                navController.navigate(Screen.TreasureBox.route)
+                                            }
+                                            "Merchant" -> {
+                                                navController.navigate(Screen.Merchant.route)
+                                            }
+                                            "Ancient Tree" -> {
+                                                navController.navigate(Screen.AncientTree.route)
+                                            }
+                                            "Slime Attack" -> {
+                                                navController.navigate(Screen.SlimeAttack.route)
+                                            }
+                                            "Stone Pile" -> {
+                                                navController.navigate(Screen.StonePile.route)
+                                            }
+                                            "Wordle Game" -> {
+                                                navController.navigate(Screen.WordleGame.route)
+                                            }
+                                            else -> {
+                                                // 如果任務名稱沒有對應的畫面，可以顯示一個 Toast 或不做任何事
+                                                Toast.makeText(
+                                                                ctx,
+                                                                "找不到對應的任務畫面: ${mission.taskName}",
+                                                                Toast.LENGTH_SHORT
+                                                        )
+                                                        .show()
+                                            }
+                                        }
+                                    }
+                            ) { Text("執行「${mission.taskName}」任務") }
                         }
-                    }) { Text("打卡") }
-                }
-            },
-
+                    }
+                },
                 dismissButton = { TextButton(onClick = { showDialog = false }) { Text("取消") } },
                 title = { Text(spot.ChName) },
                 text = {
