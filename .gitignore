@@ -23,5 +23,4 @@ google-services.json
 # == macOS or OS-related ==
 *.log
 .DS_Store
-frontend/app/google-services.json
-backend/config/hunter-cde2a-firebase-adminsdk-fbsvc-975d1238b1.json
+/frontend/app/google-services.json
