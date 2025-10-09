@@ -312,6 +312,27 @@ const completeSlimeAttack = async (req, res) => {
     }
 };
 
+const getUserTasks = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const user = await User.findById(userId).populate('tasks'); // 使用 populate 來取得完整的 task 物件
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: "使用者不存在" });
+        }
+
+        // user.tasks 現在會是完整的任務物件陣列
+        res.status(200).json({
+            success: true,
+            tasks: user.tasks,
+        });
+
+    } catch (error) {
+        console.error("取得使用者任務時發生錯誤:", error);
+        res.status(500).json({ success: false, message: "伺服器錯誤" });
+    }
+};
+
 module.exports = {
     getAllTasks,
     getTaskById,
@@ -320,4 +341,5 @@ module.exports = {
     openTreasureBox,
     blessTree,
     completeSlimeAttack,
+    getUserTasks,
 };
