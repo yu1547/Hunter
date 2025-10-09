@@ -697,6 +697,9 @@ fun BagScreen(navController: NavHostController) {
                                             Text("前往合成", color = Color.Black, fontSize = 23.sp)
                                         }
                                     }
+                                    else{
+                                        Spacer(Modifier.height(100.dp))
+                                    }
 
                                 }
                             }
