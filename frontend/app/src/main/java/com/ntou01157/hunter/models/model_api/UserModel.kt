@@ -7,6 +7,7 @@ import java.util.Date
 data class User(
         @SerializedName("_id") val id: String,
         @SerializedName("username") val username: String,
+        @SerializedName("email") val email: String, // 新增
         @SerializedName("backpackItems") val backpackItems: List<BackpackItem>,
         @SerializedName("missions") val missions: List<Mission> = emptyList(),
         @SerializedName("gender") val gender: String?,
@@ -14,7 +15,8 @@ data class User(
         @SerializedName("photoURL") val photoURL: String? = null,
         @SerializedName("settings") val settings: Settings?,
         @SerializedName("spotsScanLogs") val spotsScanLogs: Map<String, Boolean>? = null,
-        @SerializedName("buff") val buff: List<Buff>? = null
+        @SerializedName("buff") val buff: List<Buff>? = null,
+        @SerializedName("score") val score: Double = 0.0 // 新增
 
 // 其他用戶屬性...
 )
@@ -30,7 +32,7 @@ data class BackpackItem(
 // 使用者任務進度模型
 data class Mission(
         @SerializedName("taskId") val taskId: String,
-        @SerializedName("taskName") val taskName: String,
+        @SerializedName("taskName") val taskName: String, // 在 Spot_UI.kt 中需要
         @SerializedName("state") val state: String,
         @SerializedName("acceptedAt") val acceptedAt: Date?,
         @SerializedName("expiresAt") val expiresAt: Date?,
@@ -56,8 +58,8 @@ data class Buff(
         @SerializedName("name") val name: String, // e.g. "ancient_branch"
         @SerializedName("expiresAt") val expiresAt: String // e.g. "2025-08-24T22:46:28.153Z"
 ) {
-    fun expiresAtMillisOrNull(): Long? =
-            runCatching { java.time.Instant.parse(expiresAt).toEpochMilli() }.getOrNull()
+        fun expiresAtMillisOrNull(): Long? =
+                runCatching { java.time.Instant.parse(expiresAt).toEpochMilli() }.getOrNull()
 }
 
 fun List<Buff>?.expireAtOf(name: String): Long? =
