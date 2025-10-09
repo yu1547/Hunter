@@ -8,6 +8,10 @@ import okhttp3.Request
 import org.json.JSONArray
 import org.json.JSONObject
 
+// 新增：導入 Task 相關模型
+import com.ntou01157.hunter.models.model_api.CheckPlaces
+import com.ntou01157.hunter.models.model_api.RewardItem
+import com.ntou01157.hunter.models.model_api.Task
 object SpotApi {
     private val client = OkHttpClient()
 
@@ -77,11 +81,89 @@ object SpotApi {
             emptyList()
         }
     }
+    // --- ✅ 已完成 getUserTasks 的實作 ---
     fun getUserTasks(userId: String): List<Task> {
         val url = "${ApiConfig.BASE_URL}/api/tasks/user/$userId"
-        // ... 實作完整的網路請求邏輯，類似 SpotApi.getAllSpots
-        // 成功時，解析 JSON 並回傳 List<Task>
-        // 失敗時，回傳 emptyList()
-        return emptyList() // 這裡先放假的回傳值
+
+        val token = TokenManager.idToken
+        if (token.isNullOrEmpty()) {
+            Log.e("SpotApi", "❌ 沒有 Token，無法呼叫 getUserTasks API")
+            return emptyList()
+        }
+
+        val request = Request.Builder()
+            .url(url)
+            .get()
+            .addHeader("Authorization", "Bearer $token")
+            .build()
+
+        return try {
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    Log.e("SpotApi", "getUserTasks 錯誤: HTTP ${response.code} from $url")
+                    return emptyList()
+                }
+                val body = response.body?.string() ?: return emptyList()
+                val root = JSONObject(body)
+
+                if (!root.optBoolean("success", false)) {
+                    Log.e("SpotApi", "getUserTasks 回應 success=false")
+                    return emptyList()
+                }
+
+                val tasksArray = root.optJSONArray("tasks") ?: return emptyList()
+                val tasksList = mutableListOf<Task>()
+
+                for (i in 0 until tasksArray.length()) {
+                    val taskJson = tasksArray.getJSONObject(i)
+
+                    // 解析 nested checkPlaces
+                    val checkPlacesArray = taskJson.optJSONArray("checkPlaces")
+                    val checkPlacesList = mutableListOf<CheckPlaces>()
+                    if (checkPlacesArray != null) {
+                        for (j in 0 until checkPlacesArray.length()) {
+                            val placeJson = checkPlacesArray.getJSONObject(j)
+                            checkPlacesList.add(
+                                CheckPlaces(spotId = placeJson.getString("spotId"))
+                            )
+                        }
+                    }
+
+                    // 解析 nested rewardItems
+                    val rewardItemsArray = taskJson.optJSONArray("rewardItems")
+                    val rewardItemsList = mutableListOf<RewardItem>()
+                    if (rewardItemsArray != null) {
+                        for (j in 0 until rewardItemsArray.length()) {
+                            val itemJson = rewardItemsArray.getJSONObject(j)
+                            rewardItemsList.add(
+                                RewardItem(
+                                    itemId = itemJson.getString("itemId"),
+                                    quantity = itemJson.getInt("quantity")
+                                )
+                            )
+                        }
+                    }
+
+                    val task = Task(
+                        taskId = taskJson.getString("_id"),
+                        taskName = taskJson.getString("taskName"),
+                        taskDescription = taskJson.optString("taskDescription", null),
+                        taskDifficulty = taskJson.optString("taskDifficulty", null),
+                        taskTarget = taskJson.getString("taskTarget"),
+                        checkPlaces = checkPlacesList,
+                        taskDuration = taskJson.optLong("taskDuration", 0L).takeIf { it > 0 },
+                        rewardItems = rewardItemsList,
+                        rewardScore = taskJson.getInt("rewardScore"),
+                        isLLM = taskJson.optBoolean("isLLM", false)
+                    )
+                    tasksList.add(task)
+                }
+                Log.i("SpotApi", "成功為使用者 $userId 取得 ${tasksList.size} 個任務")
+                tasksList
+            }
+        } catch (e: Exception) {
+            Log.e("SpotApi", "getUserTasks 失敗 (userId: $userId)", e)
+            emptyList()
+        }
     }
 }
