@@ -1,5 +1,6 @@
 package com.ntou01157.hunter
 
+// import kotlinx.coroutines.coroutineScope
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -11,6 +12,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,9 +24,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
@@ -37,9 +42,11 @@ import com.ntou01157.hunter.api.RetrofitClient // Correct import for RetrofitCli
 import com.ntou01157.hunter.api.SpotApi
 import com.ntou01157.hunter.api.SupplyApi
 import com.ntou01157.hunter.data.RankRepository // Correct import for your RankRepository
+import com.ntou01157.hunter.data.TaskRepository
 import com.ntou01157.hunter.handlers.SpotLogHandler
 import com.ntou01157.hunter.models.*
 import com.ntou01157.hunter.models.model_api.User as ApiUser
+import com.ntou01157.hunter.models.model_api.UserTask
 import com.ntou01157.hunter.models.model_api.expireAtOf
 import com.ntou01157.hunter.temp.*
 import com.ntou01157.hunter.ui.*
@@ -145,22 +152,148 @@ class Main : ComponentActivity() {
 
                 composable("ranking") { RankingScreen(navController = navController) }
                 composable("tasklist") { TaskListScreen(navController) }
-                composable("bugHunt") { WordleGameUI() }
-                composable("ancientTree") {
-                    AncientTreeUI(onEventCompleted = { navController.popBackStack() })
+                composable(
+                        route = "bugHunt/{userId}/{taskId}",
+                        arguments =
+                                listOf(
+                                        navArgument("userId") { type = NavType.StringType },
+                                        navArgument("taskId") { type = NavType.StringType }
+                                )
+                ) { backStackEntry ->
+                    val userId = backStackEntry.arguments?.getString("userId")
+                    val taskId = backStackEntry.arguments?.getString("taskId")
+                    if (userId != null && taskId != null) {
+                        WordleGameUI(
+                                userId = userId,
+                                taskId = taskId,
+                                onEventCompleted = { success ->
+                                    if (success) {
+                                        navController.previousBackStackEntry?.savedStateHandle?.set(
+                                                "task_completed",
+                                                true
+                                        )
+                                    }
+                                    navController.popBackStack()
+                                }
+                        )
+                    }
                 }
-                composable("merchant") {
-                    MerchantUI(onEventCompleted = { navController.popBackStack() })
+                composable(
+                        route = "ancientTree/{userId}", // 1. 定義路徑和參數
+                        arguments =
+                                listOf(
+                                        navArgument("userId") { type = NavType.StringType }
+                                ) // 2. 定義參數類型
+                ) { backStackEntry ->
+                    val userId = backStackEntry.arguments?.getString("userId")
+                    if (userId != null) {
+                        AncientTreeUI(
+                                userId = userId,
+                                onEventCompleted = { success ->
+                                    if (success) {
+                                        navController.previousBackStackEntry?.savedStateHandle?.set(
+                                                "task_completed",
+                                                true
+                                        )
+                                    }
+                                    navController.popBackStack()
+                                }
+                        )
+                    }
                 }
-                composable("slimeAttack") {
-                    SlimeAttackUI(onEventCompleted = { navController.popBackStack() })
+                composable(
+                        route = "merchant/{userId}",
+                        arguments = listOf(navArgument("userId") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val userId = backStackEntry.arguments?.getString("userId")
+                    if (userId != null) {
+                        MerchantUI(
+                                userId = userId,
+                                onEventCompleted = { success ->
+                                    if (success) {
+                                        navController.previousBackStackEntry?.savedStateHandle?.set(
+                                                "task_completed",
+                                                true
+                                        )
+                                    }
+                                    navController.popBackStack()
+                                }
+                        )
+                    }
                 }
-                composable("stonePile") {
-                    StonePileUI(onEventCompleted = { navController.popBackStack() })
+                composable(
+                        // 1. 在路由中新增一個參數 hasTorchBuff
+                        route = "slimeAttack/{userId}/{hasTorchBuff}",
+                        arguments =
+                                listOf(
+                                        navArgument("userId") { type = NavType.StringType },
+                                        navArgument("hasTorchBuff") {
+                                            type = NavType.BoolType
+                                        } // 定義參數類型
+                                )
+                ) { backStackEntry ->
+                    val userId = backStackEntry.arguments?.getString("userId")
+                    // 2. 接收 hasTorchBuff 參數
+                    val hasTorchBuff = backStackEntry.arguments?.getBoolean("hasTorchBuff") ?: false
+                    if (userId != null) {
+                        SlimeAttackUI(
+                                userId = userId,
+                                hasTorchBuff = hasTorchBuff, // 3. 將參數傳給 UI
+                                onEventCompleted = { success ->
+                                    if (success) {
+                                        navController.previousBackStackEntry?.savedStateHandle?.set(
+                                                "task_completed",
+                                                true
+                                        )
+                                    }
+                                    navController.popBackStack()
+                                }
+                        )
+                    }
                 }
-                composable("treasureBox") {
-                    TreasureBoxUI(onEventCompleted = { navController.popBackStack() })
+
+                composable(
+                        route = "stonePile/{userId}",
+                        arguments = listOf(navArgument("userId") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val userId = backStackEntry.arguments?.getString("userId")
+                    if (userId != null) {
+                        StonePileUI(
+                                userId = userId,
+                                onEventCompleted = { success ->
+                                    if (success) {
+                                        navController.previousBackStackEntry?.savedStateHandle?.set(
+                                                "task_completed",
+                                                true
+                                        )
+                                    }
+                                    navController.popBackStack()
+                                }
+                        )
+                    }
                 }
+
+                composable(
+                        route = "treasureBox/{userId}",
+                        arguments = listOf(navArgument("userId") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val userId = backStackEntry.arguments?.getString("userId")
+                    if (userId != null) {
+                        TreasureBoxUI(
+                                userId = userId,
+                                onEventCompleted = { success ->
+                                    if (success) {
+                                        navController.previousBackStackEntry?.savedStateHandle?.set(
+                                                "task_completed",
+                                                true
+                                        )
+                                    }
+                                    navController.popBackStack()
+                                }
+                        )
+                    }
+                }
+
                 /*composable("settings") {
                     SettingsScreen(
                         navController = navController,
@@ -178,7 +311,62 @@ class Main : ComponentActivity() {
 fun MainScreen(navController: androidx.navigation.NavHostController) {
     var showChatDialog by remember { mutableStateOf(false) }
     var apiUser by remember { mutableStateOf<ApiUser?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current // ✅ 新增: 取得 context 以顯示 Toast
+    // --- 1. 新增：管理 UserTask 列表的狀態 ---
+    var userTasks by remember { mutableStateOf(emptyList<UserTask>()) }
+    var isLoadingTasks by remember { mutableStateOf(false) }
 
+    // --- 2. 新增：刷新任務的函式 ---
+    fun refreshTasks(userId: String) {
+        coroutineScope.launch {
+            isLoadingTasks = true
+            try {
+                val tasks = TaskRepository.refreshAndGetTasks(userId)
+                userTasks = tasks
+            } catch (e: Exception) {
+                Log.e("MainScreen", "刷新任務失敗", e)
+                // ✅ 新增: 在主執行緒上顯示 Toast 錯誤訊息
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "任務列表刷新失敗，請稍後再試", Toast.LENGTH_SHORT).show()
+                }
+            } finally {
+                isLoadingTasks = false
+            }
+        }
+    }
+
+    // --- 3. 修改：使用導航返回的時機來刷新資料 ---
+    val currentBackStackEntry by navController.currentBackStackEntryAsState()
+    LaunchedEffect(currentBackStackEntry) {
+        // 當畫面回到 "main" 時，重新載入使用者與任務資料
+        if (currentBackStackEntry?.destination?.route == "main") {
+            try {
+                val email = FirebaseAuth.getInstance().currentUser?.email ?: return@LaunchedEffect
+                val user = RetrofitClient.apiService.getUserByEmail(email)
+                apiUser = user
+                refreshTasks(user.id) // 取得 user 後刷新任務
+            } catch (e: Exception) {
+                Log.e("MainScreen", "載入使用者失敗: ${e.message}", e)
+            }
+        }
+    }
+
+    // +++ 新增監聽器以處理從事件頁面返回的刷新請求 (修正版) +++
+    val taskCompletedResult =
+            currentBackStackEntry
+                    ?.savedStateHandle
+                    ?.getLiveData<Boolean>("task_completed")
+                    ?.observeAsState()
+
+    LaunchedEffect(taskCompletedResult?.value) {
+        // 當 taskCompletedResult 的值變為 true 時執行
+        if (taskCompletedResult?.value == true) {
+            apiUser?.id?.let { userId -> refreshTasks(userId) }
+            // 處理完畢後，立即從 SavedStateHandle 中移除標記，避免重複觸發
+            currentBackStackEntry?.savedStateHandle?.remove<Boolean>("task_completed")
+        }
+    }
     // ===== Buff 狀態 ===========================================
     var branchExpireAt by remember { mutableStateOf<Long?>(null) }
     LaunchedEffect(Unit) {
@@ -198,7 +386,6 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
     var selectedSupply by remember { mutableStateOf<Supply?>(null) }
     var showSupplyDialog by remember { mutableStateOf(false) }
 
-    val context = LocalContext.current
     val locationPermissionState =
             rememberPermissionState(android.Manifest.permission.ACCESS_FINE_LOCATION)
     val locationService = remember { LocationService(context) }
@@ -279,7 +466,13 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                 userLocation?.let { Marker(state = MarkerState(position = it), title = "所在位置") }
                 apiUser?.let { u ->
                     spots.forEach { spot ->
-                        spotMarker(spot = spot, userId = u.id, navController = navController)
+                        // --- 4. 修改：將完整的任務列表傳遞給 spotMarker ---
+                        spotMarker(
+                                spot = spot,
+                                userId = u.id,
+                                userTasks = userTasks, // <-- 傳遞已處理好的任務列表
+                                navController = navController
+                        )
                     }
                 }
                 supplyStations.forEach { supply ->
@@ -341,27 +534,41 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                                 contentColor = Color.White
                         )
 
-                Button(onClick = { navController.navigate("bugHunt") }, colors = sideButtonColors) {
-                    Text("BugHunt")
-                }
                 Button(
-                        onClick = { navController.navigate("ancientTree") },
+                        onClick = {
+                            apiUser?.id?.let { navController.navigate("ancientTree/$it") }
+                        },
                         colors = sideButtonColors
                 ) { Text("古樹") }
                 Button(
-                        onClick = { navController.navigate("merchant") },
+                        onClick = { apiUser?.id?.let { navController.navigate("merchant/$it") } },
                         colors = sideButtonColors
                 ) { Text("商人") }
                 Button(
-                        onClick = { navController.navigate("slimeAttack") },
+                        onClick = {
+                            apiUser?.let { user ->
+                                // 4. 檢查 BUFF 狀態
+                                val now = System.currentTimeMillis()
+                                val hasTorch =
+                                        apiUser?.buff?.any {
+                                            it.name == "torch" &&
+                                                    (it.expiresAtMillisOrNull() ?: 0) > now
+                                        }
+                                                ?: false
+                                // 5. 導航時將 BUFF 狀態傳過去
+                                navController.navigate("slimeAttack/${user.id}/$hasTorch")
+                            }
+                        },
                         colors = sideButtonColors
                 ) { Text("史萊姆") }
                 Button(
-                        onClick = { navController.navigate("stonePile") },
+                        onClick = { apiUser?.id?.let { navController.navigate("stonePile/$it") } },
                         colors = sideButtonColors
                 ) { Text("石堆") }
                 Button(
-                        onClick = { navController.navigate("treasureBox") },
+                        onClick = {
+                            apiUser?.id?.let { navController.navigate("treasureBox/$it") }
+                        },
                         colors = sideButtonColors
                 ) { Text("寶箱") }
             }
