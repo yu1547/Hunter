@@ -471,7 +471,8 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                                 spot = spot,
                                 userId = u.id,
                                 userTasks = userTasks, // <-- 傳遞已處理好的任務列表
-                                navController = navController
+                                navController = navController,
+                                apiUser = u // ✅ 將 apiUser 物件傳遞進去
                         )
                     }
                 }
@@ -534,43 +535,45 @@ fun MainScreen(navController: androidx.navigation.NavHostController) {
                                 contentColor = Color.White
                         )
 
-                Button(
-                        onClick = {
-                            apiUser?.id?.let { navController.navigate("ancientTree/$it") }
-                        },
-                        colors = sideButtonColors
-                ) { Text("古樹") }
-                Button(
-                        onClick = { apiUser?.id?.let { navController.navigate("merchant/$it") } },
-                        colors = sideButtonColors
-                ) { Text("商人") }
-                Button(
-                        onClick = {
-                            apiUser?.let { user ->
-                                // 4. 檢查 BUFF 狀態
-                                val now = System.currentTimeMillis()
-                                val hasTorch =
-                                        apiUser?.buff?.any {
-                                            it.name == "torch" &&
-                                                    (it.expiresAtMillisOrNull() ?: 0) > now
-                                        }
-                                                ?: false
-                                // 5. 導航時將 BUFF 狀態傳過去
-                                navController.navigate("slimeAttack/${user.id}/$hasTorch")
-                            }
-                        },
-                        colors = sideButtonColors
-                ) { Text("史萊姆") }
-                Button(
-                        onClick = { apiUser?.id?.let { navController.navigate("stonePile/$it") } },
-                        colors = sideButtonColors
-                ) { Text("石堆") }
-                Button(
-                        onClick = {
-                            apiUser?.id?.let { navController.navigate("treasureBox/$it") }
-                        },
-                        colors = sideButtonColors
-                ) { Text("寶箱") }
+                // Button(
+                //         onClick = {
+                //             apiUser?.id?.let { navController.navigate("ancientTree/$it") }
+                //         },
+                //         colors = sideButtonColors
+                // ) { Text("古樹") }
+                // Button(
+                //         onClick = { apiUser?.id?.let { navController.navigate("merchant/$it") }
+                // },
+                //         colors = sideButtonColors
+                // ) { Text("商人") }
+                // Button(
+                //         onClick = {
+                //             apiUser?.let { user ->
+                //                 // 4. 檢查 BUFF 狀態
+                //                 val now = System.currentTimeMillis()
+                //                 val hasTorch =
+                //                         apiUser?.buff?.any {
+                //                             it.name == "torch" &&
+                //                                     (it.expiresAtMillisOrNull() ?: 0) > now
+                //                         }
+                //                                 ?: false
+                //                 // 5. 導航時將 BUFF 狀態傳過去
+                //                 navController.navigate("slimeAttack/${user.id}/$hasTorch")
+                //             }
+                //         },
+                //         colors = sideButtonColors
+                // ) { Text("史萊姆") }
+                // Button(
+                //         onClick = { apiUser?.id?.let { navController.navigate("stonePile/$it") }
+                // },
+                //         colors = sideButtonColors
+                // ) { Text("石堆") }
+                // Button(
+                //         onClick = {
+                //             apiUser?.id?.let { navController.navigate("treasureBox/$it") }
+                //         },
+                //         colors = sideButtonColors
+                // ) { Text("寶箱") }
             }
 
             // 客服

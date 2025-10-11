@@ -28,6 +28,7 @@ import com.ntou01157.hunter.LocationService
 import com.ntou01157.hunter.R
 import com.ntou01157.hunter.handlers.CheckInHandler
 import com.ntou01157.hunter.models.*
+import com.ntou01157.hunter.models.model_api.User as ApiUser
 import com.ntou01157.hunter.models.model_api.UserTask
 import com.ntou01157.hunter.utils.GeoVerifier
 import com.ntou01157.hunter.utils.Vectorizer
@@ -55,6 +56,7 @@ fun spotMarker(
         userId: String,
         userTasks: List<UserTask>, // <-- 【修改點 C】 修改參數
         navController: NavHostController, // <-- 修正型別
+        apiUser: ApiUser? // ✅ 2. 新增 apiUser 參數
 ) {
     // --- 狀態管理 ---
     var showDialog by remember { mutableStateOf(false) }
@@ -186,6 +188,21 @@ fun spotMarker(
                                                         val taskId = userTask.task.taskId
                                                         navController.navigate(
                                                                 "$route/$userId/$taskId"
+                                                        )
+                                                    } else if (route == "slimeAttack") {
+                                                        // ✅ 3. 定義 now 來取得當前時間
+                                                        val now = System.currentTimeMillis()
+                                                        // ✅ 4. 使用傳入的 apiUser 來檢查 BUFF
+                                                        val hasTorch =
+                                                                apiUser?.buff?.any {
+                                                                    it.name == "torch" &&
+                                                                            (it.expiresAtMillisOrNull()
+                                                                                    ?: 0) > now
+                                                                }
+                                                                        ?: false
+                                                        // ✅ 5. 導航到正確的路徑
+                                                        navController.navigate(
+                                                                "$route/$userId/$hasTorch"
                                                         )
                                                     } else {
                                                         // 其他事件頁面需要 userId
