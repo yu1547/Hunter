@@ -19,6 +19,9 @@ async function decFromBackpack(userId, itemId, session) {
         { 'backpackItems.$': 1 }
     ).session(session);
     if (!u || !u.backpackItems?.length) throw new Error('NO_STOCK');
+    
+    // 從查詢結果 u 中取得物品的當前數量
+    const currentQty = u.backpackItems[0].quantity;
 
     if (currentQty === 1) {
         // 會變 0：直接移除該項，避免把 quantity 寫成 0（因為 schema min:1）

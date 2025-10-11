@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const { ObjectId } = mongoose.Types;
 const User = require('../models/userModel');
 const Item = require('../models/itemModel');
-
+const { completeEvent } = require('./eventController');
 // GET 所有任務
 const getAllTasks = async (req, res) => {
     try {
@@ -58,8 +58,8 @@ const startGame = async (req, res) => {
             return res.status(404).json({ success: false, message: '用戶沒有此任務' });
         }
 
-        // 2. 檢查任務狀態，只能從 'available' 變為 'in_progress'
-        if (mission.state !== 'available') {
+        // 2. 檢查任務狀態，允許從 'available' 或 'in_progress' 開始
+        if (mission.state !== 'available' && mission.state !== 'in_progress') {
             return res.status(400).json({ success: false, message: `任務狀態為 ${mission.state}，無法開始遊戲` });
         }
 
@@ -69,22 +69,25 @@ const startGame = async (req, res) => {
 
         // 4. 將遊戲狀態暫時儲存在記憶體中
         gameStates[userId] = {
-            taskId: eventId,
+            taskId: eventId, // taskId 就是 eventId
             secretWord: secretWord,
             guesses: [],
             attemptsLeft: 6,
             status: 'playing',
         };
         
-        // 5. 更新用戶的任務狀態
-        mission.state = 'claimed';
+        // 5. 僅在任務狀態為 'available' 時才更新用戶的任務狀態
+        if (mission.state === 'available') {
+            mission.state = 'in_progress';
+            await user.save();
+        }
         await user.save();
 
         res.status(200).json({
             success: true,
             message: "遊戲已開始！",
-            gameId: newGame._id,
-            gameId: userId, // 暫時使用 userId 作為遊戲 ID
+            // ✅ 修正: gameId 不是必要的，前端可以用 userId 繼續玩
+            gameId: userId,
         });
         
     } catch (error) {
@@ -169,13 +172,13 @@ const submitGuess = async (req, res) => {
             message = '恭喜你！猜對了！';
             await user.save();
             
-            // 遊戲獲勝，交由 completeEvent 處理獎勵發放，傳遞正確的 eventId
-            const eventReq = {
-                body: { userId: game.userId, gameResult: game.status },
-                params: { eventId: game.eventId } // 從 game 物件取得關聯的 eventId
-            };
-            await completeEvent(eventReq, res);
-            return;
+            // // 遊戲獲勝，交由 completeEvent 處理獎勵發放，傳遞正確的 eventId
+            // const eventReq = {
+            //     body: { userId: game.userId, gameResult: game.status },
+            //     params: { eventId: game.eventId } // 從 game 物件取得關聯的 eventId
+            // };
+            // await completeEvent(eventReq, res);
+            // return;
         } else if (game.attemptsLeft <= 0) {
             game.status = 'lose';
             mission.state = 'claimed'; // 任務狀態設為完成
@@ -183,17 +186,17 @@ const submitGuess = async (req, res) => {
             success = false;
             await user.save();
 
-            // 呼叫 completeEvent 處理失敗狀態
-            const eventReq = {
-                body: { userId: game.userId, gameResult: game.status },
-                params: { eventId: game.eventId } // 從 game 物件取得關聯的 eventId
-            };
-            await completeEvent(eventReq, res);
+            // // 呼叫 completeEvent 處理失敗狀態
+            // const eventReq = {
+            //     body: { userId: game.userId, gameResult: game.status },
+            //     params: { eventId: game.eventId } // 從 game 物件取得關聯的 eventId
+            // };
+            // await completeEvent(eventReq, res);
         } else {
             message = '答案錯誤，請繼續猜測。';
         }
 
-        await game.save();
+        // await game.save();
 
         res.status(200).json({
             success: success,
@@ -257,9 +260,30 @@ const blessTree = async (req, res) => {
             return res.status(404).json({ success: false, message: '古樹事件不存在' });
         }
 
+        // ======================= START: 新增的驗證邏輯 =======================
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: '找不到使用者' });
+        }
+
+        const eventId = event._id.toString();
+        const mission = user.missions.find(m => m.taskId.toString() === eventId);
+
+        // 檢查任務是否存在
+        if (!mission) {
+            return res.status(400).json({ success: false, message: '你尚未領取古樹的祝福任務，無法進行獻祭。' });
+        }
+        
+        // 檢查任務狀態是否正確
+        if (mission.state !== 'available' && mission.state !== 'in_progress') {
+             return res.status(400).json({ success: false, message: `任務狀態為 ${mission.state}，無法進行獻祭。` });
+        }
+        // ======================= END: 新增的驗證邏輯 =========================
+
         // 將古樹事件的 ID 和選定的選項傳遞給 completeEvent
         req.params.eventId = event._id;
-        req.body.selectedOption = `交出${itemToOffer}`;
+        req.body.selectedOption = itemToOffer;
+        console.log(`交出物品: ${itemToOffer}`);
         
         return await completeEvent(req, res);
     } catch (error) {
@@ -315,7 +339,7 @@ const completeSlimeAttack = async (req, res) => {
 const getUserTasks = async (req, res) => {
     try {
         const { userId } = req.params;
-        const user = await User.findById(userId).populate('tasks'); // 使用 populate 來取得完整的 task 物件
+        const user = await User.findById(userId).populate('missions.taskId'); // 使用 populate 來取得完整的 task 物件
 
         if (!user) {
             return res.status(404).json({ success: false, message: "使用者不存在" });
