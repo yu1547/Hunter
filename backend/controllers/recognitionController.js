@@ -30,13 +30,14 @@ exports.handleRecognition = async (req, res) => {
             const result = await recognitionService.updateUserRecognition(userId, spotName);
             return res.json({ success: true, updatedLogs: result, score: data.score, predicted: data.predicted, reason: data.reason });
         } else {
-            return res.status(400).json({
+            return res.json({
                 success: false,
                 message: "辨識失敗或與 spotName 不一致",
                 predicted: data.predicted,
                 score: data.score,
                 reason: data.reason
             });
+
         }
     } catch (error) {
         console.error("辨識流程出錯：", error?.response?.data || error.message);

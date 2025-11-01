@@ -92,17 +92,23 @@ fun spotMarker(
 
                         // （位置驗證改在按下按鈕時做，這裡不再檢查）
 
-                        val spotName = spot.spotName
+                        val chname = spot.ChName
                         try {
-                            val res = CheckInHandler.checkIn(userId, spotName, vector)
-                            if (res.success) {
-                                Toast.makeText(ctx, "打卡成功", Toast.LENGTH_SHORT).show()
+                            val res = CheckInHandler.checkIn(userId, spot.spotName, vector)
+
+                            // 直接印整個回傳內容，不拆開
+                            Log.d("CheckIn", "response = $res")
+
+                            if (res.success ) {
+                                Toast.makeText(ctx, "「${chname}」打卡成功", Toast.LENGTH_LONG).show()
                             } else {
-                                Toast.makeText(ctx, "打卡失敗", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(ctx, "「${chname}」打卡失敗，請更換角度與距離重新嘗試拍攝", Toast.LENGTH_LONG).show()
                             }
                         } catch (e: Exception) {
-                            Toast.makeText(ctx, "打卡錯誤：${e.message}", Toast.LENGTH_SHORT).show()
+                            Log.e("CheckIn", "backend error", e)
+                            Toast.makeText(ctx, "打卡錯誤，未連接上後端，請聯繫管理員修復", Toast.LENGTH_LONG).show()
                         }
+
                     }
                     // --------圖片轉向量
                     // 這裡用傳入參數 userId；spotName 使用當前 spot.spotName
