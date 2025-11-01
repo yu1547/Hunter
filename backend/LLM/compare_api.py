@@ -1,4 +1,4 @@
-# compare_api.py
+# compare_api.py  (第一份策略 × 第二份介面)
 import os
 import sqlite3
 import numpy as np
@@ -12,11 +12,8 @@ def load_features_from_database(db_file):
     if not os.path.exists(db_file):
         raise FileNotFoundError(f"錯誤：特徵數據庫 {db_file} 不存在")
 
-    # 連接到SQLite數據庫
     conn = sqlite3.connect(db_file)
     cursor = conn.cursor()
-
-    # 讀取所有數據
     cursor.execute("SELECT label, feature FROM features")
     rows = cursor.fetchall()
     conn.close()
@@ -27,24 +24,39 @@ def load_features_from_database(db_file):
     labels = []
     features = []
     for label, feature_bytes in rows:
-        # 將二進制數據轉換回numpy數組
         feature = np.frombuffer(feature_bytes, dtype=np.float32)
         labels.append(label)
         features.append(feature)
 
     return features, labels
 
-# 啟動時載入到記憶體，避免每次 I/O
-_DB_CACHE = {"features": None, "labels": None}
+# 快取
+_DB_CACHE = {"features": None, "labels": None, "features_norm": None}
+
+def _l2_normalize(v: np.ndarray, axis: int = -1, eps: float = 1e-8) -> np.ndarray:
+    n = np.linalg.norm(v, axis=axis, keepdims=True)
+    n = np.maximum(n, eps)
+    return v / n
 
 def ensure_cache():
     if _DB_CACHE["features"] is None:
         feats, labels = load_features_from_database(FEATURE_DB_PATH)
         _DB_CACHE["features"] = feats
         _DB_CACHE["labels"] = labels
+        # 一次性正規化訓練特徵（符合第一份策略：先正規化，再用內積作餘弦）
+        try:
+            F = np.stack(feats, axis=0)  # (N, D)
+        except Exception:
+            # 維度不一致時退回逐筆處理
+            F = None
+        if F is not None:
+            _DB_CACHE["features_norm"] = _l2_normalize(F, axis=1)  # (N, D)
+        else:
+            # 逐筆正規化
+            _DB_CACHE["features_norm"] = np.stack([_l2_normalize(f[np.newaxis, :], axis=1).squeeze(0) for f in feats], axis=0)
 
 def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
-    # 余弦相似度計算: cos(θ) = A·B / (||A||·||B||)
+    # 保留介面，但實際決策改用「先正規化後內積」以對齊第一份策略
     denom = float(np.linalg.norm(a) * np.linalg.norm(b))
     if denom == 0.0:
         return 0.0
@@ -52,103 +64,81 @@ def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
 
 def compare_vector(spotName: str, vector: List[float]):
     """
-    預測並回傳結果（HTTP API 版本，不做影像讀取）
-    - 實現雙重閾值判斷邏輯
-    - 中等可信度：按類別分組，比較不同類別間的相似度差距
+    介面與回傳格式維持第二份。
+    策略採用第一份：類別最高相似度的比例門檻 1.01 + 絕對門檻 0.72。
     """
     ensure_cache()
     train_features = _DB_CACHE["features"]
     train_labels = _DB_CACHE["labels"]
+    train_features_norm = _DB_CACHE["features_norm"]  # (N, D)
 
-    q = np.asarray(vector, dtype=np.float32)
+    q = np.asarray(vector, dtype=np.float32).reshape(1, -1)  # (1, D)
+    q_norm = _l2_normalize(q, axis=1)  # (1, D)
 
-    # 計算與訓練集中所有特徵的余弦相似度
-    similarities: List[Tuple[str, float]] = []
-    for idx, train_feature in enumerate(train_features):
-        # 余弦相似度計算: cos(θ) = A·B / (||A||·||B||)
-        sim = cosine_similarity(q, train_feature)
-        similarities.append((train_labels[idx], sim))
+    # 與全部訓練特徵的相似度：內積（等同餘弦）
+    sims = (q_norm @ train_features_norm.T).astype(np.float32).ravel()  # (N,)
 
-    # 根據相似度排序
-    similarities.sort(key=lambda x: x[1], reverse=True)
+    # 依樣本排序
+    idx_sorted = np.argsort(-sims)
+    similarities: List[Tuple[str, float]] = [(train_labels[i], float(sims[i])) for i in idx_sorted]
 
-    # 選擇第一個最相似的結果
-    similar_images = similarities[:1]
-    if not similar_images:
-        # 無法找到相似的向量 -> 視為未知類別
-        most_similar_class = "未知類別"
-        highest_similarity = 0.0
-        prediction_confidence = "低可信度"
-        prediction_reason = "無法找到相似的向量"
+    # 若完全無可用樣本
+    if len(similarities) == 0:
         return {
-            "predicted": most_similar_class,
-            "score": float(highest_similarity),
+            "predicted": "未知類別",
+            "score": 0.0,
             "matched": False,
-            "reason": prediction_reason
+            "reason": "訓練集特徵為空"
         }
 
-    # 找出最相似的結果（第一個結果）
-    most_similar_class, highest_similarity = similar_images[0]
+    # 樣本層級 Top-1（供 score 與資訊用）
+    most_similar_class, highest_similarity = similarities[0]
 
-    # 實現雙重閾值判斷邏輯
-    prediction_confidence = "未知"
-    prediction_reason = ""
+    # 依「類別」聚合，取各類別最高相似度
+    class_best = {}
+    for label, sim in similarities:
+        # 保留此類別的最高相似度
+        if label not in class_best or sim > class_best[label]:
+            class_best[label] = sim
 
-    if highest_similarity > 0.8:
-        # 高可信度 - 直接採用最相似圖片的類別
-        prediction_confidence = "高可信度"
-        prediction_reason = f"相似度 {highest_similarity:.4f} > 0.8"
-        predicted = most_similar_class
+    # 依「類別最高相似度」排序
+    sorted_classes = sorted(class_best.items(), key=lambda x: x[1], reverse=True)
 
-    elif highest_similarity < 0.7:
-        # 低可信度 - 判定為未知類別
-        predicted = "未知類別"
-        prediction_confidence = "低可信度"
-        prediction_reason = f"相似度 {highest_similarity:.4f} < 0.7"
-
+    # 取得最佳與次佳類別的最高相似度
+    best_class, best_sim = sorted_classes[0]
+    if len(sorted_classes) > 1:
+        second_best_class, second_best_sim = sorted_classes[1]
     else:
-        # 中等可信度 - 按類別分組，比較不同類別間的相似度差距
-        class_best = {}
-        # 將相似圖像按類別分組，每個類別只保留最高相似度
-        for label, sim in similarities:
-            if label not in class_best or sim > class_best[label][1]:
-                class_best[label] = (label, sim)
+        second_best_class, second_best_sim = "N/A", 0.0
 
-        # 按相似度排序類別
-        sorted_classes = sorted([(label, sim) for label, (_, sim) in class_best.items()],
-                               key=lambda x: x[1], reverse=True)
+    # 第一份策略參數
+    similarity_ratio_threshold = 1.01
+    absolute_similarity_threshold = 0.72
 
-        # 如果只有一個類別，則採用該類別
-        if len(sorted_classes) == 1:
-            best_class, best_sim = sorted_classes[0]
-            predicted = best_class
-            prediction_confidence = "中可信度-採用"
-            prediction_reason = "僅有一個匹配類別"
-        else:
-            # 獲取最高相似度的類別 (A) 和次高相似度的類別 (B)
-            best_class, best_sim = sorted_classes[0]
-            second_best_class, second_best_sim = sorted_classes[1]
-            similarity_gap = best_sim - second_best_sim
+    # 比例門檻判斷
+    if second_best_sim > 1e-8:
+        similarity_ratio = best_sim / second_best_sim
+        passed_ratio = similarity_ratio > similarity_ratio_threshold
+        ratio_reason = f"最高類別/次高類別 = {best_sim:.4f}/{second_best_sim:.4f} = {similarity_ratio:.4f} {'>' if passed_ratio else '<='} {similarity_ratio_threshold}"
+    else:
+        passed_ratio = True  # 僅有一個類別或次高極低，視為通過
+        ratio_reason = f"僅一類別或次高極低({second_best_sim:.4f})，視為通過比例門檻"
 
-            # 若最佳與次佳類別相似度差距大於0.1，採用最佳結果
-            if similarity_gap > 0.1:
-                predicted = best_class
-                prediction_confidence = "中可信度-採用"
-                prediction_reason = (
-                    f"類別間相似度差距 {similarity_gap:.4f} > 0.1 "
-                    f"(最佳:{best_class}={best_sim:.4f}, 次佳:{second_best_class}={second_best_sim:.4f})"
-                )
-            else:
-                predicted = "未知類別"
-                prediction_confidence = "中可信度-拒绝"
-                prediction_reason = (
-                    f"類別間相似度差距 {similarity_gap:.4f} <= 0.1 "
-                    f"(最佳:{best_class}={best_sim:.4f}, 次佳:{second_best_class}={second_best_sim:.4f})"
-                )
+    # 絕對門檻判斷
+    passed_abs = best_sim > absolute_similarity_threshold
+    abs_reason = f"最高相似度 {best_sim:.4f} {'>' if passed_abs else '<='} {absolute_similarity_threshold}"
+
+    # 綜合門檻
+    if passed_ratio and passed_abs:
+        predicted = best_class
+        reason = f"{ratio_reason}，且 {abs_reason}"
+    else:
+        predicted = "未知類別"
+        reason = f"{ratio_reason}，但 {abs_reason}，故拒答"
 
     return {
         "predicted": predicted,
-        "score": float(highest_similarity),  # 與原腳本一致，輸出最高相似度
+        "score": float(highest_similarity),  # 與原系統一致，回報樣本層級的最高相似度
         "matched": bool(predicted == spotName),
-        "reason": prediction_reason
+        "reason": reason
     }
